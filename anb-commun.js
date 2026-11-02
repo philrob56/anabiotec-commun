@@ -4,6 +4,7 @@
    <script src="https://philrob56.github.io/anabiotec-commun/anb-commun.js"></script>
    Toute modification ici s'applique à toutes les pages (délai ~10 min).
    v2 : version imprimable avec champs Nom / Classe à compléter.
+   v3 : sauvegarde automatique des saisies (pages listées dans ANB_SAUVEGARDE).
    ========================================================================== */
 
 /* 1. Charte graphique : polices et style du bandeau */
@@ -90,6 +91,7 @@ function anbPrint(){
     d.style.top = top + "px"; d.style.background = color; d.textContent = String(msg); d.style.display = "block";
     clearTimeout(d._t); d._t = setTimeout(function(){ d.style.display = "none"; }, 7000);
   }
+  window.anbToast = show;
   window.alert = function(msg){ show(msg, "#b91c1c"); };
   window.confirm = function(msg){
     var now = Date.now();
@@ -101,4 +103,88 @@ function anbPrint(){
     show(msg + " — Cliquez à nouveau sur le même bouton pour confirmer.", "#b45309");
     return false;
   };
+})();
+
+/* 4. Sauvegarde automatique des saisies
+      Les valeurs tapées sont gardées dans le navigateur de l'élève et restaurées
+      à son retour. Activée seulement pour les pages dont le titre est listé ici. */
+var ANB_SAUVEGARDE = [
+  "Dosages Acide-Base - Application Interactive",
+  "Extraction Liquide-Liquide",
+  "TP Dosage de l'Aspirine - Comparaison de méthodes"
+];
+(function(){
+  function stockage(){ try{ var s = window.localStorage; s.getItem("anb"); return s; }catch(e){ return null; } }
+  function demarrer(){
+    if (ANB_SAUVEGARDE.indexOf(document.title) < 0) return;
+    var ls = stockage(); if (!ls) return;
+    var CLE = "anb-saisies:" + document.title, pret = false, minuterie = null;
+    var EXCLUS = ["button","submit","reset","file","password","hidden","image"];
+    function champs(){
+      return Array.prototype.filter.call(document.querySelectorAll("input,select,textarea"), function(el){
+        return !(el.closest && el.closest(".anb-head")) && EXCLUS.indexOf((el.type || "").toLowerCase()) < 0;
+      });
+    }
+    function cle(el, i){ return el.id ? "id:" + el.id : (el.name ? "name:" + el.name + ":" + i : "n:" + i); }
+    function estCase(el){ var t = (el.type || "").toLowerCase(); return t === "checkbox" || t === "radio"; }
+    function enregistrer(){
+      if (!pret) return;
+      var d = {}, n = 0;
+      champs().forEach(function(el, i){
+        if (estCase(el)) { if (el.checked === el.defaultChecked) return; d[cle(el, i)] = el.checked; }
+        else if (el.tagName === "SELECT") { var o = el.options[el.selectedIndex]; if (!o || o.defaultSelected) return; d[cle(el, i)] = el.value; }
+        else { if (el.value === el.defaultValue) return; d[cle(el, i)] = el.value; }
+        n++;
+      });
+      try { if (n) ls.setItem(CLE, JSON.stringify({ t: Date.now(), d: d })); else ls.removeItem(CLE); } catch(e){}
+    }
+    function signaler(el){
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+      el.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+    function restaurer(){
+      var n = 0, brut = null;
+      try { brut = ls.getItem(CLE); } catch(e){}
+      if (brut) { try {
+        var d = JSON.parse(brut).d || {}, touches = [];
+        champs().forEach(function(el, i){
+          var k = cle(el, i); if (!(k in d)) return;
+          if (estCase(el)) el.checked = !!d[k]; else el.value = d[k];
+          touches.push(el); n++;
+        });
+        touches.forEach(signaler);
+      } catch(e){} }
+      pret = true;
+      if (n && window.anbToast) window.anbToast("Vos saisies précédentes ont été restaurées.", "#0e7c7b");
+    }
+    function effacer(){
+      if (!window.confirm("Effacer toutes vos saisies sur cette page ?")) return;
+      pret = false;
+      try { ls.removeItem(CLE); } catch(e){}
+      champs().forEach(function(el){
+        if (estCase(el)) el.checked = el.defaultChecked;
+        else if (el.tagName === "SELECT") { for (var j = 0; j < el.options.length; j++) el.options[j].selected = el.options[j].defaultSelected; }
+        else el.value = el.defaultValue;
+        signaler(el);
+      });
+      pret = true;
+    }
+    function planifier(){ clearTimeout(minuterie); minuterie = setTimeout(enregistrer, 400); }
+    document.addEventListener("input", planifier, true);
+    document.addEventListener("change", planifier, true);
+    window.addEventListener("pagehide", enregistrer);
+    var zone = document.querySelector(".anb-head .anb-right");
+    if (zone) {
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "anb-print anb-reset";
+      b.textContent = "Effacer mes saisies";
+      b.title = "Effacer les valeurs enregistrées sur cet appareil";
+      b.style.background = "transparent"; b.style.color = "#fff";
+      b.style.border = "1px solid rgba(255,255,255,.55)"; b.style.marginRight = "8px";
+      b.onclick = effacer;
+      zone.insertBefore(b, zone.firstChild);
+    }
+    setTimeout(restaurer, 80);
+  }
+  if (document.readyState === "complete") demarrer(); else window.addEventListener("load", demarrer);
 })();
