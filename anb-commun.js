@@ -5,6 +5,7 @@
    Toute modification ici s'applique à toutes les pages (délai ~10 min).
    v2 : version imprimable avec champs Nom / Classe à compléter.
    v3 : sauvegarde automatique des saisies (pages listées dans ANB_SAUVEGARDE).
+   v4 : stockage durable via stockage.html (l'adresse du code intégré change à chaque chargement).
    ========================================================================== */
 
 /* 1. Charte graphique : polices et style du bandeau */
@@ -39,25 +40,22 @@ function anbPrint(){
   head.appendChild(st);
   var body=doc.querySelector('body');
   var now=new Date(); var dd=('0'+now.getDate()).slice(-2)+'/'+('0'+(now.getMonth()+1)).slice(-2)+'/'+now.getFullYear();
-  var id=document.createElement('div'); id.className='anb-id'; id.innerHTML='<label>Nom et prénom : <input class="anb-in" id="anb-nom" placeholder="à compléter" autocomplete="off"></label><label>Classe : <input class="anb-in anb-in-court" id="anb-classe" placeholder="à compléter" autocomplete="off"></label><span>Date : '+dd+'</span>';
+  var id=document.createElement('div'); id.className='anb-id'; id.innerHTML='<label>Nom et prénom : <input class="anb-in" id="anb-nom" placeholder="à compléter" autocomplete="off" value="'+anbEsc(window.anbNomMemo||'')+'"></label><label>Classe : <input class="anb-in anb-in-court" id="anb-classe" placeholder="à compléter" autocomplete="off" value="'+anbEsc(window.anbClasseMemo||'')+'"></label><span>Date : '+dd+'</span>';
   var hd=body.querySelector('.anb-head'); if(hd&&hd.nextSibling) hd.parentNode.insertBefore(id,hd.nextSibling); else body.insertBefore(id,body.firstChild);
   var bar=document.createElement('div'); bar.className='anb-bar'; bar.innerHTML='<span>Version imprimable — indiquez votre nom et votre classe, puis imprimez ou enregistrez en PDF</span><button onclick="anbDoPrint()">Imprimer / Enregistrer en PDF</button>';
   body.insertBefore(bar,body.firstChild);
-  /* Champs Nom / Classe de la version imprimable : pré-remplis et mémorisés */
+  /* Champs Nom / Classe de la version imprimable : pré-remplis et mémorisés (via anbStore) */
   var st2=document.createElement('style');
-  st2.textContent='.anb-id label{flex:1 1 220px;display:flex;align-items:baseline;gap:6px;white-space:nowrap}.anb-in{flex:1;min-width:120px;font:600 13.5px Inter,system-ui,sans-serif;color:#0f2a2e;border:0;border-bottom:1.5px solid #9fb3b1;background:transparent;padding:2px 4px;outline:none}.anb-in:focus{border-bottom-color:#0e7c7b}.anb-in.anb-manque{border-bottom-color:#b91c1c;background:#fdecec}.anb-in-court{max-width:140px}@media print{.anb-in{border-bottom-color:#0f2a2e}.anb-in::placeholder{color:transparent}}';
+  st2.textContent='.anb-id label{flex:1 1 220px;display:flex;align-items:baseline;gap:6px;white-space:nowrap}.anb-in{flex:1;min-width:120px;font:600 13.5px Inter,system-ui,sans-serif;color:#0f2a2e;border:0;border-bottom:1.5px solid #9fb3b1;background:transparent;padding:2px 4px;outline:none}.anb-in:focus{border-bottom-color:#0e7c7b}.anb-in.anb-manque{border-bottom-color:#b91c1c;background:#fdecec}.anb-in-court{max-width:140px}.anb-id label:first-child{flex:2 1 280px}@media print{.anb-in{border-bottom-color:#0f2a2e}.anb-in::placeholder{color:transparent}}';
   head.appendChild(st2);
   var sc=document.createElement('script');
   sc.textContent='(function(){'
-   +'function g(k){try{return localStorage.getItem(k)||"";}catch(e){return "";}}'
-   +'function s(k,v){try{localStorage.setItem(k,v);}catch(e){}}'
    +'var n=document.getElementById("anb-nom"),c=document.getElementById("anb-classe");'
    +'if(!n||!c){window.anbDoPrint=function(){window.print();};return;}'
-   +'n.value=g("anb-nom");c.value=g("anb-classe");'
    +'n.oninput=function(){n.classList.remove("anb-manque");};'
    +'window.anbDoPrint=function(){'
    +'if(!n.value.trim()){n.classList.add("anb-manque");n.placeholder="Indiquez votre nom avant d\\u2019imprimer";n.focus();return;}'
-   +'s("anb-nom",n.value.trim());s("anb-classe",c.value.trim());'
+   +'try{if(window.opener&&window.opener.anbMemo)window.opener.anbMemo(n.value.trim(),c.value.trim());}catch(e){}'
    +'window.print();};'
    +'if(!n.value)setTimeout(function(){n.focus();},300);'
    +'})();';
@@ -106,7 +104,7 @@ function anbPrint(){
 })();
 
 /* 4. Sauvegarde automatique des saisies
-      Les valeurs tapées sont gardées dans le navigateur de l'élève et restaurées
+      Les valeurs tapées sont gardées sur l'appareil de l'élève et restaurées
       à son retour. Activée seulement pour les pages dont le titre est listé ici. */
 var ANB_SAUVEGARDE = [
   "Dosages Acide-Base - Application Interactive",
@@ -114,10 +112,8 @@ var ANB_SAUVEGARDE = [
   "TP Dosage de l'Aspirine - Comparaison de méthodes"
 ];
 (function(){
-  function stockage(){ try{ var s = window.localStorage; s.getItem("anb"); return s; }catch(e){ return null; } }
   function demarrer(){
     if (ANB_SAUVEGARDE.indexOf(document.title) < 0) return;
-    var ls = stockage(); if (!ls) return;
     var CLE = "anb-saisies:" + document.title, pret = false, minuterie = null;
     var EXCLUS = ["button","submit","reset","file","password","hidden","image"];
     function champs(){
@@ -136,15 +132,14 @@ var ANB_SAUVEGARDE = [
         else { if (el.value === el.defaultValue) return; d[cle(el, i)] = el.value; }
         n++;
       });
-      try { if (n) ls.setItem(CLE, JSON.stringify({ t: Date.now(), d: d })); else ls.removeItem(CLE); } catch(e){}
+      if (n) anbStore.set(CLE, JSON.stringify({ t: Date.now(), d: d })); else anbStore.del(CLE);
     }
     function signaler(el){
       el.dispatchEvent(new Event("input", { bubbles: true }));
       el.dispatchEvent(new Event("change", { bubbles: true }));
     }
-    function restaurer(){
-      var n = 0, brut = null;
-      try { brut = ls.getItem(CLE); } catch(e){}
+    function restaurer(brut){
+      var n = 0;
       if (brut) { try {
         var d = JSON.parse(brut).d || {}, touches = [];
         champs().forEach(function(el, i){
@@ -160,7 +155,7 @@ var ANB_SAUVEGARDE = [
     function effacer(){
       if (!window.confirm("Effacer toutes vos saisies sur cette page ?")) return;
       pret = false;
-      try { ls.removeItem(CLE); } catch(e){}
+      anbStore.del(CLE);
       champs().forEach(function(el){
         if (estCase(el)) el.checked = el.defaultChecked;
         else if (el.tagName === "SELECT") { for (var j = 0; j < el.options.length; j++) el.options[j].selected = el.options[j].defaultSelected; }
@@ -172,7 +167,6 @@ var ANB_SAUVEGARDE = [
     function planifier(){ clearTimeout(minuterie); minuterie = setTimeout(enregistrer, 400); }
     document.addEventListener("input", planifier, true);
     document.addEventListener("change", planifier, true);
-    window.addEventListener("pagehide", enregistrer);
     var zone = document.querySelector(".anb-head .anb-right");
     if (zone) {
       var b = document.createElement("button");
@@ -184,7 +178,64 @@ var ANB_SAUVEGARDE = [
       b.onclick = effacer;
       zone.insertBefore(b, zone.firstChild);
     }
-    setTimeout(restaurer, 80);
+    anbStore.get(CLE).then(function(brut){ setTimeout(function(){ restaurer(brut); }, 50); });
   }
   if (document.readyState === "complete") demarrer(); else window.addEventListener("load", demarrer);
+})();
+
+/* 5. Stockage durable
+      Google Sites donne une adresse différente au code intégré à chaque chargement,
+      ce qui vide le stockage du navigateur. Les données passent donc par une petite
+      page à adresse fixe, hébergée ici sur GitHub (stockage.html), chargée en arrière-plan.
+      anbStore.get / set / del renvoient une promesse ; sans stockage disponible, rien ne casse. */
+var anbStore = (function(){
+  var ADRESSE = "https://philrob56.github.io/anabiotec-commun/stockage.html";
+  var ORIGINE = "https://philrob56.github.io";
+  var cadre = null, pret = false, dispo = false, attente = [], rappels = {}, compteur = 0;
+  function vider(){ var a = attente; attente = []; a.forEach(function(f){ f(); }); }
+  function initialiser(){
+    if (cadre) return;
+    cadre = document.createElement("iframe");
+    cadre.src = ADRESSE; cadre.title = "stockage"; cadre.tabIndex = -1;
+    cadre.setAttribute("aria-hidden", "true");
+    cadre.style.cssText = "position:absolute;width:0;height:0;border:0;visibility:hidden";
+    (document.body || document.documentElement).appendChild(cadre);
+    setTimeout(function(){ if (!pret) { pret = true; vider(); } }, 4000);
+  }
+  window.addEventListener("message", function(ev){
+    if (ev.origin !== ORIGINE || !ev.data || ev.data.anb !== 1) return;
+    if (ev.data.pret) { pret = true; dispo = !!ev.data.ok; vider(); return; }
+    var cb = rappels[ev.data.id];
+    if (cb) { delete rappels[ev.data.id]; cb(ev.data.valeur == null ? null : ev.data.valeur); }
+  });
+  function envoyer(op, cle, valeur){
+    return new Promise(function(res){
+      function go(){
+        if (!dispo) { res(null); return; }
+        var id = ++compteur; rappels[id] = res;
+        cadre.contentWindow.postMessage({ anb: 1, id: id, op: op, cle: cle, valeur: valeur }, ORIGINE);
+        setTimeout(function(){ if (rappels[id]) { delete rappels[id]; res(null); } }, 3000);
+      }
+      if (pret) go(); else { attente.push(go); initialiser(); }
+    });
+  }
+  return {
+    get: function(k){ return envoyer("get", k); },
+    set: function(k, v){ return envoyer("set", k, v); },
+    del: function(k){ return envoyer("del", k); }
+  };
+})();
+function anbEsc(s){ return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;"); }
+/* Nom et classe de la version imprimable : mémorisés pour toutes les pages */
+window.anbMemo = function(nom, classe){
+  window.anbNomMemo = nom; window.anbClasseMemo = classe;
+  anbStore.set("anb-nom", nom); anbStore.set("anb-classe", classe);
+};
+(function(){
+  function charger(){
+    if (!document.querySelector(".anb-head")) return;
+    anbStore.get("anb-nom").then(function(v){ if (v) window.anbNomMemo = v; });
+    anbStore.get("anb-classe").then(function(v){ if (v) window.anbClasseMemo = v; });
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", charger); else charger();
 })();
