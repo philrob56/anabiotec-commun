@@ -6,6 +6,7 @@
    v2 : version imprimable avec champs Nom / Classe à compléter.
    v3 : sauvegarde automatique des saisies (pages listées dans ANB_SAUVEGARDE).
    v4 : stockage durable via stockage.html (l'adresse du code intégré change à chaque chargement).
+   v5 : sauvegarde des saisies étendue à toutes les pages (sauf ANB_SANS_SAUVEGARDE).
    ========================================================================== */
 
 /* 1. Charte graphique : polices et style du bandeau */
@@ -104,62 +105,82 @@ function anbPrint(){
 })();
 
 /* 4. Sauvegarde automatique des saisies
-      Les valeurs tapées sont gardées sur l'appareil de l'élève et restaurées
-      à son retour. Activée seulement pour les pages dont le titre est listé ici. */
-var ANB_SAUVEGARDE = [
-  "Dosages Acide-Base - Application Interactive",
-  "Extraction Liquide-Liquide",
-  "TP Dosage de l'Aspirine - Comparaison de méthodes"
+      Les valeurs tapées sont gardées sur l'appareil de l'élève et restaurées à son retour.
+      Active sur toutes les pages, sauf celles dont le titre est listé ici.
+      Seuls les champs qui ont un identifiant (id) sont sauvegardés. */
+var ANB_SANS_SAUVEGARDE = [
+  "Étalonnage des micropipettes",
+  "Étalonnage des micropipettes — TP"
 ];
 (function(){
   function demarrer(){
-    if (ANB_SAUVEGARDE.indexOf(document.title) < 0) return;
-    var CLE = "anb-saisies:" + document.title, pret = false, minuterie = null;
+    if (ANB_SANS_SAUVEGARDE.indexOf(document.title) >= 0) return;
+    if (!document.querySelector(".anb-head")) return;
+    var CLE = "anb-saisies:" + document.title, pret = false, minuterie = null, memo = null;
     var EXCLUS = ["button","submit","reset","file","password","hidden","image"];
     function champs(){
-      return Array.prototype.filter.call(document.querySelectorAll("input,select,textarea"), function(el){
+      return Array.prototype.filter.call(document.querySelectorAll("input[id],select[id],textarea[id]"), function(el){
         return !(el.closest && el.closest(".anb-head")) && EXCLUS.indexOf((el.type || "").toLowerCase()) < 0;
       });
     }
-    function cle(el, i){ return el.id ? "id:" + el.id : (el.name ? "name:" + el.name + ":" + i : "n:" + i); }
     function estCase(el){ var t = (el.type || "").toLowerCase(); return t === "checkbox" || t === "radio"; }
+    function estChoix(el){ return estCase(el) || el.tagName === "SELECT"; }
     function enregistrer(){
       if (!pret) return;
       var d = {}, n = 0;
-      champs().forEach(function(el, i){
-        if (estCase(el)) { if (el.checked === el.defaultChecked) return; d[cle(el, i)] = el.checked; }
-        else if (el.tagName === "SELECT") { var o = el.options[el.selectedIndex]; if (!o || o.defaultSelected) return; d[cle(el, i)] = el.value; }
-        else { if (el.value === el.defaultValue) return; d[cle(el, i)] = el.value; }
-        n++;
+      if (memo) for (var k in memo) d[k] = memo[k];   /* garde les champs pas encore affichés */
+      champs().forEach(function(el){
+        var k = el.id;
+        if (estCase(el)) { if (el.checked === el.defaultChecked) { delete d[k]; return; } d[k] = el.checked; }
+        else if (el.tagName === "SELECT") { var o = el.options[el.selectedIndex]; if (!o || o.defaultSelected) { delete d[k]; return; } d[k] = el.value; }
+        else { if (el.value === el.defaultValue) { delete d[k]; return; } d[k] = el.value; }
       });
+      for (var j in d) n++;
+      memo = d;
       if (n) anbStore.set(CLE, JSON.stringify({ t: Date.now(), d: d })); else anbStore.del(CLE);
     }
     function signaler(el){
       el.dispatchEvent(new Event("input", { bubbles: true }));
       el.dispatchEvent(new Event("change", { bubbles: true }));
     }
-    function restaurer(brut){
+    function appliquer(d, choix, faits){
       var n = 0;
-      if (brut) { try {
-        var d = JSON.parse(brut).d || {}, touches = [];
-        champs().forEach(function(el, i){
-          var k = cle(el, i); if (!(k in d)) return;
-          if (estCase(el)) el.checked = !!d[k]; else el.value = d[k];
-          touches.push(el); n++;
-        });
-        touches.forEach(signaler);
-      } catch(e){} }
-      pret = true;
-      if (n && window.anbToast) window.anbToast("Vos saisies précédentes ont été restaurées.", "#0e7c7b");
+      champs().forEach(function(el){
+        var k = el.id;
+        if (!(k in d) || faits[k] || estChoix(el) !== choix) return;
+        if (estCase(el)) { if (el.checked !== !!d[k]) { el.checked = !!d[k]; signaler(el); } }
+        else if (el.value !== String(d[k])) { el.value = d[k]; signaler(el); }
+        faits[k] = true; n++;
+      });
+      return n;
+    }
+    function restaurer(brut){
+      var d = null;
+      try { d = brut ? (JSON.parse(brut).d || null) : null; } catch(e){ d = null; }
+      if (!d) { pret = true; return; }
+      memo = d;
+      var faits = {}, n = appliquer(d, true, faits);
+      setTimeout(function(){
+        n += appliquer(d, false, faits);
+        setTimeout(function(){
+          n += appliquer(d, true, faits) + appliquer(d, false, faits);
+          pret = true;
+          if (n && window.anbToast) window.anbToast("Vos saisies précédentes ont été restaurées.", "#0e7c7b");
+        }, 400);
+      }, 120);
     }
     function effacer(){
       if (!window.confirm("Effacer toutes vos saisies sur cette page ?")) return;
-      pret = false;
+      pret = false; memo = null;
       anbStore.del(CLE);
       champs().forEach(function(el){
-        if (estCase(el)) el.checked = el.defaultChecked;
-        else if (el.tagName === "SELECT") { for (var j = 0; j < el.options.length; j++) el.options[j].selected = el.options[j].defaultSelected; }
-        else el.value = el.defaultValue;
+        if (estCase(el)) { if (el.checked === el.defaultChecked) return; el.checked = el.defaultChecked; }
+        else if (el.tagName === "SELECT") {
+          var change = false;
+          for (var j = 0; j < el.options.length; j++) if (el.options[j].selected !== el.options[j].defaultSelected) { el.options[j].selected = el.options[j].defaultSelected; change = true; }
+          if (!change) return;
+        }
+        else { if (el.value === el.defaultValue) return; el.value = el.defaultValue; }
         signaler(el);
       });
       pret = true;
@@ -168,7 +189,7 @@ var ANB_SAUVEGARDE = [
     document.addEventListener("input", planifier, true);
     document.addEventListener("change", planifier, true);
     var zone = document.querySelector(".anb-head .anb-right");
-    if (zone) {
+    if (zone && champs().length) {
       var b = document.createElement("button");
       b.type = "button"; b.className = "anb-print anb-reset";
       b.textContent = "Effacer mes saisies";
