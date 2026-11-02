@@ -7,6 +7,7 @@
    v3 : sauvegarde automatique des saisies (pages listées dans ANB_SAUVEGARDE).
    v4 : stockage durable via stockage.html (l'adresse du code intégré change à chaque chargement).
    v5 : sauvegarde des saisies étendue à toutes les pages (sauf ANB_SANS_SAUVEGARDE).
+   v6 : référence = état de la page après chargement (et non les valeurs du HTML).
    ========================================================================== */
 
 /* 1. Charte graphique : polices et style du bandeau */
@@ -125,15 +126,23 @@ var ANB_SANS_SAUVEGARDE = [
     }
     function estCase(el){ var t = (el.type || "").toLowerCase(); return t === "checkbox" || t === "radio"; }
     function estChoix(el){ return estCase(el) || el.tagName === "SELECT"; }
+    function valeur(el){ return estCase(el) ? el.checked : el.value; }
+    function defaut(el){
+      if (estCase(el)) return el.defaultChecked;
+      if (el.tagName === "SELECT") { for (var j = 0; j < el.options.length; j++) if (el.options[j].defaultSelected) return el.options[j].value; return el.options.length ? el.options[0].value : ""; }
+      return el.defaultValue;
+    }
+    /* Référence : l'état de la page juste après son chargement (certains outils règlent leurs champs par script) */
+    var initial = {};
+    champs().forEach(function(el){ initial[el.id] = valeur(el); });
+    function reference(el){ return (el.id in initial) ? initial[el.id] : defaut(el); }
     function enregistrer(){
       if (!pret) return;
       var d = {}, n = 0;
       if (memo) for (var k in memo) d[k] = memo[k];   /* garde les champs pas encore affichés */
       champs().forEach(function(el){
-        var k = el.id;
-        if (estCase(el)) { if (el.checked === el.defaultChecked) { delete d[k]; return; } d[k] = el.checked; }
-        else if (el.tagName === "SELECT") { var o = el.options[el.selectedIndex]; if (!o || o.defaultSelected) { delete d[k]; return; } d[k] = el.value; }
-        else { if (el.value === el.defaultValue) { delete d[k]; return; } d[k] = el.value; }
+        var k = el.id, v = valeur(el);
+        if (v === reference(el)) delete d[k]; else d[k] = v;
       });
       for (var j in d) n++;
       memo = d;
@@ -148,9 +157,9 @@ var ANB_SANS_SAUVEGARDE = [
       champs().forEach(function(el){
         var k = el.id;
         if (!(k in d) || faits[k] || estChoix(el) !== choix) return;
-        if (estCase(el)) { if (el.checked !== !!d[k]) { el.checked = !!d[k]; signaler(el); } }
-        else if (el.value !== String(d[k])) { el.value = d[k]; signaler(el); }
-        faits[k] = true; n++;
+        if (estCase(el)) { if (el.checked !== !!d[k]) { el.checked = !!d[k]; signaler(el); n++; } }
+        else if (el.value !== String(d[k])) { el.value = d[k]; signaler(el); n++; }
+        faits[k] = true;
       });
       return n;
     }
@@ -174,15 +183,12 @@ var ANB_SANS_SAUVEGARDE = [
       pret = false; memo = null;
       anbStore.del(CLE);
       champs().forEach(function(el){
-        if (estCase(el)) { if (el.checked === el.defaultChecked) return; el.checked = el.defaultChecked; }
-        else if (el.tagName === "SELECT") {
-          var change = false;
-          for (var j = 0; j < el.options.length; j++) if (el.options[j].selected !== el.options[j].defaultSelected) { el.options[j].selected = el.options[j].defaultSelected; change = true; }
-          if (!change) return;
-        }
-        else { if (el.value === el.defaultValue) return; el.value = el.defaultValue; }
+        var r = reference(el);
+        if (valeur(el) === r) return;
+        if (estCase(el)) el.checked = r; else el.value = r;
         signaler(el);
       });
+      anbStore.del(CLE);
       pret = true;
     }
     function planifier(){ clearTimeout(minuterie); minuterie = setTimeout(enregistrer, 400); }
