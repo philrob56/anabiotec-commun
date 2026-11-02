@@ -1,0 +1,28 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Stockage ANABIOTEC</title>
+<!-- Page invisible chargée par anb-commun.js : elle garde les données (saisies, nom, classe)
+     dans le navigateur de l'élève, à une adresse fixe. Elle ne répond qu'au site Google Sites. -->
+<script>
+(function(){
+  function autorise(o){
+    return /^https:\/\/[a-z0-9-]+-atari-embeds\.googleusercontent\.com$/.test(o) || o === "https://sites.google.com";
+  }
+  var ls = null;
+  try { ls = window.localStorage; ls.getItem("anb"); } catch(e) { ls = null; }
+  window.addEventListener("message", function(ev){
+    if (!autorise(ev.origin)) return;
+    var m = ev.data; if (!m || m.anb !== 1 || !m.id) return;
+    var rep = { anb: 1, id: m.id, ok: !!ls, valeur: null };
+    try {
+      if (ls && typeof m.cle === "string" && m.cle.indexOf("anb-") === 0) {
+        if (m.op === "get") rep.valeur = ls.getItem(m.cle);
+        else if (m.op === "set") ls.setItem(m.cle, String(m.valeur).slice(0, 100000));
+        else if (m.op === "del") ls.removeItem(m.cle);
+      }
+    } catch(e) { rep.ok = false; }
+    ev.source.postMessage(rep, ev.origin);
+  });
+  if (window.parent !== window) window.parent.postMessage({ anb: 1, pret: true, ok: !!ls }, "*");
+})();
+</script>
