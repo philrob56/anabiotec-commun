@@ -8,6 +8,7 @@
    v4 : stockage durable via stockage.html (l'adresse du code intégré change à chaque chargement).
    v5 : sauvegarde des saisies étendue à toutes les pages (sauf ANB_SANS_SAUVEGARDE).
    v6 : référence = état de la page après chargement (et non les valeurs du HTML).
+   v7 : listes de valeurs (Grubbs, Dixon, Normalité) + mesure de hauteur pour la maintenance.
    ========================================================================== */
 
 /* 1. Charte graphique : polices et style du bandeau */
@@ -136,6 +137,31 @@ var ANB_SANS_SAUVEGARDE = [
     var initial = {};
     champs().forEach(function(el){ initial[el.id] = valeur(el); });
     function reference(el){ return (el.id in initial) ? initial[el.id] : defaut(el); }
+    /* Listes de valeurs ajoutées à la volée (Grubbs, Dixon, Normalité : zone "values-container") */
+    function listes(){ return Array.prototype.slice.call(document.querySelectorAll('[id$="values-container"]')); }
+    function lireListe(c){
+      var v = Array.prototype.map.call(c.querySelectorAll("input"), function(x){ return x.value; });
+      while (v.length && v[v.length - 1] === "") v.pop();
+      return v;
+    }
+    function appliquerListes(d){
+      var n = 0;
+      listes().forEach(function(c){
+        var v = d["liste:" + c.id]; if (!v || !v.length) return;
+        var ins = c.querySelectorAll("input"), garde = 0;
+        while (ins.length < v.length && garde++ < 40) {
+          var dernier = ins[ins.length - 1]; if (!dernier) break;
+          dernier.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true, cancelable: true }));
+          var apres = c.querySelectorAll("input"); if (apres.length === ins.length) break; ins = apres;
+        }
+        ins = c.querySelectorAll("input");
+        v.forEach(function(x, j){
+          if (ins[j] && ins[j].value !== x) { ins[j].value = x; ins[j].dispatchEvent(new Event("input", { bubbles: true })); n++; }
+        });
+      });
+      if (n && document.activeElement && document.activeElement.blur) document.activeElement.blur();
+      return n;
+    }
     function enregistrer(){
       if (!pret) return;
       var d = {}, n = 0;
@@ -143,6 +169,10 @@ var ANB_SANS_SAUVEGARDE = [
       champs().forEach(function(el){
         var k = el.id, v = valeur(el);
         if (v === reference(el)) delete d[k]; else d[k] = v;
+      });
+      listes().forEach(function(c){
+        var v = lireListe(c), k = "liste:" + c.id;
+        if (v.length) d[k] = v; else delete d[k];
       });
       for (var j in d) n++;
       memo = d;
@@ -172,7 +202,7 @@ var ANB_SANS_SAUVEGARDE = [
       setTimeout(function(){
         n += appliquer(d, false, faits);
         setTimeout(function(){
-          n += appliquer(d, true, faits) + appliquer(d, false, faits);
+          n += appliquer(d, true, faits) + appliquer(d, false, faits) + appliquerListes(d);
           pret = true;
           if (n && window.anbToast) window.anbToast("Vos saisies précédentes ont été restaurées.", "#0e7c7b");
         }, 400);
@@ -188,6 +218,12 @@ var ANB_SANS_SAUVEGARDE = [
         if (estCase(el)) el.checked = r; else el.value = r;
         signaler(el);
       });
+      listes().forEach(function(c){
+        if (!lireListe(c).length) return;
+        var ins = c.querySelectorAll("input");
+        for (var j = ins.length - 1; j > 0; j--) ins[j].parentNode.removeChild(ins[j]);
+        if (ins[0]) { ins[0].value = ""; ins[0].dispatchEvent(new Event("input", { bubbles: true })); }
+      });
       anbStore.del(CLE);
       pret = true;
     }
@@ -195,7 +231,7 @@ var ANB_SANS_SAUVEGARDE = [
     document.addEventListener("input", planifier, true);
     document.addEventListener("change", planifier, true);
     var zone = document.querySelector(".anb-head .anb-right");
-    if (zone && champs().length) {
+    if (zone && (champs().length || listes().length)) {
       var b = document.createElement("button");
       b.type = "button"; b.className = "anb-print anb-reset";
       b.textContent = "Effacer mes saisies";
@@ -266,3 +302,18 @@ window.anbMemo = function(nom, classe){
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", charger); else charger();
 })();
+
+/* 6. Mesure de hauteur (maintenance)
+      Répond seulement à une demande explicite : hauteur du contenu et hauteur du cadre,
+      pour repérer les blocs intégrés trop grands ou trop petits. Invisible pour les élèves. */
+window.addEventListener("message", function(ev){
+  if (!ev.data || ev.data.anbMesure !== 1 || !ev.source) return;
+  var b = document.body, bas = 0;
+  if (b) Array.prototype.forEach.call(b.children, function(el){
+    if (el.id === "anb-toast" || el.tagName === "SCRIPT" || el.tagName === "IFRAME") return;
+    var r = el.getBoundingClientRect(); if (r.height) bas = Math.max(bas, r.bottom + window.scrollY);
+  });
+  var mb = b ? parseFloat(getComputedStyle(b).marginBottom) + parseFloat(getComputedStyle(b).paddingBottom) : 0;
+  ev.source.postMessage({ anbMesure: 2, titre: document.title, contenu: Math.ceil(bas + (mb || 0)),
+    defilement: document.documentElement.scrollHeight, cadre: window.innerHeight }, "*");
+});
