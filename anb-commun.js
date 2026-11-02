@@ -3,6 +3,7 @@
    Chaque page le charge avec :
    <script src="https://philrob56.github.io/anabiotec-commun/anb-commun.js"></script>
    Toute modification ici s'applique à toutes les pages (délai ~10 min).
+   v2 : version imprimable avec champs Nom / Classe à compléter.
    ========================================================================== */
 
 /* 1. Charte graphique : polices et style du bandeau */
@@ -37,10 +38,29 @@ function anbPrint(){
   head.appendChild(st);
   var body=doc.querySelector('body');
   var now=new Date(); var dd=('0'+now.getDate()).slice(-2)+'/'+('0'+(now.getMonth()+1)).slice(-2)+'/'+now.getFullYear();
-  var id=document.createElement('div'); id.className='anb-id'; id.innerHTML='<span>Nom : ______________________</span><span>Classe : ____________</span><span>Date : '+dd+'</span>';
+  var id=document.createElement('div'); id.className='anb-id'; id.innerHTML='<label>Nom et prénom : <input class="anb-in" id="anb-nom" placeholder="à compléter" autocomplete="off"></label><label>Classe : <input class="anb-in anb-in-court" id="anb-classe" placeholder="à compléter" autocomplete="off"></label><span>Date : '+dd+'</span>';
   var hd=body.querySelector('.anb-head'); if(hd&&hd.nextSibling) hd.parentNode.insertBefore(id,hd.nextSibling); else body.insertBefore(id,body.firstChild);
-  var bar=document.createElement('div'); bar.className='anb-bar'; bar.innerHTML='<span>Version imprimable — vérifiez puis imprimez ou enregistrez en PDF</span><button onclick="window.print()">Imprimer / Enregistrer en PDF</button>';
+  var bar=document.createElement('div'); bar.className='anb-bar'; bar.innerHTML='<span>Version imprimable — indiquez votre nom et votre classe, puis imprimez ou enregistrez en PDF</span><button onclick="anbDoPrint()">Imprimer / Enregistrer en PDF</button>';
   body.insertBefore(bar,body.firstChild);
+  /* Champs Nom / Classe de la version imprimable : pré-remplis et mémorisés */
+  var st2=document.createElement('style');
+  st2.textContent='.anb-id label{flex:1 1 220px;display:flex;align-items:baseline;gap:6px;white-space:nowrap}.anb-in{flex:1;min-width:120px;font:600 13.5px Inter,system-ui,sans-serif;color:#0f2a2e;border:0;border-bottom:1.5px solid #9fb3b1;background:transparent;padding:2px 4px;outline:none}.anb-in:focus{border-bottom-color:#0e7c7b}.anb-in.anb-manque{border-bottom-color:#b91c1c;background:#fdecec}.anb-in-court{max-width:140px}@media print{.anb-in{border-bottom-color:#0f2a2e}.anb-in::placeholder{color:transparent}}';
+  head.appendChild(st2);
+  var sc=document.createElement('script');
+  sc.textContent='(function(){'
+   +'function g(k){try{return localStorage.getItem(k)||"";}catch(e){return "";}}'
+   +'function s(k,v){try{localStorage.setItem(k,v);}catch(e){}}'
+   +'var n=document.getElementById("anb-nom"),c=document.getElementById("anb-classe");'
+   +'if(!n||!c){window.anbDoPrint=function(){window.print();};return;}'
+   +'n.value=g("anb-nom");c.value=g("anb-classe");'
+   +'n.oninput=function(){n.classList.remove("anb-manque");};'
+   +'window.anbDoPrint=function(){'
+   +'if(!n.value.trim()){n.classList.add("anb-manque");n.placeholder="Indiquez votre nom avant d\\u2019imprimer";n.focus();return;}'
+   +'s("anb-nom",n.value.trim());s("anb-classe",c.value.trim());'
+   +'window.print();};'
+   +'if(!n.value)setTimeout(function(){n.focus();},300);'
+   +'})();';
+  body.appendChild(sc);
   var html='<!doctype html>'+doc.outerHTML;
   var w=window.open('','_blank');
   if(w&&w.document){ w.document.open(); w.document.write(html); w.document.close(); try{w.document.title='Impression – '+(document.title||'outil');}catch(e){} return; }
