@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+<meta name="description" content="Simulateur interactif de chromatographie liquide en phase inverse : faites varier le gradient eau/solvant organique et observez l’effet sur la rétention et la séparation des pics. Outil du BTSa ANABIOTEC, Pontivy.">
+<link rel="canonical" href="https://philrob56.github.io/anabiotec-commun/outils/simulateur-gradient-hplc-c18.html">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulateur de gradient HPLC sur colonne C18 | BTSa ANABIOTEC</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #0e7c7b; --secondary-color: #f5f5f5; --text-color: #333;
+            --border-color: #ddd; --background-color: #fff; --shadow-color: rgba(0, 0, 0, 0.1);
+            --rs-ok-color: #27ae60; --rs-warn-color: #f39c12; --rs-bad-color: #c0392b;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--secondary-color); color: var(--text-color); margin: 0; padding: 20px;
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .container {
+            width: 100%; max-width: 1400px; background-color: var(--background-color);
+            border-radius: 12px; box-shadow: 0 4px 12px var(--shadow-color); overflow: hidden;
+        }
+        header {
+            background-color: var(--primary-color); color: white; padding: 15px 20px; text-align: center;
+        }
+        header h1 { margin: 0; font-size: 1.6em; }
+        .main-content {
+            display: grid; grid-template-columns: 1fr 2.5fr; gap: 20px; padding: 20px;
+        }
+        .chromatogram-area {
+            height: 65vh;
+            position: relative;
+        }
+        .side-panel { display: flex; flex-direction: column; gap: 15px; }
+        .card {
+            background-color: #fff; border: 1px solid var(--border-color);
+            border-radius: 8px; padding: 20px;
+        }
+        .card h2 {
+            margin-top: 0; border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 10px; margin-bottom: 20px; font-size: 1.1em;
+        }
+        .setting-group { margin-bottom: 15px; }
+        .label-input-group {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;
+        }
+        .label-input-group label { font-weight: bold; font-size: 0.9em; }
+        .input-wrapper { display: flex; align-items: center; gap: 5px; }
+        .input-wrapper input[type="number"] {
+            width: 60px; text-align: right; padding: 4px; border: 1px solid #ccc; border-radius: 4px;
+            -moz-appearance: textfield;
+        }
+        .input-wrapper input[type="number"]::-webkit-outer-spin-button,
+        .input-wrapper input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none; margin: 0;
+        }
+        .input-wrapper span { font-size: 0.85em; }
+        input[type="range"] { width: 100%; cursor: pointer; }
+        .compound-form { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: center; }
+        input[type="text"], .compound-form input[type="number"] { width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 4px; }
+        button {
+            padding: 8px 12px; border: none; background-color: var(--primary-color);
+            color: white; border-radius: 4px; cursor: pointer; transition: background-color 0.2s;
+        }
+        button:hover { background-color: #0a5c5b; }
+        .compound-list { margin-top: 15px; max-height: 120px; overflow-y: auto; }
+        .compound-item { display: flex; justify-content: space-between; align-items: center; padding: 6px; border-bottom: 1px solid var(--border-color); font-size: 0.9em;}
+        .editable-field { cursor: pointer; }
+        .editable-field:hover { color: var(--primary-color); }
+        .remove-compound { color: #e74c3c; background: none; border: none; cursor: pointer; font-weight: bold; flex-shrink: 0; }
+        #pressure-gauge {
+            width: 100%; height: 20px; background-color: #eee; border-radius: 5px; overflow: hidden; border: 1px solid var(--border-color); margin-top: 10px;
+        }
+        #pressure-bar {
+            height: 100%; width: 0%; background-color: var(--rs-ok-color); transition: width 0.3s, background-color 0.3s;
+        }
+        #pressure-text { font-weight: bold; text-align: center; font-size: 0.9em; margin-top: 5px; }
+        #toggle-resolution { width: 100%; margin-top: 10px; background-color: #7f8c8d; }
+        #toggle-resolution.active { background-color: var(--primary-color); }
+        
+        #reset-zoom {
+            position: absolute;
+            top: 10px;
+            right: 45px;
+            z-index: 10;
+            padding: 5px 10px;
+            font-size: 0.8em;
+            background-color: rgba(0,0,0,0.5);
+        }
+        #reset-zoom:hover {
+            background-color: rgba(0,0,0,0.7);
+        }
+
+        @media (max-width: 1000px) { .main-content { grid-template-columns: 1fr; } .chromatogram-area { order: 2; height: 50vh;} .side-panel { order: 1; } }
+    </style>
+<style id="responsive-patch">
+@media (max-width: 700px) {
+*,*::before,*::after{box-sizing:border-box}
+img,svg,video,canvas{max-width:100%}
+body{padding:8px}
+.main-content{grid-template-columns:minmax(0,1fr) !important;padding:10px;gap:12px}
+.side-panel,.side-panel>*,.card,.chromatogram-area{min-width:0;max-width:100%;width:auto}
+.card{padding:12px}
+input[type=number],input[type=text],select{min-width:0;max-width:100%}
+input[type=range]{min-width:0;width:100%}
+}
+</style>
+<!-- anb-commun --><script src="https://philrob56.github.io/anabiotec-commun/anb-commun.js"></script><!-- /anb-commun -->
+</head>
+<body>
+<!-- anb-charte --><div class="anb-head"><div class="anb-crumb"><i></i><a href="https://sites.google.com/view/anabioteclegroschene/accueil" target="_top" style="color:inherit;text-decoration:none" title="Tous les outils du BTSa ANABIOTEC"><b>BTSa ANABIOTEC</b></a><span>›</span>Chromatographie</div><div class="anb-right"><div class="anb-tag">LEGTA Le Gros Chêne · Pontivy</div><button type="button" class="anb-print" onclick="anbPrint()" title="Ouvrir une version imprimable (PDF)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimer / PDF</button></div></div><!-- /anb-charte -->
+    <div class="container">
+        <header><h1>Simulateur de Chromatographie Liquide</h1></header>
+        <div class="main-content">
+            <div class="side-panel">
+                 <div class="card">
+                    <h2>Méthode & Pression</h2>
+                    <div class="setting-group" style="margin-bottom: 20px;">
+                        <label>Solvant Organique (B)</label>
+                        <div class="radio-group" style="margin-top: 5px;">
+                            <input type="radio" id="solvent-acn" name="solvent" value="acetonitrile" checked> <label for="solvent-acn">Acétonitrile</label> &nbsp;
+                            <input type="radio" id="solvent-meoh" name="solvent" value="methanol"> <label for="solvent-meoh">Méthanol</label>
+                        </div>
+                    </div>
+                    <div class="setting-group">
+                        <div class="label-input-group">
+                            <label for="flow-rate">Débit</label>
+                            <div class="input-wrapper">
+                                <input type="number" id="flow-rate-input" data-slider-id="flow-rate" min="0.1" max="2.0" value="1.0" step="0.1">
+                                <span>mL/min</span>
+                            </div>
+                        </div>
+                        <input type="range" id="flow-rate" data-input-id="flow-rate-input" min="0.1" max="2.0" value="1.0" step="0.1">
+                    </div>
+                    <div class="setting-group">
+                        <div class="label-input-group">
+                            <label for="temperature">Température</label>
+                             <div class="input-wrapper">
+                                <input type="number" id="temperature-input" data-slider-id="temperature" min="20" max="80" value="20" step="1">
+                                <span>°C</span>
+                            </div>
+                        </div>
+                        <input type="range" id="temperature" data-input-id="temperature-input" min="20" max="80" value="20">
+                    </div>
+                    <div id="pressure-gauge"><div id="pressure-bar"></div></div>
+                    <div id="pressure-text">0 bar</div>
+                </div>
+
+                <div class="card">
+                    <h2>Colonne</h2>
+                    <div class="setting-group">
+                        <div class="label-input-group">
+                            <label for="col-length">Longueur</label>
+                            <div class="input-wrapper">
+                                <input type="number" id="col-length-input" data-slider-id="col-length" min="20" max="250" value="150" step="10">
+                                <span>mm</span>
+                            </div>
+                        </div>
+                        <input type="range" id="col-length" data-input-id="col-length-input" min="20" max="250" value="150" step="10">
+                    </div>
+                    <div class="setting-group">
+                       <div class="label-input-group">
+                            <label for="col-id">Diamètre interne</label>
+                            <div class="input-wrapper">
+                                <input type="number" id="col-id-input" data-slider-id="col-id" min="1.0" max="4.6" value="4.6" step="0.1">
+                                <span>mm</span>
+                            </div>
+                        </div>
+                        <input type="range" id="col-id" data-input-id="col-id-input" min="1.0" max="4.6" value="4.6" step="0.1">
+                    </div>
+                    <div class="setting-group">
+                        <div class="label-input-group">
+                            <label for="part-size">Taille Particules</label>
+                            <div class="input-wrapper">
+                                <input type="number" id="part-size-input" data-slider-id="part-size" min="1.5" max="5.0" value="5.0" step="0.1">
+                                <span>µm</span>
+                            </div>
+                        </div>
+                        <input type="range" id="part-size" data-input-id="part-size-input" min="1.5" max="5.0" value="5.0" step="0.1">
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>Programme du Gradient</h2>
+                    <div class="setting-group">
+                        <div class="label-input-group">
+                            <label for="initial-b">%B Initial</label>
+                            <div class="input-wrapper">
+                                <input type="number" id="initial-b-input" data-slider-id="initial-b" min="0" max="100" value="40" step="1">
+                                <span>%</span>
+                            </div>
+                        </div>
+                        <input type="range" id="initial-b" data-input-id="initial-b-input" min="0" max="100" value="40">
+                    </div>
+                     <div class="setting-group">
+                        <div class="label-input-group">
+                            <label for="hold-time">Pallier</label>
+                            <div class="input-wrapper">
+                                <input type="number" id="hold-time-input" data-slider-id="hold-time" min="0" max="10" value="1" step="0.5">
+                                <span>min</span>
+                            </div>
+                        </div>
+                        <input type="range" id="hold-time" data-input-id="hold-time-input" min="0" max="10" value="1" step="0.5">
+                    </div>
+                    <div class="setting-group">
+                         <div class="label-input-group">
+                            <label for="final-b">%B Final</label>
+                            <div class="input-wrapper">
+                                <input type="number" id="final-b-input" data-slider-id="final-b" min="0" max="100" value="95" step="1">
+                                <span>%</span>
+                            </div>
+                        </div>
+                        <input type="range" id="final-b" data-input-id="final-b-input" min="0" max="100" value="95">
+                    </div>
+                    <div class="setting-group">
+                         <div class="label-input-group">
+                            <label for="gradient-time">Tps Gradient</label>
+                            <div class="input-wrapper">
+                                <input type="number" id="gradient-time-input" data-slider-id="gradient-time" min="0" max="60" value="8" step="1">
+                                <span>min</span>
+                            </div>
+                        </div>
+                        <input type="range" id="gradient-time" data-input-id="gradient-time-input" min="0" max="60" value="8">
+                    </div>
+                     <div class="setting-group">
+                        <div class="label-input-group">
+                            <label for="run-time">Durée Totale</label>
+                            <div class="input-wrapper">
+                                <input type="number" id="run-time-input" data-slider-id="run-time" min="2" max="100" value="12" step="1">
+                                <span>min</span>
+                            </div>
+                        </div>
+                        <input type="range" id="run-time" data-input-id="run-time-input" min="2" max="100" value="12">
+                    </div>
+                </div>
+                
+                 <div class="card">
+                    <h2>Composés</h2>
+                    <div class="compound-form">
+                        <input type="text" id="compound-name" placeholder="Nom">
+                        <input type="number" id="compound-logkw" placeholder="log k_w" step="0.1" value="2.5">
+                        <button id="add-compound">Ajouter</button>
+                    </div>
+                    <div class="compound-list" id="compound-list"></div>
+                    <button id="toggle-resolution">Afficher/Masquer Résolution</button>
+                </div>
+            </div>
+
+            <div class="chromatogram-area card">
+                <button id="reset-zoom">Réinitialiser le Zoom</button>
+                <canvas id="chromatogram-chart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        Chart.register(ChartDataLabels, ChartZoom);
+
+        const compoundNameInput = document.getElementById('compound-name'), compoundLogkwInput = document.getElementById('compound-logkw');
+        const addCompoundBtn = document.getElementById('add-compound'), compoundListDiv = document.getElementById('compound-list');
+        const pressureBar = document.getElementById('pressure-bar'), pressureText = document.getElementById('pressure-text');
+        const toggleResolutionBtn = document.getElementById('toggle-resolution');
+        let showResolution = false;
+
+        const solventProperties = {
+            'acetonitrile': { S: 5.1, viscosityParams: { a: 1.1, b: -0.015 } },
+            'methanol':     { S: 4.2, viscosityParams: { a: 1.6, b: -0.025 } }
+        };
+        let compounds = [
+            { name: 'Composé A', log_k_w: 1.0, color: 'rgba(231, 76, 60, 1)' },
+            { name: 'Composé B', log_k_w: 1.5, color: 'rgba(46, 204, 113, 1)' },
+            { name: 'Composé C', log_k_w: 2.0, color: 'rgba(52, 152, 219, 1)' }
+        ];
+
+        const chromatogramCtx = document.getElementById('chromatogram-chart').getContext('2d');
+        let chromatogramChart = new Chart(chromatogramCtx, {
+            type: 'line', data: { datasets: [] },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: {
+                    x: { type: 'linear', title: { display: true, text: 'Temps (min)' }, min: 0 },
+                    y_signal: { position: 'left', title: { display: true, text: 'Signal (AU)' }, min: 0 },
+                    y_gradient: { position: 'right', title: { display: true, text: '%B' }, min: 0, max: 100, grid: { drawOnChartArea: false } }
+                },
+                plugins: { 
+                    tooltip: { enabled: false }, 
+                    datalabels: { display: false }, 
+                    legend: { display: false },
+                    zoom: {
+                        pan: {
+                            enabled: true,
+                            mode: 'xy',
+                            modifierKey: 'shift', 
+                        },
+                        zoom: {
+                            drag: {
+                                enabled: true
+                            },
+                            // ===== MODIFICATION UNIQUE ICI =====
+                            wheel: {
+                                enabled: false, // Désactivation du zoom à la molette
+                            },
+                            // ==================================
+                            pinch: {
+                                enabled: true
+                            },
+                            mode: 'xy',
+                        }
+                    }
+                },
+                animation: { duration: 0 }
+            }
+        });
+
+        const allSliders = document.querySelectorAll('input[type="range"]');
+        const allNumberInputs = document.querySelectorAll('input[type="number"]');
+
+        allSliders.forEach(slider => {
+            const inputId = slider.dataset.inputId;
+            if (inputId) {
+                const numberInput = document.getElementById(inputId);
+                slider.addEventListener('input', () => {
+                    numberInput.value = slider.value;
+                    updateSimulation();
+                });
+            }
+        });
+
+        allNumberInputs.forEach(numberInput => {
+            const sliderId = numberInput.dataset.sliderId;
+            if (sliderId) {
+                const slider = document.getElementById(sliderId);
+                numberInput.addEventListener('input', () => {
+                    const value = parseFloat(numberInput.value);
+                    const min = parseFloat(numberInput.min);
+                    const max = parseFloat(numberInput.max);
+                    if (!isNaN(value) && value >= min && value <= max) {
+                        slider.value = numberInput.value;
+                        updateSimulation();
+                    }
+                });
+                numberInput.addEventListener('change', () => {
+                    let value = parseFloat(numberInput.value);
+                    const min = parseFloat(numberInput.min);
+                    const max = parseFloat(numberInput.max);
+                    if (isNaN(value)) value = min;
+                    if (value < min) value = min;
+                    if (value > max) value = max;
+                    numberInput.value = value;
+                    slider.value = value;
+                    updateSimulation();
+                });
+            }
+        });
+        
+        document.querySelectorAll('input[name="solvent"]').forEach(radio => radio.addEventListener('change', updateSimulation));
+        
+        toggleResolutionBtn.addEventListener('click', () => {
+            showResolution = !showResolution;
+            toggleResolutionBtn.classList.toggle('active', showResolution);
+            updateSimulation();
+        });
+
+        const resetZoomBtn = document.getElementById('reset-zoom');
+        resetZoomBtn.addEventListener('click', () => {
+            chromatogramChart.resetZoom();
+        });
+
+        function renderCompoundList() {
+            compoundListDiv.innerHTML = '';
+            compounds.forEach((compound, index) => {
+                const item = document.createElement('div');
+                item.className = 'compound-item';
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'editable-field';
+                nameSpan.dataset.index = index;
+                nameSpan.dataset.property = 'name';
+                nameSpan.textContent = compound.name;
+                const logkwSpan = document.createElement('span');
+                logkwSpan.className = 'editable-field';
+                logkwSpan.dataset.index = index;
+                logkwSpan.dataset.property = 'log_k_w';
+                logkwSpan.innerHTML = `(log k<sub>w</sub>: ${compound.log_k_w.toFixed(1)})`;
+                const infoWrapper = document.createElement('div');
+                infoWrapper.style.display = 'flex'; infoWrapper.style.gap = '5px'; infoWrapper.style.alignItems = 'center';
+                infoWrapper.appendChild(nameSpan); infoWrapper.appendChild(logkwSpan);
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'remove-compound';
+                removeBtn.innerHTML = 'X';
+                removeBtn.dataset.index = index;
+                item.appendChild(infoWrapper);
+                item.appendChild(removeBtn);
+                compoundListDiv.appendChild(item);
+            });
+            document.querySelectorAll('.remove-compound').forEach(button => button.addEventListener('click', (e) => {
+                compounds.splice(e.target.dataset.index, 1);
+                updateSimulation();
+            }));
+            document.querySelectorAll('.editable-field').forEach(span => span.addEventListener('click', handleEdit));
+        }
+
+        function handleEdit(e) {
+            const span = e.currentTarget;
+            const index = span.dataset.index;
+            const property = span.dataset.property;
+            const currentValue = compounds[index][property];
+            const input = document.createElement('input');
+            input.type = (property === 'name') ? 'text' : 'number';
+            if (input.type === 'number') input.step = '0.1';
+            input.value = currentValue;
+            span.style.display = 'none';
+            span.parentElement.insertBefore(input, span.nextSibling);
+            input.focus();
+            input.select();
+            const saveValue = () => {
+                let newValue = input.value;
+                if(property === 'name') {
+                    compounds[index][property] = newValue.trim() || currentValue;
+                } else {
+                    const numValue = parseFloat(newValue);
+                    compounds[index][property] = isNaN(numValue) ? currentValue : numValue;
+                }
+                updateSimulation();
+            };
+            input.addEventListener('blur', saveValue);
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') input.blur();
+                else if (e.key === 'Escape') { input.value = currentValue; input.blur(); }
+            });
+        }
+
+        function addCompound() {
+            const name = compoundNameInput.value || `Composé ${String.fromCharCode(65 + compounds.length)}`;
+            const log_k_w = parseFloat(compoundLogkwInput.value);
+            if (!isNaN(log_k_w)) {
+                const color = `rgba(${Math.floor(Math.random() * 180)}, ${Math.floor(Math.random() * 180)}, ${Math.floor(Math.random() * 180)}, 1)`;
+                compounds.push({ name, log_k_w, color });
+                updateSimulation();
+                compoundNameInput.value = ''; compoundLogkwInput.value = (log_k_w + 0.5).toFixed(1);
+            }
+        }
+
+        function getParams() {
+            const params = {};
+            const controlIds = ['flow-rate', 'temperature', 'col-length', 'col-id', 'part-size', 'initial-b', 'hold-time', 'final-b', 'gradient-time', 'run-time'];
+            controlIds.forEach(id => {
+                params[id.replace(/-/g, '_')] = parseFloat(document.getElementById(id).value);
+            });
+            params.selected_solvent = document.querySelector('input[name="solvent"]:checked').value;
+            return params;
+        }
+
+        function getMobilePhaseViscosity(percentB, solvent, temp) {
+            const {a, b} = solventProperties[solvent].viscosityParams;
+            const viscosityAtRefTemp = a + b * percentB;
+            return Math.max(0.2, viscosityAtRefTemp * (1 - 0.02 * (temp - 30)));
+        }
+
+        function calculateSystemState(p) {
+            const Vm = (Math.PI * Math.pow(p.col_id / 2, 2) * p.col_length * 0.65) / 1000;
+            const N = (p.col_length * 1000) / (2.5 * p.part_size);
+            const eta = getMobilePhaseViscosity(p.initial_b, p.selected_solvent, p.temperature);
+            const pressure = (600 * eta * p.col_length * p.flow_rate) / (Math.pow(p.part_size, 2) * Math.pow(p.col_id, 2));
+            return { Vm, N, pressure: Math.round(pressure) };
+        }
+
+        function calculateRetentionTime(compound_log_k_w, p, Vm) {
+            const iB = p.initial_b / 100, fB = p.final_b / 100;
+            const tG = p.gradient_time, tH = p.hold_time;
+            const S = solventProperties[p.selected_solvent].S;
+            const t0 = Vm / p.flow_rate;
+            const log_k_w_corr = compound_log_k_w * (1 - 0.02 * (p.temperature - 25));
+            const k_initial = Math.pow(10, log_k_w_corr - S * iB);
+            const tR_isocratic_initial = t0 * (1 + k_initial);
+            if (tR_isocratic_initial <= t0 + tH || Math.abs(iB - fB) < 0.001 || tG < 0.1) {
+                return tR_isocratic_initial;
+            } else {
+                const b = (fB - iB) / tG;
+                if (b <= 0) return tR_isocratic_initial;
+                const time_in_ramp = (t0 / (b * S * Math.log(10))) * Math.log(b * S * k_initial * Math.log(10) + 1);
+                return t0 + tH + time_in_ramp;
+            }
+        }
+
+        function getPeakIntensityAtTime(t, retentionTime, sigma) {
+            return (sigma <= 0) ? 0 : Math.exp(-0.5 * Math.pow((t - retentionTime) / sigma, 2));
+        }
+        
+        function updateSimulation() {
+            compounds.sort((a, b) => a.log_k_w - b.log_k_w);
+            renderCompoundList();
+            
+            const params = getParams();
+            const { Vm, N, pressure } = calculateSystemState(params);
+            
+            pressureText.textContent = `${pressure} bar`;
+            const pressureRatio = Math.min(pressure / 600, 1);
+            pressureBar.style.width = `${pressureRatio * 100}%`;
+            pressureBar.style.backgroundColor = (pressure > 600) ? 'var(--rs-bad-color)' : (pressure > 400) ? 'var(--rs-warn-color)' : 'var(--rs-ok-color)';
+
+            const peakInfos = compounds.map(c => {
+                const tR = calculateRetentionTime(c.log_k_w, params, Vm);
+                const sigma = tR / Math.sqrt(N);
+                const width_at_base = 4 * sigma;
+                return {...c, tR, sigma, width_at_base};
+            });
+            
+            const maxTime = params.run_time;
+            const timeStep = maxTime / 500;
+            let summedData = [], maxY = 0;
+            for (let t = 0; t <= maxTime; t += timeStep) {
+                let totalIntensity = peakInfos.reduce((sum, peak) => sum + getPeakIntensityAtTime(t, peak.tR, peak.sigma), 0);
+                summedData.push({ x: t, y: totalIntensity });
+                if (totalIntensity > maxY) maxY = totalIntensity;
+            }
+            
+            const gradientEnd = params.hold_time + params.gradient_time;
+            const gradientDataset = {
+                yAxisID: 'y_gradient', data: [{x: 0, y: params.initial_b}, {x: params.hold_time, y: params.initial_b}, {x: gradientEnd > params.hold_time ? gradientEnd : params.hold_time, y: params.final_b}, {x: maxTime, y: params.final_b}],
+                borderColor: 'rgba(74, 144, 226, 0.5)', fill: false, borderWidth: 2, pointRadius: 0, tension: 0, borderDash: [5, 5]
+            };
+
+            const summedDataset = {
+                yAxisID: 'y_signal', data: summedData, borderColor: 'rgba(0, 0, 0, 0.9)', backgroundColor: 'rgba(100, 100, 100, 0.1)',
+                fill: true, borderWidth: 2, pointRadius: 0, tension: 0.4,
+                datalabels: { display: false }
+            };
+            const individualDatasets = peakInfos.map(peak => ({
+                yAxisID: 'y_signal', retentionTime: peak.tR, peakName: peak.name,
+                data: summedData.map(p => ({ x: p.x, y: getPeakIntensityAtTime(p.x, peak.tR, peak.sigma) })),
+                borderColor: peak.color, fill: false, borderWidth: 1.5, pointRadius: 0, tension: 0.4,
+                datalabels: {
+                    display: true, align: 'top', anchor: 'end', offset: 10, textAlign: 'center',
+                    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                    borderColor: ctx => ctx.dataset.borderColor, borderWidth: 1, borderRadius: 4, 
+                    color: ctx => ctx.dataset.borderColor, font: { weight: 'bold' }, padding: 4,
+                    formatter: (v, ctx) => {
+                        if (v.y >= Math.max(...ctx.dataset.data.map(p => p.y)) && v.y > 0.01) {
+                            return `${ctx.dataset.peakName}\n${ctx.dataset.retentionTime.toFixed(2)}`;
+                        }
+                        return null;
+                    }
+                }
+            }));
+
+            const resolutionDataset = {
+                type: 'scatter',
+                yAxisID: 'y_signal',
+                data: [],
+                pointRadius: showResolution ? 6 : 0, 
+                pointBackgroundColor: [],
+                pointBorderColor: [],
+                pointBorderWidth: 2,
+                showLine: false,
+                datalabels: {
+                    display: showResolution,
+                    align: 'top',
+                    anchor: 'end',
+                    offset: 8,
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    borderRadius: 4,
+                    borderWidth: 1,
+                    padding: {top: 3, bottom: 3, left: 6, right: 6},
+                    font: { weight: 'bold', size: 11 },
+                    color: function(context) {
+                        const dataIndex = context.dataIndex;
+                        const dataset = context.dataset;
+                        if (dataset.pointBorderColor && dataset.pointBorderColor[dataIndex]) {
+                            return dataset.pointBorderColor[dataIndex];
+                        }
+                        return '#333';
+                    },
+                    borderColor: function(context) {
+                        const dataIndex = context.dataIndex;
+                        const dataset = context.dataset;
+                        if (dataset.pointBorderColor && dataset.pointBorderColor[dataIndex]) {
+                            return dataset.pointBorderColor[dataIndex];
+                        }
+                        return '#333';
+                    },
+                    formatter: function(value, context) {
+                        const dataIndex = context.dataIndex;
+                        const point = context.dataset.data[dataIndex];
+                        if (point && typeof point.rs === 'number') {
+                            return `Rs: ${point.rs.toFixed(2)}`;
+                        }
+                        return '';
+                    }
+                }
+            };
+
+            if (peakInfos.length > 1) {
+                for(let i = 0; i < peakInfos.length - 1; i++) {
+                    const p1 = peakInfos[i];
+                    const p2 = peakInfos[i+1];
+                    const Rs = 2 * (p2.tR - p1.tR) / (p1.width_at_base + p2.width_at_base);
+                    
+                    if (Rs > 0) {
+                        let color = '#27ae60';
+                        if (Rs < 1.2) color = '#c0392b';
+                        else if (Rs < 1.5) color = '#f39c12';
+                        
+                        const midTime = (p1.tR + p2.tR) / 2;
+                        const yPosition = Math.max(
+                            getPeakIntensityAtTime(midTime, p1.tR, p1.sigma),
+                            getPeakIntensityAtTime(midTime, p2.tR, p2.sigma)
+                        ) + maxY * 0.1;
+                        
+                        resolutionDataset.data.push({
+                            x: midTime,
+                            y: yPosition,
+                            rs: Rs,
+                            color: color
+                        });
+                        
+                        resolutionDataset.pointBackgroundColor.push(color);
+                        resolutionDataset.pointBorderColor.push(color);
+                    }
+                }
+            }
+
+            chromatogramChart.data.datasets = [summedDataset, ...individualDatasets, gradientDataset, resolutionDataset];
+            chromatogramChart.options.scales.x.max = maxTime;
+            chromatogramChart.options.scales.y_signal.max = Math.max(1.1, maxY * 1.3);
+            chromatogramChart.update('none');
+        }
+
+        addCompoundBtn.addEventListener('click', addCompound);
+        updateSimulation();
+    });
+    </script>
+
+</body>
+</html>
