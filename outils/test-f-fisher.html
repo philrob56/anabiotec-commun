@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+<meta name="description" content="Calculateur du test F de Fisher-Snedecor pour comparer la dispersion de deux séries de mesures, par exemple la fidélité de deux méthodes ou de deux opérateurs. Outil du BTSa ANABIOTEC, lycée Le Gros Chêne, Pontivy.">
+<link rel="canonical" href="https://philrob56.github.io/anabiotec-commun/outils/test-f-fisher.html">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test F de Fisher-Snedecor : comparer deux variances | BTSa ANABIOTEC</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+
+        :root {
+            --bg-color: #f0f2f5;
+            --container-bg: #ffffff;
+            --primary-accent: #e67e22; /* Orange */
+            --text-color: #333;
+            --label-color: #555;
+            --border-color: #dbe2e8;
+            --success-color: #27ae60;
+            --error-color: #c0392b;
+            --info-color: #0a5c5b;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1rem;
+            box-sizing: border-box;
+        }
+
+        .container {
+            background: var(--container-bg);
+            padding: 1.5rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+            box-sizing: border-box;
+            border: 1px solid var(--border-color);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        h1 {
+            color: var(--primary-accent);
+            margin: 0 0 0.25rem 0;
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+        
+        header p { margin: 0; color: var(--label-color); }
+
+        .data-series-container {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .series-input { flex: 1; }
+
+        label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--label-color);
+        }
+
+        select, input[type="number"] {
+            width: 100%;
+            padding: 0.6rem 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 1rem;
+            background-color: #fdfdfd;
+            transition: all 0.2s ease-in-out;
+        }
+        
+        input[type="number"] { margin-bottom: 0.5rem; }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-accent);
+            box-shadow: 0 0 0 3px rgba(230, 126, 34, 0.2);
+        }
+
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none; margin: 0;
+        }
+        input[type=number] { -moz-appearance: textfield; }
+
+        .results {
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1.5rem;
+            text-align: center;
+        }
+        
+        #result-summary {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .result-details p {
+            margin: 0.4rem 0;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: var(--label-color);
+        }
+        .result-details strong { color: var(--text-color); }
+
+        .variances-differentes { color: var(--error-color); }
+        .variances-egales { color: var(--success-color); }
+        .info { color: var(--info-color); }
+
+        footer { text-align: center; margin-top: 1.5rem; }
+
+        #clear-button {
+            background-image: linear-gradient(to right, #e52d27 0%, #b31217  51%, #e52d27  100%);
+            color: #fff;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1rem;
+            font-weight: 500;
+            background-size: 200% auto;
+        }
+
+        #clear-button:hover {
+            background-position: right center;
+            box-shadow: 0 4px 15px rgba(192, 57, 43, 0.4);
+        }
+
+        @media (max-width: 500px) {
+            .data-series-container { flex-direction: column; gap: 1rem;}
+        }
+
+    </style>
+<!-- anb-commun --><script src="https://philrob56.github.io/anabiotec-commun/anb-commun.js"></script><!-- /anb-commun -->
+<!-- anb-charte --><style>body{flex-direction:column!important;justify-content:flex-start!important;align-items:center!important}@media (max-width:700px){body>*{max-width:100%;box-sizing:border-box}}</style><!-- /anb-charte -->
+</head>
+<body>
+<!-- anb-charte --><div class="anb-head"><div class="anb-crumb"><i></i><a href="https://sites.google.com/view/anabioteclegroschene/accueil" target="_top" style="color:inherit;text-decoration:none" title="Tous les outils du BTSa ANABIOTEC"><b>BTSa ANABIOTEC</b></a><span>›</span>Statistiques</div><div class="anb-right"><div class="anb-tag">LEGTA Le Gros Chêne · Pontivy</div><button type="button" class="anb-print" onclick="anbPrint()" title="Ouvrir une version imprimable (PDF)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimer / PDF</button></div></div><!-- /anb-charte -->
+    <div class="container">
+        <header>
+            <h1>Test F de Fisher</h1>
+            <p>Comparaison de deux variances</p>
+        </header>
+        <main>
+            <div class="input-section">
+                <label for="alpha">Niveau de risque (alpha) :</label>
+                <select id="alpha">
+                    <option value="0.05">5%</option>
+                    <option value="0.10">10%</option>
+                </select>
+            </div>
+            
+            <div class="data-series-container">
+                <div class="series-input">
+                    <label>Série de données 1</label>
+                    <div id="values-container-1">
+                        <input type="number" placeholder="Valeur">
+                    </div>
+                </div>
+                <div class="series-input">
+                    <label>Série de données 2</label>
+                    <div id="values-container-2">
+                        <input type="number" placeholder="Valeur">
+                    </div>
+                </div>
+            </div>
+
+            <div class="results">
+                <div id="result-summary" class="info">En attente de données...</div>
+                <div class="result-details">
+                    <p><span>F calculé :</span> <strong id="f-calculated">N/A</strong></p>
+                    <p><span>F critique :</span> <strong id="f-critical">N/A</strong></p>
+                </div>
+            </div>
+        </main>
+        <footer>
+            <button id="clear-button">Effacer</button>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const container1 = document.getElementById('values-container-1');
+            const container2 = document.getElementById('values-container-2');
+            const alphaSelect = document.getElementById('alpha');
+            const resultSummary = document.getElementById('result-summary');
+            const fCalculatedSpan = document.getElementById('f-calculated');
+            const fCriticalSpan = document.getElementById('f-critical');
+            const clearButton = document.getElementById('clear-button');
+
+            // Table F pour alpha=0.05 (confiance 95%) - TRANSCRITE DE VOTRE IMAGE
+            const f_table_005 = {1:{1:161,2:18.5,3:10.1,4:7.71,5:6.61,6:5.99,7:5.59,8:5.32,9:5.12,10:4.96,11:4.84,12:4.75,13:4.67,14:4.60,15:4.54,16:4.49,17:4.45,18:4.41,19:4.38,20:4.35},2:{1:200,2:19.0,3:9.6,4:6.94,5:5.79,6:5.14,7:4.74,8:4.46,9:4.26,10:4.10,11:3.98,12:3.89,13:3.81,14:3.74,15:3.68,16:3.63,17:3.59,18:3.55,19:3.52,20:3.49},3:{1:216,2:19.2,3:9.3,4:6.59,5:5.41,6:4.76,7:4.35,8:4.07,9:3.86,10:3.71,11:3.59,12:3.49,13:3.41,14:3.34,15:3.29,16:3.24,17:3.20,18:3.16,19:3.13,20:3.10},4:{1:225,2:19.2,3:9.1,4:6.39,5:5.19,6:4.53,7:4.12,8:3.84,9:3.63,10:3.48,11:3.36,12:3.26,13:3.18,14:3.11,15:3.06,16:3.01,17:2.96,18:2.93,19:2.90,20:2.87},5:{1:230,2:19.3,3:9.0,4:6.26,5:5.05,6:4.39,7:3.97,8:3.69,9:3.48,10:3.33,11:3.20,12:3.11,13:3.03,14:2.96,15:2.90,16:2.85,17:2.81,18:2.77,19:2.74,20:2.71},6:{1:234,2:19.3,3:8.9,4:6.16,5:4.95,6:4.28,7:3.87,8:3.58,9:3.37,10:3.22,11:3.09,12:3.00,13:2.92,14:2.85,15:2.79,16:2.74,17:2.70,18:2.66,19:2.63,20:2.60},7:{1:237,2:19.4,3:8.9,4:6.09,5:4.88,6:4.21,7:3.79,8:3.50,9:3.29,10:3.14,11:3.01,12:2.91,13:2.83,14:2.76,15:2.71,16:2.66,17:2.61,18:2.58,19:2.54,20:2.51},8:{1:239,2:19.4,3:8.8,4:6.04,5:4.82,6:4.15,7:3.73,8:3.44,9:3.23,10:3.07,11:2.95,12:2.85,13:2.77,14:2.70,15:2.64,16:2.59,17:2.55,18:2.51,19:2.48,20:2.45},9:{1:241,2:19.4,3:8.8,4:6.00,5:4.77,6:4.10,7:3.68,8:3.39,9:3.18,10:3.02,11:2.90,12:2.80,13:2.71,14:2.65,15:2.59,16:2.54,17:2.49,18:2.45,19:2.42,20:2.39},10:{1:242,2:19.4,3:8.8,4:5.96,5:4.74,6:4.06,7:3.64,8:3.35,9:3.14,10:2.98,11:2.85,12:2.75,13:2.67,14:2.60,15:2.54,16:2.49,17:2.45,18:2.41,19:2.38,20:2.35},11:{1:243,2:19.4,3:8.8,4:5.94,5:4.70,6:4.03,7:3.60,8:3.31,9:3.10,10:2.94,11:2.82,12:2.72,13:2.63,14:2.57,15:2.51,16:2.46,17:2.41,18:2.37,19:2.34,20:2.31},12:{1:244,2:19.4,3:8.7,4:5.91,5:4.68,6:4.00,7:3.57,8:3.28,9:3.07,10:2.91,11:2.79,12:2.69,13:2.60,14:2.54,15:2.48,16:2.43,17:2.38,18:2.34,19:2.31,20:2.28},13:{1:245,2:19.4,3:8.7,4:5.89,5:4.66,6:3.98,7:3.55,8:3.26,9:3.05,10:2.89,11:2.76,12:2.66,13:2.58,14:2.51,15:2.46,16:2.40,17:2.36,18:2.32,19:2.28,20:2.25},14:{1:245,2:19.4,3:8.7,4:5.87,5:4.64,6:3.96,7:3.53,8:3.24,9:3.03,10:2.86,11:2.74,12:2.64,13:2.55,14:2.48,15:2.43,16:2.37,17:2.33,18:2.29,19:2.26,20:2.22},15:{1:246,2:19.4,3:8.7,4:5.86,5:4.62,6:3.94,7:3.51,8:3.22,9:3.01,10:2.85,11:2.72,12:2.62,13:2.53,14:2.46,15:2.40,16:2.35,17:2.31,18:2.27,19:2.23,20:2.20},16:{1:246,2:19.4,3:8.7,4:5.84,5:4.60,6:3.92,7:3.49,8:3.20,9:2.99,10:2.83,11:2.70,12:2.60,13:2.51,14:2.44,15:2.38,16:2.33,17:2.29,18:2.25,19:2.21,20:2.18},17:{1:247,2:19.4,3:8.7,4:5.83,5:4.59,6:3.91,7:3.48,8:3.19,9:2.97,10:2.81,11:2.69,12:2.58,13:2.50,14:2.42,15:2.37,16:2.32,17:2.27,18:2.23,19:2.19,20:2.17},18:{1:247,2:19.4,3:8.7,4:5.82,5:4.58,6:3.90,7:3.47,8:3.17,9:2.96,10:2.80,11:2.67,12:2.57,13:2.48,14:2.41,15:2.35,16:2.30,17:2.25,18:2.22,19:2.18,20:2.15},19:{1:248,2:19.4,3:8.7,4:5.81,5:4.57,6:3.88,7:3.46,8:3.16,9:2.95,10:2.79,11:2.66,12:2.56,13:2.47,14:2.40,15:2.34,16:2.29,17:2.24,18:2.20,19:2.17,20:2.14},20:{1:248,2:19.4,3:8.7,4:5.80,5:4.56,6:3.87,7:3.44,8:3.15,9:2.94,10:2.77,11:2.65,12:2.54,13:2.46,14:2.39,15:2.33,16:2.28,17:2.23,18:2.19,19:2.16,20:2.12}};
+            
+            // Table F pour alpha=0.10 (confiance 90%)
+            const f_table_010 = {1:{1:39.86,2:8.53,3:5.54,4:4.54,5:4.06,6:3.78,7:3.59,8:3.46,9:3.36,10:3.29,11:3.23,12:3.18,13:3.14,14:3.10,15:3.07,16:3.05,17:3.03,18:3.01,19:2.99,20:2.97},2:{1:49.50,2:9.00,3:5.46,4:4.32,5:3.78,6:3.46,7:3.26,8:3.11,9:3.01,10:2.92,11:2.86,12:2.81,13:2.76,14:2.73,15:2.70,16:2.67,17:2.64,18:2.62,19:2.60,20:2.59},3:{1:53.59,2:9.16,3:5.39,4:4.19,5:3.62,6:3.29,7:3.07,8:2.92,9:2.81,10:2.73,11:2.66,12:2.61,13:2.56,14:2.53,15:2.49,16:2.46,17:2.44,18:2.42,19:2.40,20:2.38},4:{1:55.83,2:9.24,3:5.34,4:4.11,5:3.52,6:3.18,7:2.96,8:2.81,9:2.69,10:2.60,11:2.54,12:2.48,13:2.43,14:2.39,15:2.36,16:2.33,17:2.31,18:2.29,19:2.27,20:2.25},5:{1:57.24,2:9.29,3:5.31,4:4.05,5:3.45,6:3.11,7:2.88,8:2.73,9:2.61,10:2.52,11:2.45,12:2.40,13:2.35,14:2.31,15:2.27,16:2.24,17:2.22,18:2.20,19:2.18,20:2.16},6:{1:58.20,2:9.33,3:5.28,4:4.01,5:3.40,6:3.05,7:2.82,8:2.66,9:2.54,10:2.45,11:2.38,12:2.33,13:2.28,14:2.24,15:2.20,16:2.17,17:2.15,18:2.13,19:2.11,20:2.09},7:{1:58.91,2:9.35,3:5.27,4:3.98,5:3.37,6:3.01,7:2.78,8:2.62,9:2.50,10:2.41,11:2.34,12:2.28,13:2.23,14:2.19,15:2.15,16:2.12,17:2.09,18:2.07,19:2.05,20:2.03},8:{1:59.44,2:9.37,3:5.25,4:3.95,5:3.34,6:2.98,7:2.75,8:2.59,9:2.47,10:2.38,11:2.31,12:2.25,13:2.20,14:2.15,15:2.11,16:2.08,17:2.05,18:2.03,19:2.00,20:1.98},9:{1:59.86,2:9.38,3:5.24,4:3.94,5:3.32,6:2.96,7:2.72,8:2.56,9:2.44,10:2.35,11:2.28,12:2.22,13:2.17,14:2.12,15:2.08,16:2.05,17:2.02,18:1.99,19:1.97,20:1.95},10:{1:60.19,2:9.39,3:5.23,4:3.92,5:3.30,6:2.94,7:2.70,8:2.54,9:2.42,10:2.32,11:2.25,12:2.19,13:2.14,14:2.10,15:2.06,16:2.03,17:2.00,18:1.98,19:1.96,20:1.94},11:{1:60.47,2:9.40,3:5.22,4:3.91,5:3.28,6:2.92,7:2.68,8:2.52,9:2.40,10:2.30,11:2.23,12:2.17,13:2.12,14:2.07,15:2.03,16:2.00,17:1.97,18:1.95,19:1.92,20:1.90},12:{1:60.71,2:9.41,3:5.22,4:3.90,5:3.27,6:2.90,7:2.66,8:2.50,9:2.38,10:2.28,11:2.21,12:2.15,13:2.10,14:2.05,15:2.01,16:1.98,17:1.95,18:1.92,19:1.90,20:1.88},13:{1:60.92,2:9.42,3:5.21,4:3.89,5:3.26,6:2.89,7:2.65,8:2.49,9:2.36,10:2.26,11:2.19,12:2.13,13:2.08,14:2.03,15:1.99,16:1.96,17:1.93,18:1.90,19:1.88,20:1.86},14:{1:61.11,2:9.42,3:5.20,4:3.88,5:3.25,6:2.88,7:2.64,8:2.48,9:2.35,10:2.25,11:2.18,12:2.12,13:2.07,14:2.02,15:1.98,16:1.95,17:1.92,18:1.89,19:1.87,20:1.85},15:{1:61.22,2:9.42,3:5.20,4:3.87,5:3.24,6:2.87,7:2.63,8:2.47,9:2.35,10:2.25,11:2.17,12:2.11,13:2.06,14:2.02,15:1.97,16:1.94,17:1.92,18:1.89,19:1.87,20:1.85},16:{1:61.35,2:9.43,3:5.19,4:3.86,5:3.23,6:2.86,7:2.62,8:2.46,9:2.34,10:2.24,11:2.16,12:2.10,13:2.05,14:2.00,15:1.96,16:1.93,17:1.90,18:1.87,19:1.85,20:1.83},17:{1:61.45,2:9.43,3:5.19,4:3.86,5:3.22,6:2.85,7:2.61,8:2.45,9:2.32,10:2.22,11:2.15,12:2.09,13:2.04,14:1.99,15:1.95,16:1.91,17:1.89,18:1.86,19:1.84,20:1.81},18:{1:61.55,2:9.44,3:5.18,4:3.85,5:3.21,6:2.84,7:2.60,8:2.44,9:2.31,10:2.21,11:2.14,12:2.08,13:2.03,14:1.98,15:1.93,16:1.90,17:1.87,18:1.85,19:1.82,20:1.80},19:{1:61.63,2:9.44,3:5.18,4:3.85,5:3.21,6:2.84,7:2.59,8:2.43,9:2.30,10:2.20,11:2.13,12:2.07,13:2.01,14:1.96,15:1.92,16:1.89,17:1.86,18:1.83,19:1.81,20:1.78},20:{1:61.74,2:9.44,3:5.18,4:3.84,5:3.20,6:2.83,7:2.59,8:2.43,9:2.31,10:2.20,11:2.12,12:2.06,13:2.01,14:1.96,15:1.92,16:1.89,17:1.86,18:1.84,19:1.81,20:1.79}};
+            const fCriticalValues = { '0.05': f_table_005, '0.10': f_table_010 };
+            
+            const addValueInput = (container) => {
+                const maxInputs = 21; // df max = 20
+                if (container.querySelectorAll('input').length < maxInputs) {
+                    const newInput = document.createElement('input');
+                    newInput.type = 'number';
+                    newInput.placeholder = 'Valeur';
+                    container.appendChild(newInput);
+                    newInput.focus();
+                }
+            };
+            
+            const getVariance = (values) => {
+                const n = values.length;
+                if (n < 2) return 0;
+                const mean = values.reduce((a, b) => a + b, 0) / n;
+                return values.reduce((a, b) => a + (b - mean) ** 2, 0) / (n - 1);
+            };
+
+            const calculateFTest = () => {
+                const alpha = alphaSelect.value;
+                const values1 = Array.from(container1.querySelectorAll('input')).map(i => parseFloat(i.value)).filter(v => !isNaN(v));
+                const values2 = Array.from(container2.querySelectorAll('input')).map(i => parseFloat(i.value)).filter(v => !isNaN(v));
+
+                if (values1.length < 2 || values2.length < 2) {
+                    resultSummary.textContent = "Chaque série doit avoir au moins 2 valeurs.";
+                    resultSummary.className = 'info';
+                    fCalculatedSpan.textContent = "N/A";
+                    fCriticalSpan.textContent = "N/A";
+                    return;
+                }
+
+                const variance1 = getVariance(values1);
+                const variance2 = getVariance(values2);
+                
+                if (variance2 === 0) {
+                     resultSummary.textContent = "La variance d'une série est nulle.";
+                     resultSummary.className = 'info'; return;
+                }
+
+                let fCalculated, df_num, df_den;
+                if (variance1 >= variance2) {
+                    fCalculated = variance1 / variance2;
+                    df_num = values1.length - 1;
+                    df_den = values2.length - 1;
+                } else {
+                    fCalculated = variance2 / variance1;
+                    df_num = values2.length - 1;
+                    df_den = values1.length - 1;
+                }
+                
+                fCalculatedSpan.textContent = fCalculated.toFixed(3);
+
+                // Recherche directe dans la table
+                let fCritical = null;
+                const tableForAlpha = fCriticalValues[alpha];
+                if (tableForAlpha && tableForAlpha[df_num] && tableForAlpha[df_num][df_den]) {
+                    fCritical = tableForAlpha[df_num][df_den];
+                }
+
+                if (fCritical) {
+                    fCriticalSpan.textContent = fCritical.toFixed(3);
+                    if (fCalculated > fCritical) {
+                        resultSummary.textContent = "Les variances sont significativement différentes.";
+                        resultSummary.className = 'variances-differentes';
+                    } else {
+                        resultSummary.textContent = "Les variances ne sont pas significativement différentes.";
+                        resultSummary.className = 'variances-egales';
+                    }
+                } else {
+                    resultSummary.textContent = `Valeurs critiques hors table (max mesures = 21).`;
+                    resultSummary.className = 'info';
+                    fCriticalSpan.textContent = "N/A";
+                }
+            };
+            
+            [container1, container2, alphaSelect].forEach(el => el.addEventListener('input', calculateFTest));
+            [container1, container2].forEach(container => {
+                 container.addEventListener('keydown', (e) => {
+                    if (e.key === 'ArrowDown' && e.target.nodeName === 'INPUT') {
+                        e.preventDefault();
+                        addValueInput(container);
+                    }
+                });
+            });
+            
+            clearButton.addEventListener('click', () => {
+                container1.innerHTML = '<input type="number" placeholder="Valeur">';
+                container2.innerHTML = '<input type="number" placeholder="Valeur">';
+                container1.querySelector('input').focus();
+                calculateFTest();
+            });
+
+            // Init
+            calculateFTest();
+        });
+    </script>
+
+</body>
+</html>
