@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+<meta name="description" content="Calculatrice de la méthode de Kjeldahl : solution de contrôle de sulfate d’ammonium, dosage de l’azote total et calcul de la teneur en protéines du lait. Outil du BTSa ANABIOTEC, lycée Le Gros Chêne, Pontivy.">
+<link rel="canonical" href="https://philrob56.github.io/anabiotec-commun/outils/kjeldahl.html">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Calculatrice Kjeldahl : dosage de l’azote et des protéines du lait | BTSa ANABIOTEC</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #0e7c7b 0%, #0a4f4f 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #0e7c7b 0%, #0a4f4f 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        .header p {
+            font-size: 16px;
+            opacity: 0.95;
+            font-weight: 300;
+        }
+        
+        .content {
+            padding: 40px 30px;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #f0f0f0;
+            overflow-x: auto;
+        }
+        
+        .tab-btn {
+            padding: 12px 20px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            color: #999;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+        
+        .tab-btn.active {
+            color: #0e7c7b;
+            border-bottom-color: #0e7c7b;
+        }
+        
+        .tab-btn:hover {
+            color: #0e7c7b;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .section {
+            background: #f9f9f9;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            border-left: 4px solid #0e7c7b;
+        }
+        
+        .section h2 {
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 8px;
+        }
+        
+        input[type="number"],
+        input[type="text"],
+        select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1.5px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="number"]:focus,
+        input[type="text"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #0e7c7b;
+            box-shadow: 0 0 0 3px rgba(14,124,123, 0.1);
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .form-row.three {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+        
+        .unit {
+            font-size: 12px;
+            color: #999;
+            margin-top: 4px;
+            font-weight: 400;
+        }
+        
+        .result-box {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            border: 2px solid #0e7c7b;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .result-box .label {
+            font-size: 13px;
+            color: #666;
+            font-weight: 500;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .result-box .value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #0e7c7b;
+        }
+        
+        .result-box .unit {
+            font-size: 13px;
+            color: #999;
+            margin-top: 5px;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #0e7c7b 0%, #0a4f4f 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(14,124,123, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button.secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        
+        button.secondary:hover {
+            background: #e0e0e0;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+        }
+        
+        .data-table th {
+            background: #0e7c7b;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+        }
+        
+        .data-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .data-table tr:hover {
+            background: #f9f9f9;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 30px 0;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #e0e0e0;
+            text-align: center;
+        }
+        
+        .stat-card .label {
+            font-size: 12px;
+            color: #999;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        
+        .stat-card .value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #0e7c7b;
+        }
+        
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-size: 14px;
+            color: #856404;
+        }
+        
+        .success {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-size: 14px;
+            color: #155724;
+        }
+        
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-row.three {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .tabs {
+                gap: 5px;
+            }
+            
+            .tab-btn {
+                padding: 10px 15px;
+                font-size: 14px;
+            }
+        }
+    </style>
+<!-- anb-commun --><script src="https://philrob56.github.io/anabiotec-commun/anb-commun.js"></script><!-- /anb-commun -->
+<!-- anb-charte --><style>body{background:#f6f8f7!important;background-image:none!important}</style><!-- /anb-charte -->
+</head>
+<body>
+<!-- anb-charte --><div class="anb-head"><div class="anb-crumb"><i></i><a href="https://sites.google.com/view/anabioteclegroschene/accueil" target="_top" style="color:inherit;text-decoration:none" title="Tous les outils du BTSa ANABIOTEC"><b>BTSa ANABIOTEC</b></a><span>›</span>Chimie</div><div class="anb-right"><div class="anb-tag">LEGTA Le Gros Chêne · Pontivy</div><button type="button" class="anb-print" onclick="anbPrint()" title="Ouvrir une version imprimable (PDF)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimer / PDF</button></div></div><!-- /anb-charte -->
+    <div class="container">
+        <div class="header">
+            <h1>⚗️ Calculatrice Kjeldahl</h1>
+            <p>Dosage des protéines totales du lait - Méthode automatisée</p>
+        </div>
+        
+        <div class="content">
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('control')">1. Contrôle (NH₄)₂SO₄</button>
+                <button class="tab-btn" onclick="switchTab('lait')">2. Dosage du lait</button>
+                <button class="tab-btn" onclick="switchTab('stats')">3. Résultats & Stats</button>
+            </div>
+            
+            <!-- TAB 1: CONTRÔLE -->
+            <div id="control" class="tab-content active">
+                <div class="section">
+                    <h2><i class="fas fa-flask-vial"></i> Calcul de la masse de (NH₄)₂SO₄</h2>
+                    
+                    <p style="color: #666; margin-bottom: 20px; font-size: 14px;">
+                        Préparation d'une solution de contrôle contenant une masse d'azote connue.
+                    </p>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Masse d'azote souhaitée (N)</label>
+                            <input type="number" id="massN" value="200" step="10">
+                            <div class="unit">mg</div>
+                        </div>
+                        <div class="form-group">
+                            <label>Pureté du sulfate d'ammonium</label>
+                            <input type="number" id="purity" value="99" step="0.1" min="90" max="100">
+                            <div class="unit">%</div>
+                        </div>
+                    </div>
+                    
+                    <button onclick="calculateSulfate()">Calculer la masse de (NH₄)₂SO₄</button>
+                    
+                    <div id="sulfateResult"></div>
+                    
+                    <div class="section" style="margin-top: 25px; background: #e8f4f8; border-left-color: #17a2b8;">
+                        <h3 style="font-size: 14px; color: #555; margin-bottom: 12px;">Formules utilisées :</h3>
+                        <p style="font-family: monospace; font-size: 13px; color: #333; line-height: 1.8;">
+                            <strong>Préparation de la solution mère :</strong><br>
+                            m((NH₄)₂SO₄) = m(N) × M((NH₄)₂SO₄) / (P × 2 × M(N))<br>
+                            = m(N) × 132 / (P% × 2 × 14)<br>
+                            <br>
+                            <strong>Dosage (contrôle et lait) :</strong><br>
+                            m(N) = 2 × Ca × (Va - Vb) × M(N)<br>
+                            <br>
+                            <strong>Données :</strong> M((NH₄)₂SO₄) = 132 g/mol ; M(N) = 14 g/mol ; Facteur protéines = 6,38
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h2><i class="fas fa-microscope"></i> Dosage du contrôle</h2>
+                    
+                    <p style="color: #666; margin-bottom: 20px; font-size: 14px;">
+                        Introduire 10 mL de la solution dans un matras et procéder au dosage en suivant la méthode "sulfate 0,10".
+                    </p>
+                    
+                    <div style="background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h4 style="font-size: 13px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin: 0;">Essais</h4>
+                            <button onclick="addEssaiControl()" style="background: #0e7c7b; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">+ Ajouter essai</button>
+                        </div>
+                        <div id="controlEssaisContainer"></div>
+                    </div>
+                    
+                    <div style="background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h4 style="font-size: 13px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin: 0;">Blancs</h4>
+                            <button onclick="addBlancControl()" style="background: #0e7c7b; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">+ Ajouter blanc</button>
+                        </div>
+                        <div id="controlBlancsContainer"></div>
+                    </div>
+                    
+                    <div style="margin-top: 20px;">
+                        <h3 style="font-size: 14px; color: #555; margin-bottom: 12px;">Paramètres de dosage :</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Concentration H₂SO₄</label>
+                                <input type="number" id="caH2SO4" value="0.05" step="0.001" min="0.01" max="0.1">
+                                <div class="unit">mol/L</div>
+                            </div>
+                            <div class="form-group">
+                                <label>Écart acceptable (relative)</label>
+                                <input type="number" id="acceptableError" value="3" step="0.1" min="1" max="10">
+                                <div class="unit">%</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="controlResults"></div>
+                </div>
+            </div>
+            
+            <!-- TAB 2: DOSAGE DU LAIT -->
+            <div id="lait" class="tab-content">
+                <div class="section">
+                    <h2><i class="fas fa-droplet"></i> Dosage des protéines du lait</h2>
+                    
+                    <p style="color: #666; margin-bottom: 20px; font-size: 14px;">
+                        Saisir les volumes d'acide sulfurique versés pour chaque essai et les blancs.
+                    </p>
+                    
+                    <div style="margin-bottom: 25px; background: #f5f5f5; padding: 20px; border-radius: 10px;">
+                        <h3 style="font-size: 14px; color: #555; margin-bottom: 15px; font-weight: 600;">📋 Traçabilité :</h3>
+                        <div class="form-row three">
+                            <div class="form-group">
+                                <label>Opérateur</label>
+                                <input type="text" id="operateur" placeholder="Nom de l'étudiant">
+                            </div>
+                            <div class="form-group">
+                                <label>Date</label>
+                                <input type="date" id="dateTP">
+                            </div>
+                            <div class="form-group">
+                                <label>Numéro d'échantillon</label>
+                                <input type="text" id="numEchantillon" placeholder="Lot/Ref lait">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Observations</label>
+                            <input type="text" id="observations" placeholder="Remarques sur la mesure" style="width: 100%; margin-top: 10px;">
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 25px;">
+                        <h3 style="font-size: 14px; color: #555; margin-bottom: 15px;">Paramètres généraux :</h3>
+                        <div class="form-row three">
+                            <div class="form-group">
+                                <label>Concentration H₂SO₄</label>
+                                <input type="number" id="caH2SO4Lait" value="0.05" step="0.001" min="0.01" max="0.1">
+                                <div class="unit">mol/L</div>
+                            </div>
+                            <div class="form-group">
+                                <label>Volume de lait minéralisé</label>
+                                <input type="number" id="volumeLaitMineral" value="3" step="0.1" min="0.5" max="10">
+                                <div class="unit">mL</div>
+                            </div>
+                            <div class="form-group">
+                                <label>Teneur en protéines (attendue)</label>
+                                <input type="number" id="expectedProtein" value="3.5" step="0.1" min="2" max="5">
+                                <div class="unit">g/100mL</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h3 style="font-size: 14px; color: #555; margin-bottom: 15px;">Volumes d'acide versés :</h3>
+                    
+                    <div style="background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h4 style="font-size: 13px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin: 0;">Essais lait</h4>
+                            <button onclick="addEssai()" style="background: #0e7c7b; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">+ Ajouter essai</button>
+                        </div>
+                        <div id="essaisContainer"></div>
+                    </div>
+                    
+                    <div style="background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h4 style="font-size: 13px; color: #666; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin: 0;">Blancs</h4>
+                            <button onclick="addBlanc()" style="background: #0e7c7b; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">+ Ajouter blanc</button>
+                        </div>
+                        <div id="blancsContainer"></div>
+                    </div>
+                    
+                    <button onclick="calculateLait()">Calculer la teneur en protéines</button>
+                </div>
+                
+                <div id="laitResults"></div>
+            </div>
+            
+            <!-- TAB 3: RÉSULTATS & STATISTIQUES -->
+            <div id="stats" class="tab-content">
+                <div class="section">
+                    <h2><i class="fas fa-chart-bar"></i> Résultats du dosage du lait</h2>
+                    
+                    <div id="statsContent">
+                        <p style="color: #999; text-align: center; padding: 40px 20px;">
+                            Complétez d'abord le dosage du lait pour voir les résultats statistiques.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+    
+    <script>
+        let laitData = {
+            essais: [],
+            blancs: []
+        };
+        
+        let essaiCounter = 3;
+        let blancCounter = 3;
+        let essaisLait = []; // {id, nom, volume}
+        let blancsList = []; // {id, nom, volume}
+        
+        let essaiControlCounter = 3;
+        let blancControlCounter = 3;
+        let essaisControl = []; // {id, nom, volume}
+        let blancsControl = []; // {id, nom, volume}
+        
+        let controlData = {
+            theorique: 0,
+            mesures: [],
+            concentration: 0.05
+        };
+        
+        function addEssai() {
+            essaiCounter++;
+            essaisLait.push({ id: essaiCounter, nom: `Essai ${essaisLait.length + 1}`, volume: '' });
+            renderEssais();
+        }
+        
+        function removeEssai(id) {
+            essaisLait = essaisLait.filter(e => e.id !== id);
+            renderEssais();
+        }
+        
+        function renderEssais() {
+            const container = document.getElementById('essaisContainer');
+            if (essaisLait.length === 0) {
+                container.innerHTML = '<p style="color: #999;">Aucun essai. Cliquez sur "+ Ajouter essai".</p>';
+                return;
+            }
+            
+            let html = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">';
+            essaisLait.forEach((essai, idx) => {
+                html += `
+                    <div style="border: 1px solid #ddd; padding: 15px; border-radius: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <input type="text" placeholder="Nom" value="${essai.nom}" onchange="essaisLait[${idx}].nom = this.value" style="flex: 1; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; font-weight: 600;">
+                            <button onclick="removeEssai(${essai.id})" style="background: #ff6b6b; color: white; border: none; padding: 4px 8px; border-radius: 4px; margin-left: 10px; cursor: pointer; font-size: 12px;">✕</button>
+                        </div>
+                        <label style="font-size: 13px; font-weight: 600; color: #555; display: block; margin-bottom: 6px;">Volume H₂SO₄ (mL)</label>
+                        <input type="number" placeholder="0.00" step="0.01" min="0" value="${essai.volume}" onchange="essaisLait[${idx}].volume = this.value" style="width: 100%; padding: 8px; border: 1.5px solid #ddd; border-radius: 6px; font-size: 14px;">
+                    </div>
+                `;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+        
+        function addBlanc() {
+            blancCounter++;
+            blancsList.push({ id: blancCounter, nom: `Blanc ${blancsList.length + 1}`, volume: '' });
+            renderBlancs();
+        }
+        
+        function removeBlanc(id) {
+            blancsList = blancsList.filter(b => b.id !== id);
+            renderBlancs();
+        }
+        
+        function renderBlancs() {
+            const container = document.getElementById('blancsContainer');
+            if (blancsList.length === 0) {
+                container.innerHTML = '<p style="color: #999;">Aucun blanc. Cliquez sur "+ Ajouter blanc".</p>';
+                return;
+            }
+            
+            let html = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">';
+            blancsList.forEach((blanc, idx) => {
+                html += `
+                    <div style="border: 1px solid #ddd; padding: 15px; border-radius: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <input type="text" placeholder="Nom" value="${blanc.nom}" onchange="blancsList[${idx}].nom = this.value" style="flex: 1; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; font-weight: 600;">
+                            <button onclick="removeBlanc(${blanc.id})" style="background: #ff6b6b; color: white; border: none; padding: 4px 8px; border-radius: 4px; margin-left: 10px; cursor: pointer; font-size: 12px;">✕</button>
+                        </div>
+                        <label style="font-size: 13px; font-weight: 600; color: #555; display: block; margin-bottom: 6px;">Volume H₂SO₄ (mL)</label>
+                        <input type="number" placeholder="0.00" step="0.01" min="0" value="${blanc.volume}" onchange="blancsList[${idx}].volume = this.value" style="width: 100%; padding: 8px; border: 1.5px solid #ddd; border-radius: 6px; font-size: 14px;">
+                    </div>
+                `;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+        
+        function addEssaiControl() {
+            essaiControlCounter++;
+            essaisControl.push({ id: essaiControlCounter, nom: `Essai ${essaisControl.length + 1}`, volume: '' });
+            renderEssaisControl();
+        }
+        
+        function removeEssaiControl(id) {
+            essaisControl = essaisControl.filter(e => e.id !== id);
+            renderEssaisControl();
+        }
+        
+        function renderEssaisControl() {
+            const container = document.getElementById('controlEssaisContainer');
+            if (essaisControl.length === 0) {
+                container.innerHTML = '<p style="color: #999;">Aucun essai. Cliquez sur "+ Ajouter essai".</p>';
+                return;
+            }
+            
+            let html = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">';
+            essaisControl.forEach((essai, idx) => {
+                html += `
+                    <div style="border: 1px solid #ddd; padding: 15px; border-radius: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <input type="text" placeholder="Nom" value="${essai.nom}" onchange="essaisControl[${idx}].nom = this.value" style="flex: 1; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; font-weight: 600;">
+                            <button onclick="removeEssaiControl(${essai.id})" style="background: #ff6b6b; color: white; border: none; padding: 4px 8px; border-radius: 4px; margin-left: 10px; cursor: pointer; font-size: 12px;">✕</button>
+                        </div>
+                        <label style="font-size: 13px; font-weight: 600; color: #555; display: block; margin-bottom: 6px;">Volume H₂SO₄ (mL)</label>
+                        <input type="number" placeholder="0.00" step="0.01" min="0" value="${essai.volume}" onchange="essaisControl[${idx}].volume = this.value; validateControlDosage()" style="width: 100%; padding: 8px; border: 1.5px solid #ddd; border-radius: 6px; font-size: 14px;">
+                    </div>
+                `;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+        
+        function addBlancControl() {
+            blancControlCounter++;
+            blancsControl.push({ id: blancControlCounter, nom: `Blanc ${blancsControl.length + 1}`, volume: '' });
+            renderBlancsControl();
+        }
+        
+        function removeBlancControl(id) {
+            blancsControl = blancsControl.filter(b => b.id !== id);
+            renderBlancsControl();
+        }
+        
+        function renderBlancsControl() {
+            const container = document.getElementById('controlBlancsContainer');
+            if (blancsControl.length === 0) {
+                container.innerHTML = '<p style="color: #999;">Aucun blanc. Cliquez sur "+ Ajouter blanc".</p>';
+                return;
+            }
+            
+            let html = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">';
+            blancsControl.forEach((blanc, idx) => {
+                html += `
+                    <div style="border: 1px solid #ddd; padding: 15px; border-radius: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <input type="text" placeholder="Nom" value="${blanc.nom}" onchange="blancsControl[${idx}].nom = this.value" style="flex: 1; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; font-weight: 600;">
+                            <button onclick="removeBlancControl(${blanc.id})" style="background: #ff6b6b; color: white; border: none; padding: 4px 8px; border-radius: 4px; margin-left: 10px; cursor: pointer; font-size: 12px;">✕</button>
+                        </div>
+                        <label style="font-size: 13px; font-weight: 600; color: #555; display: block; margin-bottom: 6px;">Volume H₂SO₄ (mL)</label>
+                        <input type="number" placeholder="0.00" step="0.01" min="0" value="${blanc.volume}" onchange="blancsControl[${idx}].volume = this.value; validateControlDosage()" style="width: 100%; padding: 8px; border: 1.5px solid #ddd; border-radius: 6px; font-size: 14px;">
+                    </div>
+                `;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+        
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+        
+        function calculateSulfate() {
+            const massN = parseFloat(document.getElementById('massN').value) || 200;
+            const purity = parseFloat(document.getElementById('purity').value) || 99;
+            
+            // Constantes molaires
+            const M_NH4_SO4 = 132; // g/mol
+            const M_N = 14; // g/mol
+            
+            // Calcul : m((NH4)2SO4) = m(N) * M((NH4)2SO4) / (P * 2 * M(N))
+            const massSulfate = (massN / 1000) * M_NH4_SO4 / (purity / 100 * 2 * M_N);
+            
+            // La masse DOSÉE dans le matras = 200 mg × (10 mL / 100 mL) = 20 mg
+            const massNInMatras = massN * 10 / 100;
+            
+            const massSulfateMg = massSulfate * 1000;
+            
+            const resultHTML = `
+                <div class="result-box">
+                    <div class="label">Masse de (NH₄)₂SO₄ à peser</div>
+                    <div class="value">${massSulfateMg.toFixed(1)}</div>
+                    <div class="unit">mg</div>
+                </div>
+                
+                <div class="result-box" style="margin-top: 15px; background: #e8f4f8; border-color: #17a2b8;">
+                    <div class="label">Masse d'azote dans le matras (10 mL)</div>
+                    <div class="value">${massNInMatras.toFixed(0)}</div>
+                    <div class="unit">mg (à retrouver à ± 3%)</div>
+                </div>
+                
+                <div class="warning" style="margin-top: 20px;">
+                    <strong>Mode opératoire :</strong><br>
+                    1. Peser ${massSulfateMg.toFixed(1)} mg de (NH₄)₂SO₄<br>
+                    2. Dissoudre dans l'eau distillée<br>
+                    3. Compléter à 100 mL (solution mère contenant 200 mg N)<br>
+                    4. Introduire exactement <strong>10 mL</strong> dans un matras (= ${massNInMatras.toFixed(0)} mg N)<br>
+                    5. Procéder au dosage selon la méthode "sulfate 0,10"
+                </div>
+            `;
+            
+            document.getElementById('sulfateResult').innerHTML = resultHTML;
+            // La valeur théorique = masse d'azote dans le matras (10 mL)
+            controlData.theorique = massNInMatras;
+            
+            // Initialize control table
+            updateControlTable();
+        }
+        
+        function validateControlDosage() {
+            const ca = parseFloat(document.getElementById('caH2SO4').value) || 0.05;
+            const acceptError = parseFloat(document.getElementById('acceptableError').value) || 3;
+            
+            // Récupérer les volumes valides des blancs du contrôle
+            const volumesBlancsControl = blancsControl
+                .map(b => parseFloat(b.volume))
+                .filter(v => !isNaN(v) && v > 0);
+            
+            if (volumesBlancsControl.length === 0) {
+                return; // Pas de calcul si pas de blanc
+            }
+            
+            const blancMoyen = volumesBlancsControl.reduce((a, b) => a + b, 0) / volumesBlancsControl.length;
+            
+            controlData.concentration = ca;
+            controlData.mesures = [];
+            
+            let allValid = true;
+            essaisControl.forEach((essai, idx) => {
+                const volume = parseFloat(essai.volume);
+                if (isNaN(volume) || volume === '') return;
+                
+                // m(N) = 2 * Ca * (Va - Vb) * M(N)
+                const massCalculated = 2 * ca * (volume - blancMoyen) * 14;
+                const relError = Math.abs(massCalculated - controlData.theorique) / controlData.theorique * 100;
+                
+                controlData.mesures.push({
+                    essai: idx + 1,
+                    nom: essai.nom,
+                    volume: volume,
+                    massCalculated: massCalculated,
+                    relError: relError,
+                    valid: relError < acceptError
+                });
+                
+                if (relError >= acceptError) {
+                    allValid = false;
+                }
+            });
+            
+            if (controlData.mesures.length > 0) {
+                displayControlResults(allValid);
+            }
+        }
+        
+        function displayControlResults(allValid) {
+            if (controlData.mesures.length === 0 || controlData.theorique === 0) return;
+            
+            const avgMass = controlData.mesures.reduce((a, b) => a + b.massCalculated, 0) / controlData.mesures.length;
+            const avgError = controlData.mesures.reduce((a, b) => a + b.relError, 0) / controlData.mesures.length;
+            
+            let html = '<div class="section" style="margin-top: 25px; background: white; border-left-color: #0e7c7b;">';
+            html += '<h3 style="font-size: 14px; color: #555; margin-bottom: 15px; font-weight: 600;">Résultats du contrôle :</h3>';
+            
+            // Table des essais
+            html += '<table class="data-table">';
+            html += '<thead><tr><th>Essai</th><th>Va (mL)</th><th>m(N) (mg)</th><th>Écart (%)</th><th>Statut</th></tr></thead>';
+            html += '<tbody>';
+            controlData.mesures.forEach(m => {
+                const status = m.valid ? '✓ Valide' : '✗ Rejeté';
+                const statusColor = m.valid ? '#28a745' : '#dc3545';
+                html += `<tr>
+                    <td><strong>${m.nom}</strong></td>
+                    <td>${m.volume.toFixed(2)}</td>
+                    <td>${m.massCalculated.toFixed(2)}</td>
+                    <td>${m.relError.toFixed(2)}</td>
+                    <td><span style="color: ${statusColor};">${status}</span></td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            
+            html += '<div class="stats-grid" style="margin-top: 20px;">';
+            html += `<div class="stat-card"><div class="label">Masse attendue</div><div class="value">${parseFloat(controlData.theorique).toFixed(1)}</div><div class="unit">mg N</div></div>`;
+            html += `<div class="stat-card"><div class="label">Masse moyenne trouvée</div><div class="value">${avgMass.toFixed(1)}</div><div class="unit">mg N</div></div>`;
+            html += `<div class="stat-card"><div class="label">Écart relatif moyen</div><div class="value">${avgError.toFixed(2)}</div><div class="unit">%</div></div>`;
+            html += '</div>';
+            
+            if (allValid) {
+                html += `<div class="success"><strong>✓ Contrôle validé</strong><br>Tous les essais sont dans l'intervalle acceptable (&lt; 3%). Vous pouvez procéder au dosage du lait.</div>`;
+            } else {
+                html += `<div class="warning"><strong>⚠ Contrôle non validé</strong><br>Au moins un essai dépasse 3%. Vérifiez votre technique de dosage.</div>`;
+            }
+            
+            html += '</div>';
+            document.getElementById('controlResults').innerHTML = html;
+        }
+        
+        function calculateLait() {
+            // Récupérer les volumes valides du lait
+            const volumesLait = essaisLait
+                .map(e => ({ nom: e.nom, volume: parseFloat(e.volume) }))
+                .filter(e => !isNaN(e.volume) && e.volume > 0);
+            
+            if (volumesLait.length === 0) {
+                alert('Veuillez entrer au moins un volume d\'acide pour un essai');
+                return;
+            }
+            
+            const ca = parseFloat(document.getElementById('caH2SO4Lait').value) || 0.05;
+            const volumeLaitMineral = parseFloat(document.getElementById('volumeLaitMineral').value) || 3;
+            
+            // Récupérer et filtrer les blancs valides
+            const volumesBlancs = blancsList
+                .map(b => parseFloat(b.volume))
+                .filter(v => !isNaN(v) && v > 0);
+            
+            if (volumesBlancs.length === 0) {
+                alert('Veuillez entrer au moins un volume de blanc');
+                return;
+            }
+            const blancMoyen = volumesBlancs.reduce((a, b) => a + b, 0) / volumesBlancs.length;
+            
+            // Calcul pour chaque essai valide
+            // m(N) = 2 * Ca * (Va - Vb) * M(N)  → en mg
+            const masses = volumesLait.map(e => 2 * ca * (e.volume - blancMoyen) * 14);
+            
+            // Moyenne de m(N) en mg
+            const massNMoyen = masses.reduce((a, b) => a + b, 0) / masses.length;
+            
+            // Conversion pour 100 mL : m100mL(N) = massN × (100 / volumeLaitMineral)
+            const mass100mLN = massNMoyen * 100 / volumeLaitMineral;
+            
+            // Conversion en protéines : mp = m100mL(N) × 6.38 / 1000 (en g pour 100 mL)
+            const proteinPer100 = mass100mLN * 6.38 / 1000;
+            
+            laitData.essais = [];
+            volumesLait.forEach((e, idx) => {
+                laitData.essais.push({
+                    num: idx + 1,
+                    nom: e.nom,
+                    va: e.volume,
+                    massN: masses[idx]
+                });
+            });
+            laitData.blancMoyen = blancMoyen;
+            laitData.volumeLaitMineral = volumeLaitMineral;
+            laitData.massNMoyen = massNMoyen;
+            laitData.mass100mLN = mass100mLN;
+            
+            displayLaitResults(massNMoyen, mass100mLN, proteinPer100, volumeLaitMineral);
+            calculateStats(proteinPer100);
+        }
+        
+        function displayLaitResults(massNMoyen, mass100mLN, protein, volumeLait) {
+            let html = '<div class="section" style="background: white; border-left-color: #0e7c7b;">';
+            html += '<h2><i class="fas fa-table"></i> Résultats individuels</h2>';
+            
+            // Afficher la traçabilité
+            const operateur = document.getElementById('operateur').value || '-';
+            const dateTP = document.getElementById('dateTP').value || '-';
+            const numEchantillon = document.getElementById('numEchantillon').value || '-';
+            const observations = document.getElementById('observations').value || '-';
+            
+            html += '<div style="background: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e0e0e0;">';
+            html += `<div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px; font-size: 13px;">`;
+            html += `<div><strong style="color: #666;">Opérateur :</strong><br>${operateur}</div>`;
+            html += `<div><strong style="color: #666;">Date :</strong><br>${dateTP}</div>`;
+            html += `<div><strong style="color: #666;">N° Échantillon :</strong><br>${numEchantillon}</div>`;
+            html += `<div><strong style="color: #666;">Observations :</strong><br>${observations}</div>`;
+            html += `</div></div>`;
+            
+            html += '<table class="data-table">';
+            html += '<thead><tr><th>Essai</th><th>Va (mL)</th><th>Vb moyen (mL)</th><th>m(N) (mg)</th></tr></thead>';
+            html += '<tbody>';
+            
+            laitData.essais.forEach(e => {
+                html += `<tr>
+                    <td><strong>${e.nom}</strong></td>
+                    <td>${e.va.toFixed(2)}</td>
+                    <td>${laitData.blancMoyen.toFixed(2)}</td>
+                    <td>${e.massN.toFixed(2)}</td>
+                </tr>`;
+            });
+            
+            html += '</tbody></table>';
+            
+            html += '<div style="margin-top: 25px; padding: 20px; background: #eef6f5; border-radius: 10px; border-left: 4px solid #0e7c7b;">';
+            html += '<h3 style="font-size: 14px; color: #555; margin-bottom: 15px; font-weight: 600;">Calculs intermédiaires :</h3>';
+            html += `<div style="font-family: monospace; font-size: 13px; color: #333; line-height: 2;">`;
+            html += `<strong>Nombre d'essais :</strong> ${laitData.essais.length}<br>`;
+            html += `<strong>Moyenne m(N) :</strong> ${massNMoyen.toFixed(2)} mg<br>`;
+            html += `<strong>Pour 100 mL :</strong> m₁₀₀(N) = (100/${volumeLait}) × ${massNMoyen.toFixed(2)} = ${mass100mLN.toFixed(1)} mg<br>`;
+            html += `<strong>Conversion protéines :</strong> mp = 6,38 × ${mass100mLN.toFixed(1)} / 1000 = <strong style="color: #0e7c7b; font-size: 14px;">${protein.toFixed(2)} g/100mL</strong>`;
+            html += `</div>`;
+            html += '</div>';
+            
+            html += '</div>';
+            document.getElementById('laitResults').innerHTML = html;
+        }
+        
+        function calculateStats(proteinPer100) {
+            const expected = parseFloat(document.getElementById('expectedProtein').value) || 3.5;
+            const volumeLaitMineral = parseFloat(document.getElementById('volumeLaitMineral').value) || 3;
+            
+            // Recalculer les protéines pour chaque essai en utilisant le volume de lait minéralisé
+            const values = laitData.essais.map(e => {
+                const mass100mLN = e.massN * 100 / volumeLaitMineral;
+                return mass100mLN * 6.38 / 1000;
+            });
+            
+            if (values.length < 2) {
+                document.getElementById('statsContent').innerHTML = '<div class="warning">Au moins 2 essais sont nécessaires pour calculer les statistiques.</div>';
+                return;
+            }
+            
+            const mean = values.reduce((a, b) => a + b, 0) / values.length;
+            const variance = values.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / (values.length - 1);
+            const stdDev = Math.sqrt(variance);
+            
+            // Sélectionner le coefficient t de Student en fonction du nombre d'essais
+            const tStudentValues = {
+                2: 12.706, // ddl=1, α=0.05
+                3: 4.303,  // ddl=2, α=0.05
+                4: 3.182,  // ddl=3, α=0.05
+                5: 2.776   // ddl=4, α=0.05
+            };
+            const tStudent = tStudentValues[values.length] || 2.776;
+            const margin = tStudent * stdDev / Math.sqrt(values.length);
+            
+            let html = '<div class="section" style="background: white; border-left-color: #0e7c7b;">';
+            html += '<h2><i class="fas fa-chart-line"></i> Analyse statistique</h2>';
+            
+            html += '<div class="stats-grid">';
+            html += `<div class="stat-card"><div class="label">Valeur moyenne</div><div class="value">${mean.toFixed(2)}</div><div class="unit">g/100mL</div></div>`;
+            html += `<div class="stat-card"><div class="label">Écart-type</div><div class="value">${stdDev.toFixed(3)}</div><div class="unit">g/100mL</div></div>`;
+            html += `<div class="stat-card"><div class="label">Intervalle 95%</div><div class="value">±${margin.toFixed(2)}</div><div class="unit">g/100mL</div></div>`;
+            html += '</div>';
+            
+            html += '<div class="result-box">';
+            html += `<div class="label">Teneur en protéines déterminée</div>`;
+            html += `<div class="value">${mean.toFixed(2)} ± ${margin.toFixed(2)}</div>`;
+            html += `<div class="unit">g de protéines pour 100 mL de lait (IC 95%)</div>`;
+            html += '</div>';
+            
+            const diff = Math.abs(mean - expected);
+            const relDiff = (diff / expected * 100).toFixed(1);
+            
+            if (diff < margin) {
+                html += `<div class="success"><strong>✓ Résultat conforme</strong><br>La valeur mesurée (${mean.toFixed(2)} g) est proche de la valeur attendue (${expected} g). Écart : ${relDiff}%.</div>`;
+            } else {
+                html += `<div class="warning"><strong>⚠ Écart détecté</strong><br>La valeur mesurée (${mean.toFixed(2)} g) diffère de la valeur attendue (${expected} g). Écart : ${relDiff}%. Vérifiez vos mesures.</div>`;
+            }
+            
+            html += '</div>';
+            document.getElementById('statsContent').innerHTML = html;
+        }
+        
+        // Initialize on load
+        window.addEventListener('load', () => {
+            // Initialiser 3 essais et 3 blancs par défaut
+            essaisLait = [
+                { id: 1, nom: 'Essai 1', volume: '' },
+                { id: 2, nom: 'Essai 2', volume: '' },
+                { id: 3, nom: 'Essai 3', volume: '' }
+            ];
+            blancsList = [
+                { id: 101, nom: 'Blanc 1', volume: '' },
+                { id: 102, nom: 'Blanc 2', volume: '' },
+                { id: 103, nom: 'Blanc 3', volume: '' }
+            ];
+            renderEssais();
+            renderBlancs();
+            
+            // Initialiser essais et blancs du contrôle
+            essaisControl = [
+                { id: 1, nom: 'Essai 1', volume: '' },
+                { id: 2, nom: 'Essai 2', volume: '' },
+                { id: 3, nom: 'Essai 3', volume: '' }
+            ];
+            blancsControl = [
+                { id: 101, nom: 'Blanc 1', volume: '' },
+                { id: 102, nom: 'Blanc 2', volume: '' },
+                { id: 103, nom: 'Blanc 3', volume: '' }
+            ];
+            renderEssaisControl();
+            renderBlancsControl();
+            
+            // Initialiser date avec aujourd'hui
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('dateTP').value = today;
+        });
+    </script>
+
+</body>
+</html>
