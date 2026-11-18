@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+<meta name="description" content="Simulateur interactif du principe de l’électrophorèse : migration des acides aminés selon leur charge et le pH du tampon, dans un champ électrique. Outil du BTSa ANABIOTEC, lycée Le Gros Chêne, Pontivy.">
+<link rel="canonical" href="https://philrob56.github.io/anabiotec-commun/outils/principe-electrophorese.html">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulation d’électrophorèse des acides aminés : principe | BTSa ANABIOTEC</title>
+    <style>
+        /* --- Styles Généraux --- */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #1a237e;
+            text-align: center;
+        }
+
+        /* --- Conteneur Principal --- */
+        .container {
+            background-color: #ffffff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 900px;
+        }
+
+        /* --- Zone de Contrôles --- */
+        #controles {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label, legend {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #3949ab;
+        }
+        
+        /* --- Slider de pH --- */
+        #ph-slider {
+            width: 100%;
+            cursor: pointer;
+        }
+
+        #ph-valeur {
+            font-weight: bold;
+            color: #c51162;
+            font-size: 1.1em;
+        }
+
+        /* --- Sélection des Acides Aminés --- */
+        fieldset {
+            border: 1px solid #c5cae9;
+            border-radius: 8px;
+            padding: 15px;
+        }
+        
+        .fieldset-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+        
+        .select-buttons button {
+            background: none;
+            border: 1px solid #3949ab;
+            color: #3949ab;
+            font-size: 0.8em;
+            padding: 5px 10px;
+            border-radius: 4px;
+            margin-left: 5px;
+        }
+        .select-buttons button:hover {
+            background-color: #e8eaf6;
+        }
+
+        #checkboxes-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 10px;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        
+        .checkbox-item input {
+            margin-right: 8px;
+            cursor: pointer;
+        }
+        
+        .charge-display {
+            font-weight: bold;
+            margin-left: 5px;
+            width: 20px; /* Espace réservé pour la charge */
+            display: inline-block;
+        }
+        .charge-pos { color: #1e88e5; } /* Bleu pour positif */
+        .charge-neg { color: #e53935; } /* Rouge pour négatif */
+        .charge-zero { color: #757575; } /* Gris pour neutre */
+
+        /* --- Boutons --- */
+        .boutons-action {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+
+        #start-pause-btn {
+            background-color: #2962ff;
+            color: white;
+        }
+        #start-pause-btn:hover {
+            background-color: #0039cb;
+        }
+
+        #reset-btn {
+            background-color: #6c757d;
+            color: white;
+        }
+        #reset-btn:hover {
+            background-color: #5a6268;
+        }
+        
+        button:active {
+            transform: translateY(1px);
+        }
+        
+        button:disabled {
+            background-color: #e0e0e0;
+            cursor: not-allowed;
+            color: #9e9e9e;
+        }
+
+        /* --- Canvas de Simulation --- */
+        #simulation-canvas {
+            width: 100%;
+            height: 150px;
+            border: 1px solid #9fa8da;
+            background-color: #e8eaf6;
+            border-radius: 8px;
+        }
+    </style>
+<style id="responsive-patch">
+@media (max-width: 700px) {
+*,*::before,*::after{box-sizing:border-box}
+img,svg,video,canvas{max-width:100%}
+body{padding:8px}
+.container{max-width:100%;padding-left:12px;padding-right:12px}
+}
+</style>
+<!-- anb-commun --><script src="https://philrob56.github.io/anabiotec-commun/anb-commun.js"></script><!-- /anb-commun -->
+</head>
+<body>
+<!-- anb-charte --><div class="anb-head"><div class="anb-crumb"><i></i><a href="https://sites.google.com/view/anabioteclegroschene/accueil" target="_top" style="color:inherit;text-decoration:none" title="Tous les outils du BTSa ANABIOTEC"><b>BTSa ANABIOTEC</b></a><span>›</span>Électrophorèse</div><div class="anb-right"><div class="anb-tag">LEGTA Le Gros Chêne · Pontivy</div><button type="button" class="anb-print" onclick="anbPrint()" title="Ouvrir une version imprimable (PDF)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimer / PDF</button></div></div><!-- /anb-charte -->
+
+    <div class="container">
+        <h1>Simulation d'Électrophorèse d'Acides Aminés</h1>
+
+        <div id="controles">
+            <div class="control-group">
+                <label for="ph-slider">pH du tampon : <span id="ph-valeur">7.0</span></label>
+                <input type="range" id="ph-slider" min="1" max="14" value="7" step="0.1">
+            </div>
+
+            <fieldset>
+                <div class="fieldset-header">
+                    <legend>Choisir les acides aminés</legend>
+                    <div class="select-buttons">
+                        <button id="select-all-btn">Tout sélectionner</button>
+                        <button id="deselect-all-btn">Tout désélectionner</button>
+                    </div>
+                </div>
+                <div id="checkboxes-container"></div>
+            </fieldset>
+            
+            <div class="boutons-action">
+                <button id="start-pause-btn">Démarrer la migration</button>
+                <button id="reset-btn">Réinitialiser</button>
+            </div>
+        </div>
+
+        <canvas id="simulation-canvas"></canvas>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- DONNÉES SCIENTIFIQUES (avec couleurs) ---
+            const acidesAmines = [
+                { nom: 'Alanine', abbr: 'Ala', pI: 6.00, color: '#1abc9c' },
+                { nom: 'Arginine', abbr: 'Arg', pI: 10.76, color: '#0e7c7b' },
+                { nom: 'Asparagine', abbr: 'Asn', pI: 5.41, color: '#9b59b6' },
+                { nom: 'Acide Aspartique', abbr: 'Asp', pI: 2.77, color: '#e74c3c' },
+                { nom: 'Cystéine', abbr: 'Cys', pI: 5.07, color: '#f1c40f' },
+                { nom: 'Acide Glutamique', abbr: 'Glu', pI: 3.22, color: '#e67e22' },
+                { nom: 'Glutamine', abbr: 'Gln', pI: 5.65, color: '#2ecc71' },
+                { nom: 'Glycine', abbr: 'Gly', pI: 5.97, color: '#16a085' },
+                { nom: 'Histidine', abbr: 'His', pI: 7.59, color: '#0a5c5b' },
+                { nom: 'Isoleucine', abbr: 'Ile', pI: 6.02, color: '#8e44ad' },
+                { nom: 'Leucine', abbr: 'Leu', pI: 5.98, color: '#c0392b' },
+                { nom: 'Lysine', abbr: 'Lys', pI: 9.74, color: '#d35400' },
+                { nom: 'Méthionine', abbr: 'Met', pI: 5.74, color: '#f39c12' },
+                { nom: 'Phénylalanine', abbr: 'Phe', pI: 5.48, color: '#27ae60' },
+                { nom: 'Proline', abbr: 'Pro', pI: 6.30, color: '#34495e' },
+                { nom: 'Sérine', abbr: 'Ser', pI: 5.68, color: '#7f8c8d' },
+                { nom: 'Thréonine', abbr: 'Thr', pI: 5.60, color: '#95a5a6' },
+                { nom: 'Tryptophane', abbr: 'Trp', pI: 5.89, color: '#bdc3c7' },
+                { nom: 'Tyrosine', abbr: 'Tyr', pI: 5.66, color: '#ecf0f1' },
+                { nom: 'Valine', abbr: 'Val', pI: 5.96, color: '#2c3e50' }
+            ];
+
+            // --- RÉFÉRENCES DOM ---
+            const phSlider = document.getElementById('ph-slider');
+            const phValeur = document.getElementById('ph-valeur');
+            const checkboxesContainer = document.getElementById('checkboxes-container');
+            const startPauseBtn = document.getElementById('start-pause-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const selectAllBtn = document.getElementById('select-all-btn');
+            const deselectAllBtn = document.getElementById('deselect-all-btn');
+            const canvas = document.getElementById('simulation-canvas');
+            const ctx = canvas.getContext('2d');
+
+            // --- VARIABLES DE SIMULATION ---
+            let simulationEnCours = false, simulationCommencee = false;
+            let positionsAcidesAmines = {};
+            let animationFrameId;
+
+            // --- INITIALISATION ---
+
+            function resizeCanvas() {
+                const rect = canvas.getBoundingClientRect();
+                canvas.width = rect.width;
+                canvas.height = rect.height;
+            }
+
+            function mettreAJourCharges() {
+                const ph = parseFloat(phSlider.value);
+                const tolerance = 0.2;
+                acidesAmines.forEach(aa => {
+                    const chargeSpan = document.getElementById(`charge-${aa.abbr}`);
+                    if (!chargeSpan) return;
+                    
+                    if (ph < aa.pI - tolerance) {
+                        chargeSpan.textContent = '(+)';
+                        chargeSpan.className = 'charge-display charge-pos';
+                    } else if (ph > aa.pI + tolerance) {
+                        chargeSpan.textContent = '(-)';
+                        chargeSpan.className = 'charge-display charge-neg';
+                    } else {
+                        chargeSpan.textContent = '(0)';
+                        chargeSpan.className = 'charge-display charge-zero';
+                    }
+                });
+            }
+
+            function genererCheckboxes() {
+                acidesAmines.sort((a,b) => a.nom.localeCompare(b.nom));
+                acidesAmines.forEach(aa => {
+                    const div = document.createElement('div');
+                    div.className = 'checkbox-item';
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.id = aa.abbr;
+                    checkbox.value = aa.abbr;
+                    const label = document.createElement('label');
+                    label.htmlFor = aa.abbr;
+                    label.innerHTML = `${aa.nom} (${aa.abbr}) - pI: ${aa.pI.toFixed(2)} <span class="charge-display" id="charge-${aa.abbr}"></span>`;
+                    
+                    div.appendChild(checkbox);
+                    div.appendChild(label);
+                    checkboxesContainer.appendChild(div);
+                });
+            }
+
+            function dessinerGelEtMarqueurs() {
+                const width = canvas.width;
+                const height = canvas.height;
+                const midX = width / 2;
+                
+                ctx.clearRect(0, 0, width, height);
+                ctx.fillStyle = '#e8eaf6';
+                ctx.fillRect(0, 0, width, height);
+                
+                ctx.strokeStyle = 'rgba(159, 168, 218, 0.7)';
+                ctx.font = '10px sans-serif';
+                ctx.fillStyle = '#5c6bc0';
+                ctx.textAlign = 'center';
+                for (let i = 1; i < 10; i++) {
+                    const x = (width / 10) * i;
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, height);
+                    ctx.stroke();
+                    if(i !== 5) ctx.fillText(`${(i-5)*10}%`, x, 12);
+                }
+
+                ctx.font = 'bold 16px sans-serif';
+                ctx.fillStyle = '#1a237e';
+
+                // --- DÉBUT DE LA CORRECTION ---
+                // Pôle Anode (+) à droite, aligné à droite
+                ctx.textAlign = 'right';
+                ctx.fillText('(+)', width - 15, height / 2 + 6);
+                ctx.fillText('ANODE', width - 15, height / 2 - 10);
+                
+                // Pôle Cathode (-) à gauche, aligné à gauche
+                ctx.textAlign = 'left';
+                ctx.fillText('(-)', 15, height / 2 + 6);
+                ctx.fillText('CATHODE', 15, height / 2 - 10);
+                // --- FIN DE LA CORRECTION ---
+
+                ctx.textAlign = 'center'; // On remet l'alignement au centre pour le reste
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                ctx.fillRect(midX - 5, 20, 10, height - 40);
+                ctx.fillStyle = 'black';
+                ctx.font = '12px sans-serif';
+                ctx.fillText('Dépôt', midX, 15);
+            }
+
+            // --- LOGIQUE DE SIMULATION ---
+
+            function animer() {
+                if (!simulationEnCours) return;
+                const width = canvas.width;
+                const ph = parseFloat(phSlider.value);
+
+                dessinerGelEtMarqueurs();
+
+                for (const abbr in positionsAcidesAmines) {
+                    const aa = acidesAmines.find(a => a.abbr === abbr);
+                    const position = positionsAcidesAmines[abbr];
+                    
+                    const vitesse = (ph - aa.pI) * 0.1;
+                    position.x += vitesse;
+                    position.x = Math.max(15, Math.min(width - 15, position.x));
+
+                    ctx.fillStyle = aa.color;
+                    ctx.strokeStyle = '#333';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.arc(position.x, position.y, 6, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+
+                    ctx.fillStyle = 'black';
+                    ctx.font = 'bold 12px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(aa.abbr, position.x, position.y + 20);
+                }
+
+                animationFrameId = requestAnimationFrame(animer);
+            }
+            
+            function initialiserPositions() {
+                const checkboxes = checkboxesContainer.querySelectorAll('input[type="checkbox"]:checked');
+                positionsAcidesAmines = {};
+                let i = 0;
+                let yStart = (checkboxes.length > 4) ? (canvas.height / 2) - 40 : (canvas.height / 2) - 20;
+                checkboxes.forEach(cb => {
+                    positionsAcidesAmines[cb.value] = { 
+                        x: canvas.width / 2, 
+                        y: yStart + (i * 20)
+                    };
+                    i++;
+                });
+            }
+
+            // --- GESTIONNAIRES D'ÉVÉNEMENTS ---
+
+            phSlider.addEventListener('input', () => {
+                phValeur.textContent = parseFloat(phSlider.value).toFixed(1);
+                mettreAJourCharges();
+            });
+
+            startPauseBtn.addEventListener('click', () => {
+                if (!simulationCommencee) {
+                    const checkboxes = checkboxesContainer.querySelectorAll('input[type="checkbox"]:checked');
+                    if (checkboxes.length === 0) {
+                        alert('Veuillez sélectionner au moins un acide aminé.'); return;
+                    }
+                    simulationCommencee = true;
+                    initialiserPositions();
+                    phSlider.disabled = true;
+                    checkboxesContainer.querySelectorAll('input').forEach(cb => cb.disabled = true);
+                    selectAllBtn.disabled = true;
+                    deselectAllBtn.disabled = true;
+                }
+                simulationEnCours = !simulationEnCours;
+                if (simulationEnCours) {
+                    startPauseBtn.textContent = 'Mettre en Pause';
+                    startPauseBtn.style.backgroundColor = '#d32f2f';
+                    resetBtn.disabled = false;
+                    animer();
+                } else {
+                    if (animationFrameId) cancelAnimationFrame(animationFrameId);
+                    startPauseBtn.textContent = 'Reprendre';
+                    startPauseBtn.style.backgroundColor = '#388e3c';
+                }
+            });
+
+            resetBtn.addEventListener('click', () => {
+                simulationEnCours = false;
+                simulationCommencee = false;
+                if (animationFrameId) cancelAnimationFrame(animationFrameId);
+                
+                phSlider.disabled = false;
+                checkboxesContainer.querySelectorAll('input').forEach(cb => cb.disabled = false);
+                selectAllBtn.disabled = false;
+                deselectAllBtn.disabled = false;
+
+                startPauseBtn.textContent = 'Démarrer la migration';
+                startPauseBtn.style.backgroundColor = '#2962ff';
+                resetBtn.disabled = true;
+
+                positionsAcidesAmines = {};
+                dessinerGelEtMarqueurs();
+            });
+            
+            selectAllBtn.addEventListener('click', () => {
+                checkboxesContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = true);
+            });
+            
+            deselectAllBtn.addEventListener('click', () => {
+                checkboxesContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+            });
+            
+            // --- Exécution initiale ---
+            resizeCanvas();
+            window.addEventListener('resize', () => {
+                resizeCanvas();
+                dessinerGelEtMarqueurs();
+            });
+            genererCheckboxes();
+            mettreAJourCharges();
+            dessinerGelEtMarqueurs();
+            resetBtn.disabled = true;
+        });
+    </script>
+
+</body>
+</html>
