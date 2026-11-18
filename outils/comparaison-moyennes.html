@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+<meta name="description" content="Calculateur du test t de Student pour savoir si l’écart entre les moyennes de deux séries de mesures indépendantes est significatif. Outil du BTSa ANABIOTEC, lycée Le Gros Chêne, Pontivy.">
+<link rel="canonical" href="https://philrob56.github.io/anabiotec-commun/outils/comparaison-moyennes.html">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test t de Student : comparaison de deux moyennes | BTSa ANABIOTEC</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+
+        :root {
+            --bg-color: #f0f2f5;
+            --container-bg: #ffffff;
+            --primary-accent: #0e7c7b; /* Bleu pour le test t */
+            --text-color: #333;
+            --label-color: #555;
+            --border-color: #dbe2e8;
+            --success-color: #27ae60;
+            --error-color: #c0392b;
+            --info-color: #5f6c7b;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1rem;
+            box-sizing: border-box;
+        }
+
+        .container {
+            background: var(--container-bg);
+            padding: 1.5rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+            box-sizing: border-box;
+            border: 1px solid var(--border-color);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        h1 {
+            color: var(--primary-accent);
+            margin: 0 0 0.25rem 0;
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+        
+        header p { margin: 0; color: var(--label-color); }
+
+        .data-series-container {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .series-input { flex: 1; }
+
+        label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--label-color);
+        }
+
+        select, input[type="number"] {
+            width: 100%;
+            padding: 0.6rem 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 1rem;
+            background-color: #fdfdfd;
+            transition: all 0.2s ease-in-out;
+        }
+        
+        input[type="number"] { margin-bottom: 0.5rem; }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-accent);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none; margin: 0;
+        }
+        input[type=number] { -moz-appearance: textfield; }
+
+        .results {
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1.5rem;
+            text-align: center;
+        }
+        
+        #result-summary {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .result-details p {
+            margin: 0.4rem 0;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: var(--label-color);
+        }
+        .result-details strong { color: var(--text-color); }
+        .result-details #f-test-result { font-style: italic; }
+
+        .moyennes-differentes { color: var(--error-color); }
+        .moyennes-egales { color: var(--success-color); }
+        .info { color: var(--info-color); }
+
+        footer { text-align: center; margin-top: 1.5rem; }
+
+        #clear-button {
+            background-image: linear-gradient(to right, #e52d27 0%, #b31217  51%, #e52d27  100%);
+            color: #fff;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1rem;
+            font-weight: 500;
+            background-size: 200% auto;
+        }
+
+        #clear-button:hover {
+            background-position: right center;
+            box-shadow: 0 4px 15px rgba(192, 57, 43, 0.4);
+        }
+
+        @media (max-width: 500px) {
+            .data-series-container { flex-direction: column; gap: 1rem;}
+        }
+
+    </style>
+<!-- anb-commun --><script src="https://philrob56.github.io/anabiotec-commun/anb-commun.js"></script><!-- /anb-commun -->
+<!-- anb-charte --><style>body{flex-direction:column!important;justify-content:flex-start!important;align-items:center!important}@media (max-width:700px){body>*{max-width:100%;box-sizing:border-box}}</style><!-- /anb-charte -->
+</head>
+<body>
+<!-- anb-charte --><div class="anb-head"><div class="anb-crumb"><i></i><a href="https://sites.google.com/view/anabioteclegroschene/accueil" target="_top" style="color:inherit;text-decoration:none" title="Tous les outils du BTSa ANABIOTEC"><b>BTSa ANABIOTEC</b></a><span>›</span>Statistiques</div><div class="anb-right"><div class="anb-tag">LEGTA Le Gros Chêne · Pontivy</div><button type="button" class="anb-print" onclick="anbPrint()" title="Ouvrir une version imprimable (PDF)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimer / PDF</button></div></div><!-- /anb-charte -->
+    <div class="container">
+        <header>
+            <h1>Test t de Student</h1>
+            <p>Comparaison de deux moyennes</p>
+        </header>
+        <main>
+            <div class="input-section">
+                <label for="alpha">Niveau de risque (alpha) :</label>
+                <select id="alpha">
+                    <option value="0.05" selected>5%</option>
+                    <option value="0.10">10%</option>
+                </select>
+            </div>
+            
+            <div class="data-series-container">
+                <div class="series-input">
+                    <label>Série de données 1</label>
+                    <div id="values-container-1">
+                        <input type="number" placeholder="Valeur">
+                    </div>
+                </div>
+                <div class="series-input">
+                    <label>Série de données 2</label>
+                    <div id="values-container-2">
+                        <input type="number" placeholder="Valeur">
+                    </div>
+                </div>
+            </div>
+
+            <div class="results">
+                <div id="result-summary" class="info">En attente de données...</div>
+                <div class="result-details">
+                    <p><span id="f-test-result">Test de variance non effectué</span></p>
+                    <p><span>t calculé :</span> <strong id="t-calculated">N/A</strong></p>
+                    <p><span>t critique :</span> <strong id="t-critical">N/A</strong></p>
+                    <p><span>Degrés de liberté (ddl) :</span> <strong id="df">N/A</strong></p>
+                </div>
+            </div>
+        </main>
+        <footer>
+            <button id="clear-button">Effacer</button>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const container1 = document.getElementById('values-container-1');
+            const container2 = document.getElementById('values-container-2');
+            const alphaSelect = document.getElementById('alpha');
+            const resultSummary = document.getElementById('result-summary');
+            const fTestResultSpan = document.getElementById('f-test-result');
+            const tCalculatedSpan = document.getElementById('t-calculated');
+            const tCriticalSpan = document.getElementById('t-critical');
+            const dfSpan = document.getElementById('df');
+            const clearButton = document.getElementById('clear-button');
+
+            // Tables F et T. Alpha correspond à un test bilatéral.
+            const f_table_005 = {1:{1:161.45,2:18.51,3:10.13,4:7.71,5:6.61,10:4.96,20:4.35,30:4.17},2:{1:199.50,2:19.00,3:9.55,4:6.94,5:5.79,10:4.10,20:3.49,30:3.32},3:{1:215.71,2:19.16,3:9.28,4:6.59,5:5.41,10:3.71,20:3.10,30:2.92},4:{1:224.58,2:19.25,3:9.12,4:6.39,5:5.19,10:3.48,20:2.87,30:2.69},5:{1:230.16,2:19.30,3:9.01,4:6.26,5:5.05,10:3.33,20:2.71,30:2.53},10:{1:241.88,2:19.40,3:8.79,4:5.96,5:4.74,10:2.98,20:2.35,30:2.16},20:{1:248.01,2:19.45,3:8.66,4:5.80,5:4.56,10:2.77,20:2.12,30:1.93},30:{1:250.09,2:19.46,3:8.62,4:5.75,5:4.50,10:2.70,20:2.04,30:1.84}};
+            const t_table = {'0.05':{1:12.71,2:4.30,3:3.18,4:2.78,5:2.57,6:2.45,7:2.36,8:2.31,9:2.26,10:2.23,11:2.20,12:2.18,13:2.16,14:2.14,15:2.13,16:2.12,17:2.11,18:2.10,19:2.09,20:2.09,25:2.06,30:2.04,40:2.02,60:2.00},'0.10':{1:6.31,2:2.92,3:2.35,4:2.13,5:2.02,6:1.94,7:1.89,8:1.86,9:1.83,10:1.81,11:1.80,12:1.78,13:1.77,14:1.76,15:1.75,16:1.75,17:1.74,18:1.73,19:1.73,20:1.72,25:1.71,30:1.70,40:1.68,60:1.67}};
+
+            const addValueInput = (container) => {
+                if (container.querySelectorAll('input').length < 100) {
+                    const newInput = document.createElement('input');
+                    newInput.type = 'number';
+                    newInput.placeholder = 'Valeur';
+                    container.appendChild(newInput);
+                    newInput.focus();
+                }
+            };
+
+            const getStats = (values) => {
+                const n = values.length;
+                if (n === 0) return { n: 0, mean: 0, variance: 0 };
+                const mean = values.reduce((a, b) => a + b, 0) / n;
+                const variance = n > 1 ? values.reduce((a, b) => a + (b - mean) ** 2, 0) / (n - 1) : 0;
+                return { n, mean, variance };
+            };
+
+            const calculateStudentTest = () => {
+                const values1 = Array.from(container1.querySelectorAll('input')).map(i => parseFloat(i.value)).filter(v => !isNaN(v));
+                const values2 = Array.from(container2.querySelectorAll('input')).map(i => parseFloat(i.value)).filter(v => !isNaN(v));
+
+                if (values1.length < 2 || values2.length < 2) {
+                    resultSummary.textContent = "Chaque série doit avoir au moins 2 valeurs.";
+                    resultSummary.className = 'info';
+                    fTestResultSpan.textContent = 'Test de variance non effectué';
+                    tCalculatedSpan.textContent = "N/A"; tCriticalSpan.textContent = "N/A"; dfSpan.textContent = "N/A";
+                    return;
+                }
+
+                const stats1 = getStats(values1);
+                const stats2 = getStats(values2);
+                
+                // 1. Test F pour l'égalité des variances
+                const f_crit_table = f_table_005;
+                const df1_f = stats1.variance > stats2.variance ? stats1.n - 1 : stats2.n - 1;
+                const df2_f = stats1.variance > stats2.variance ? stats2.n - 1 : stats1.n - 1;
+                const f_calc = stats1.variance > stats2.variance ? stats1.variance / stats2.variance : stats2.variance / stats1.variance;
+                
+                const df1_f_key = Object.keys(f_crit_table).reverse().find(k => df1_f >= k);
+                const df2_f_key = df1_f_key ? Object.keys(f_crit_table[df1_f_key]).reverse().find(k => df2_f >= k) : null;
+                const f_crit = (df1_f_key && df2_f_key) ? f_crit_table[df1_f_key][df2_f_key] : null;
+
+                const variancesAreEqual = f_crit ? (f_calc <= f_crit) : true; // On assume l'égalité si hors table
+
+                // 2. Calcul du t de Student ou de Welch
+                let t_calc, df;
+                if (variancesAreEqual) {
+                    fTestResultSpan.textContent = `Test F : Variances considérées ÉGALES.`;
+                    // Test t de Student classique (variances poolées)
+                    const pooledVar = ((stats1.n - 1) * stats1.variance + (stats2.n - 1) * stats2.variance) / (stats1.n + stats2.n - 2);
+                    t_calc = (stats1.mean - stats2.mean) / Math.sqrt(pooledVar * (1/stats1.n + 1/stats2.n));
+                    df = stats1.n + stats2.n - 2;
+                } else {
+                    fTestResultSpan.textContent = `Test F : Variances considérées DIFFÉRENTES.`;
+                    // Test t de Welch
+                    const term1 = stats1.variance / stats1.n;
+                    const term2 = stats2.variance / stats2.n;
+                    t_calc = (stats1.mean - stats2.mean) / Math.sqrt(term1 + term2);
+                    df = (term1 + term2)**2 / ( (term1**2 / (stats1.n - 1)) + (term2**2 / (stats2.n - 1)) );
+                }
+                
+                // 3. Comparaison à la valeur critique t
+                const alpha = alphaSelect.value;
+                const t_crit_table = t_table[alpha];
+                const df_key = Object.keys(t_crit_table).reverse().find(k => Math.floor(df) >= k);
+                const t_crit = df_key ? t_crit_table[df_key] : null;
+
+                // 4. Affichage des résultats
+                tCalculatedSpan.textContent = Math.abs(t_calc).toFixed(3);
+                dfSpan.textContent = df.toFixed(2);
+                
+                if (t_crit) {
+                    tCriticalSpan.textContent = t_crit.toFixed(3);
+                    if (Math.abs(t_calc) > t_crit) {
+                        resultSummary.textContent = "Les moyennes sont significativement différentes.";
+                        resultSummary.className = 'moyennes-differentes';
+                    } else {
+                        resultSummary.textContent = "Les moyennes ne sont pas significativement différentes.";
+                        resultSummary.className = 'moyennes-egales';
+                    }
+                } else {
+                     resultSummary.textContent = `t critique non disponible pour ddl=${Math.floor(df)}`;
+                     resultSummary.className = 'info';
+                     tCriticalSpan.textContent = "N/A";
+                }
+            };
+            
+            [container1, container2, alphaSelect].forEach(el => el.addEventListener('input', calculateStudentTest));
+            [container1, container2].forEach(container => {
+                 container.addEventListener('keydown', (e) => {
+                    if (e.key === 'ArrowDown' && e.target.nodeName === 'INPUT') {
+                        e.preventDefault();
+                        addValueInput(container);
+                    }
+                });
+            });
+            
+            clearButton.addEventListener('click', () => {
+                container1.innerHTML = '<input type="number" placeholder="Valeur">';
+                container2.innerHTML = '<input type="number" placeholder="Valeur">';
+                container1.querySelector('input').focus();
+                calculateStudentTest();
+            });
+
+            calculateStudentTest();
+        });
+    </script>
+
+</body>
+</html>
