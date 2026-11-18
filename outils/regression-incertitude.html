@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+<meta name="description" content="Tableau de bord d’analyse par étalonnage : régression affine ou linéaire, pente, ordonnée à l’origine, incertitudes et concentration d’un échantillon. Outil du BTSa ANABIOTEC, lycée Le Gros Chêne, Pontivy.">
+<link rel="canonical" href="https://philrob56.github.io/anabiotec-commun/outils/regression-incertitude.html">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Régression et incertitude d’étalonnage : modèle affine ou linéaire | BTSa ANABIOTEC</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #0a5c5b;
+            --secondary-color: #f0f2f5;
+            --text-color: #333;
+            --light-gray: #fff;
+            --border-color: #dee2e6;
+            --success-color: #28a745;
+            --error-color: #dc3545;
+            --accent-linear: #e8732a;
+            --font-family: 'Segoe UI', Arial, sans-serif;
+            --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+        body {
+            font-family: var(--font-family);
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 1rem;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            background-color: var(--light-gray);
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: var(--box-shadow);
+        }
+        header { text-align: center; border-bottom: 2px solid var(--primary-color); padding-bottom: 1rem; margin-bottom: 2rem; }
+        header h1 { color: var(--primary-color); margin: 0; }
+        .section { margin-bottom: 2rem; }
+        .section h2 { color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1rem; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
+        th, td { border: 1px solid var(--border-color); padding: 0.5rem; text-align: center; vertical-align: middle; }
+        th { background-color: #f8f9fa; font-weight: 600; }
+        input[type="number"] {
+            width: 90px; padding: 0.3rem 0.5rem; border: 1px solid var(--border-color);
+            border-radius: 4px; font-size: 0.95rem; text-align: center; -moz-appearance: textfield;
+        }
+        input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type="number"]:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 2px rgba(0, 90, 156, 0.25); }
+        input.example-value { color: #aaa; font-style: italic; }
+        #unknown-y { width: 120px; }
+        .action-cell button { background: none; border: none; color: var(--error-color); cursor: pointer; font-size: 1.2rem; }
+        .btn { padding: 0.7rem 1.5rem; border-radius: 5px; cursor: pointer; font-size: 1rem; font-weight: 600; border: none; transition: background-color 0.2s; display: inline-flex; align-items: center; gap: 0.5rem; }
+        .btn-primary { background-color: var(--primary-color); color: white; }
+        .btn-primary:hover { background-color: #004880; }
+        .btn-secondary { background-color: #6c757d; color: white; }
+        .btn-secondary:hover { background-color: #545b62; }
+        .button-group { display: flex; gap: 1rem; justify-content: center; margin-top: 1rem; }
+
+        /* --- Sélecteur de modèle --- */
+        .model-selector {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+        .model-option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.7rem 1.4rem;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 600;
+            background: white;
+            user-select: none;
+        }
+        .model-option input[type="radio"] { display: none; }
+        .model-option.selected-affine {
+            border-color: var(--primary-color);
+            background-color: #e8f0fa;
+            color: var(--primary-color);
+        }
+        .model-option.selected-linear {
+            border-color: var(--accent-linear);
+            background-color: #fdf0e8;
+            color: var(--accent-linear);
+        }
+        .model-badge {
+            font-family: 'Courier New', monospace;
+            font-size: 0.95em;
+            padding: 0.1rem 0.4rem;
+            border-radius: 4px;
+            background: rgba(0,0,0,0.07);
+        }
+        /* Bandeau de contexte modèle */
+        #model-context-banner {
+            border-radius: 6px;
+            padding: 0.6rem 1rem;
+            font-size: 0.9rem;
+            margin-bottom: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background-color 0.3s;
+        }
+        .banner-affine {
+            background-color: #e8f0fa;
+            border-left: 4px solid var(--primary-color);
+            color: #003f6e;
+        }
+        .banner-linear {
+            background-color: #fdf0e8;
+            border-left: 4px solid var(--accent-linear);
+            color: #7a3a10;
+        }
+
+        #analysis-dashboard {
+            display: none;
+            flex-wrap: wrap;
+            gap: 2rem;
+            align-items: flex-start;
+        }
+        #chart-container {
+            flex: 2;
+            min-width: 350px;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+        #results-container {
+            flex: 1;
+            min-width: 300px;
+            background-color: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 5px solid var(--primary-color);
+            transition: border-color 0.3s;
+        }
+        #results-container.model-linear { border-left-color: var(--accent-linear); }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.6rem 0;
+            border-bottom: 1px dashed var(--border-color);
+            line-height: 1.2;
+        }
+        .result-item:last-child { border-bottom: none; }
+        .result-item .label { opacity: 0.9; }
+        .result-item .label small { font-size: 0.8em; opacity: 0.7; }
+        .result-item .value {
+            font-weight: bold;
+            font-family: 'Courier New', Courier, monospace;
+            white-space: nowrap;
+        }
+        .main-result .label { font-weight: bold; color: var(--primary-color); }
+        .main-result .value { font-size: 1.1em; color: var(--primary-color); }
+        .secondary-result .value { font-size: 0.95em; color: #555; }
+
+        /* Badge modèle dans les résultats */
+        #model-tag {
+            display: inline-block;
+            font-size: 0.75rem;
+            padding: 0.15rem 0.5rem;
+            border-radius: 10px;
+            font-weight: 600;
+            margin-bottom: 0.8rem;
+        }
+        .tag-affine { background: #d0e4f7; color: #004880; }
+        .tag-linear { background: #fcd9bb; color: #7a3a10; }
+
+        .accordion { border: 1px solid var(--border-color); border-radius: 5px; overflow: hidden; margin-top: 2rem; }
+        .accordion-header { background-color: #f8f9fa; padding: 0.8rem 1.2rem; cursor: pointer; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+        .accordion-header::after { content: '▼'; transition: transform 0.3s; }
+        .accordion.active .accordion-header::after { transform: rotate(180deg); }
+        .accordion-content { padding: 0 1.5rem; max-height: 0; overflow: hidden; transition: max-height 0.4s ease-out, padding 0.3s ease-out; }
+        .accordion.active .accordion-content { padding: 1.5rem; max-height: 2000px; }
+        pre { background-color: #e9ecef; padding: 1rem; border-radius: 4px; white-space: pre-wrap; word-wrap: break-word; font-size: 0.9rem; }
+
+        /* Tabs dans l'accordion */
+        .formula-tabs { display: flex; gap: 0; margin-bottom: 1rem; border-radius: 6px; overflow: hidden; border: 1px solid var(--border-color); width: fit-content; }
+        .formula-tab {
+            padding: 0.4rem 1rem;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            background: #f8f9fa;
+            border: none;
+            transition: background 0.2s;
+        }
+        .formula-tab.active-affine { background: #d0e4f7; color: #004880; }
+        .formula-tab.active-linear { background: #fcd9bb; color: #7a3a10; }
+        .formula-panel { display: none; }
+        .formula-panel.visible { display: block; }
+
+        #error-message { color: white; background-color: var(--error-color); padding: 1rem; border-radius: 5px; margin-bottom: 1rem; text-align: center; display: none; }
+
+        @media (max-width: 992px) {
+            #analysis-dashboard { flex-direction: column; }
+            .model-selector { flex-direction: column; align-items: center; }
+        }
+    </style>
+<style id="responsive-patch">
+@media (max-width: 700px) {
+*,*::before,*::after{box-sizing:border-box}
+img,svg,video,canvas{max-width:100%}
+#calibration-table{display:block;overflow-x:auto;max-width:100%}
+}
+</style>
+<!-- anb-commun --><script src="https://philrob56.github.io/anabiotec-commun/anb-commun.js"></script><!-- /anb-commun -->
+</head>
+<body>
+<!-- anb-charte --><div class="anb-head"><div class="anb-crumb"><i></i><a href="https://sites.google.com/view/anabioteclegroschene/accueil" target="_top" style="color:inherit;text-decoration:none" title="Tous les outils du BTSa ANABIOTEC"><b>BTSa ANABIOTEC</b></a><span>›</span>Incertitude</div><div class="anb-right"><div class="anb-tag">LEGTA Le Gros Chêne · Pontivy</div><button type="button" class="anb-print" onclick="anbPrint()" title="Ouvrir une version imprimable (PDF)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimer / PDF</button></div></div><!-- /anb-charte -->
+<div class="container">
+    <header><h1>Dashboard d'Analyse par Calibration</h1></header>
+    <main>
+        <!-- Sélecteur de modèle -->
+        <section class="section">
+            <h2>0. Choix du Modèle de Régression</h2>
+            <div class="model-selector">
+                <label class="model-option selected-affine" id="label-affine">
+                    <input type="radio" name="model" value="affine" checked>
+                    <span>Modèle Affine</span>
+                    <span class="model-badge">Y = ax + b</span>
+                </label>
+                <label class="model-option" id="label-linear">
+                    <input type="radio" name="model" value="linear">
+                    <span>Modèle Linéaire</span>
+                    <span class="model-badge">Y = ax</span>
+                </label>
+            </div>
+            <div id="model-context-banner" class="banner-affine">
+                ℹ️ <strong>Modèle affine :</strong> deux paramètres estimés (a, b) — ν = n − 2. L'incertitude est minimale au centre du domaine (x = x̄).
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>1. Données de Calibration</h2>
+            <table id="calibration-table">
+                <thead><tr><th>Point</th><th>Concentration (X)</th><th>Réponse (Y)</th><th>Action</th></tr></thead>
+                <tbody></tbody>
+            </table>
+            <div class="button-group"><button id="add-row-btn" class="btn btn-secondary">➕ Ajouter un point</button></div>
+        </section>
+
+        <section class="section">
+            <h2>2. Données de l'Échantillon Inconnu</h2>
+            <label for="unknown-y" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Réponse de l'instrument (Y₀) :</label>
+            <input type="number" id="unknown-y" placeholder="Entrez Y₀">
+        </section>
+
+        <div class="button-group"><button id="calculate-btn" class="btn btn-primary">⚙️ Calculer et Afficher le Dashboard</button></div>
+        <div id="error-message"></div>
+
+        <div id="analysis-dashboard">
+            <div id="chart-container">
+                <h3>Courbe de Calibration</h3>
+                <canvas id="calibrationChart"></canvas>
+            </div>
+            <div id="results-container">
+                <span id="model-tag" class="tag-affine">Modèle affine — Y = ax + b</span>
+                <h3 style="margin-top:0;">Résultats de l'Analyse</h3>
+                <div class="result-item"><span class="label">Équation<br><small id="eq-label">(y = ax + b)</small></span><span id="equation-result" class="value"></span></div>
+                <div class="result-item"><span class="label">Détermination (R²)</span><span id="r2-result" class="value"></span></div>
+                <div class="result-item secondary-result"><span class="label">Écart-type résiduel (Sᵧ)<br><small id="df-label">(ν = n−2)</small></span><span id="sy-result" class="value"></span></div>
+                <hr>
+                <div class="result-item main-result"><span class="label">Concentration<br><small>(x₀)</small></span><span id="concentration-result" class="value"></span></div>
+                <div class="result-item secondary-result"><span class="label">Incertitude-type<br><small>u(x₀)</small></span><span id="uncertainty-result" class="value"></span></div>
+                <div class="result-item main-result"><span class="label">Résultat Final<br><small>(x₀ ± U, k≈2)</small></span><span id="expanded-uncertainty-result" class="value"></span></div>
+                <hr>
+                <div class="result-item secondary-result"><span class="label">Limite de Détection (LD)</span><span id="ld-result" class="value"></span></div>
+                <div class="result-item secondary-result"><span class="label">Limite de Quantification (LQ)</span><span id="lq-result" class="value"></span></div>
+                <small style="text-align: right; display: block; margin-top: 1rem; opacity: 0.8;">*U : Incertitude élargie (95%), k = t(ν, 0.975).</small>
+            </div>
+        </div>
+
+        <!-- Accordion Méthodologie -->
+        <div class="accordion" id="method-accordion">
+            <div class="accordion-header">Méthodologie et Formules utilisées</div>
+            <div class="accordion-content">
+                <p>Les calculs sont basés sur la régression linéaire au sens des moindres carrés et le <strong>GUM</strong> (Guide pour l'expression de l'incertitude de mesure, JCGM 100:2008).</p>
+
+                <div class="formula-tabs">
+                    <button class="formula-tab active-affine" id="tab-affine" onclick="showTab('affine')">Modèle Affine (Y = ax + b)</button>
+                    <button class="formula-tab" id="tab-linear" onclick="showTab('linear')">Modèle Linéaire (Y = ax)</button>
+                </div>
+
+                <!-- Panneau Affine -->
+                <div class="formula-panel visible" id="panel-affine">
+                    <h4>Estimation des paramètres</h4>
+                    <pre>Sxx  = Σ(xᵢ − x̄)²
+Sxy  = Σ(xᵢ − x̄)(yᵢ − ȳ)
+a    = Sxy / Sxx
+b    = ȳ − a·x̄
+ν    = n − 2  (degrés de liberté)</pre>
+
+                    <h4>Écart-type des résidus (Sᵧ)</h4>
+                    <pre>Sᵧ = √[ Σ(yᵢ − axᵢ − b)² / (n−2) ]</pre>
+
+                    <h4>Concentration inconnue</h4>
+                    <pre>x₀ = (y₀ − b) / a</pre>
+
+                    <h4>Incertitude-type u(x₀) — GUM</h4>
+                    <pre>u(x₀) = (Sᵧ / |a|) × √[ 1/m + 1/n + (y₀ − ȳ)² / (a²·Sxx) ]
+
+  1/m  → variance sur la mesure de y₀ (m = nb répétitions, ici m=1)
+  1/n  → incertitude sur l'ordonnée à l'origine b
+  (y₀−ȳ)²/(a²·Sxx) = (x₀−x̄)²/Sxx → distance au centre du domaine</pre>
+
+                    <h4>Incertitude élargie</h4>
+                    <pre>U = k × u(x₀)   avec k = t(ν=n−2, 95%)</pre>
+
+                    <h4>Limites de Détection (LD) et de Quantification (LQ) — ICH</h4>
+                    <pre>LD = (3,3 × Sᵧ) / |a|
+LQ = (10  × Sᵧ) / |a|</pre>
+                </div>
+
+                <!-- Panneau Linéaire -->
+                <div class="formula-panel" id="panel-linear">
+                    <h4>Estimation du paramètre</h4>
+                    <pre>Sxx0 = Σ xᵢ²
+a    = Σ(xᵢ·yᵢ) / Sxx0     (b = 0 imposé)
+ν    = n − 1  (degrés de liberté)</pre>
+
+                    <h4>Écart-type des résidus (Sᵧ)</h4>
+                    <pre>Sᵧ = √[ Σ(yᵢ − axᵢ)² / (n−1) ]</pre>
+
+                    <h4>Concentration inconnue</h4>
+                    <pre>x₀ = y₀ / a</pre>
+
+                    <h4>Incertitude-type u(x₀) — GUM</h4>
+                    <pre>u(x₀) = (Sᵧ / |a|) × √[ 1/m + x₀² / Sxx0 ]
+
+  = (Sᵧ / |a|) × √[ 1/m + y₀² / (a²·Sxx0) ]
+
+  1/m         → variance sur la mesure de y₀ (m=1)
+  x₀²/Sxx0   → distance à l'ORIGINE (la droite passe par (0,0))
+  Absence de terme 1/n : b=0 est connu, pas estimé</pre>
+
+                    <h4>Incertitude élargie</h4>
+                    <pre>U = k × u(x₀)   avec k = t(ν=n−1, 95%)</pre>
+
+                    <h4>Limites de Détection (LD) et de Quantification (LQ) — ICH</h4>
+                    <pre>LD = (3,3 × Sᵧ) / |a|
+LQ = (10  × Sᵧ) / |a|
+
+Note : Sᵧ calculé avec ν = n−1 → valeurs légèrement plus faibles qu'en modèle affine.</pre>
+                </div>
+
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    /* ── Gestion du sélecteur de modèle ─────────────────────── */
+    const modelRadios   = document.querySelectorAll('input[name="model"]');
+    const labelAffine   = document.getElementById('label-affine');
+    const labelLinear   = document.getElementById('label-linear');
+    const banner        = document.getElementById('model-context-banner');
+
+    const bannerText = {
+        affine: '⚠️ <strong>Modèle affine :</strong> deux paramètres estimés (a, b) — ν = n − 2. L\'incertitude est minimale au centre du domaine (x = x̄).',
+        linear: '⚠️ <strong>Modèle linéaire :</strong> un seul paramètre estimé (a) — ν = n − 1. La droite passe par l\'origine. L\'incertitude croît avec l\'éloignement de zéro.'
+    };
+
+    function getModel() {
+        return document.querySelector('input[name="model"]:checked').value;
+    }
+
+    modelRadios.forEach(r => r.addEventListener('change', () => {
+        const m = getModel();
+        labelAffine.className = 'model-option' + (m === 'affine' ? ' selected-affine' : '');
+        labelLinear.className = 'model-option' + (m === 'linear' ? ' selected-linear' : '');
+        banner.className = m === 'affine' ? 'banner-affine' : 'banner-linear';
+        banner.innerHTML = bannerText[m];
+        // Sync l'onglet de l'accordion
+        showTab(m);
+    }));
+
+    /* ── Gestion du tableau ──────────────────────────────────── */
+    const tableBody = document.querySelector('#calibration-table tbody');
+    const addRowBtn = document.getElementById('add-row-btn');
+    const calculateBtn = document.getElementById('calculate-btn');
+    const dashboard = document.getElementById('analysis-dashboard');
+    const errorMessage = document.getElementById('error-message');
+    const accordion = document.getElementById('method-accordion');
+    let calibrationChart = null;
+
+    const addRow = (x = '', y = '', isExample = false) => {
+        const rowCount = tableBody.rows.length;
+        const newRow = tableBody.insertRow();
+        const cls = isExample ? ' example-value' : '';
+        newRow.innerHTML = `<td>${rowCount + 1}</td>
+            <td><input type="number" class="x-value${cls}" value="${x}"></td>
+            <td><input type="number" class="y-value${cls}" value="${y}"></td>
+            <td class="action-cell"><button class="remove-row-btn">✖</button></td>`;
+        if (isExample) {
+            newRow.querySelectorAll('input').forEach(inp => {
+                inp.addEventListener('focus', function() {
+                    this.classList.remove('example-value');
+                }, { once: true });
+            });
+        }
+    };
+    const updateRowNumbers = () => tableBody.querySelectorAll('tr').forEach((row, i) => row.cells[0].textContent = i + 1);
+
+    addRowBtn.addEventListener('click', () => addRow());
+    tableBody.addEventListener('click', e => {
+        if (e.target.classList.contains('remove-row-btn')) {
+            e.target.closest('tr').remove();
+            updateRowNumbers();
+        }
+    });
+    tableBody.addEventListener('keydown', e => {
+        if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) return;
+        e.preventDefault();
+        const currentCell = e.target.closest('td');
+        const currentRow  = currentCell.closest('tr');
+        const rows = Array.from(tableBody.rows);
+        const ri = rows.indexOf(currentRow);
+        const ci = Array.from(currentRow.cells).indexOf(currentCell);
+        let t = null;
+        switch (e.key) {
+            case 'ArrowUp':    if (ri > 0)              t = rows[ri-1].cells[ci].querySelector('input'); break;
+            case 'ArrowDown':  if (ri < rows.length-1)  t = rows[ri+1].cells[ci].querySelector('input'); break;
+            case 'ArrowLeft':  t = ci > 1 ? currentRow.cells[ci-1].querySelector('input') : (ri > 0 ? rows[ri-1].cells[2].querySelector('input') : null); break;
+            case 'ArrowRight': t = ci < 2 ? currentRow.cells[ci+1].querySelector('input') : (ri < rows.length-1 ? rows[ri+1].cells[1].querySelector('input') : null); break;
+        }
+        if (t) { t.focus(); t.select(); }
+    });
+
+    /* ── Table de Student ────────────────────────────────────── */
+    const tTable = { 1:12.706, 2:4.303, 3:3.182, 4:2.776, 5:2.571, 6:2.447, 7:2.365, 8:2.306, 9:2.262, 10:2.228, 11:2.201, 12:2.179, 13:2.160, 14:2.145, 15:2.131, 16:2.120, 17:2.110, 18:2.101, 19:2.093, 20:2.086, 25:2.060, 30:2.042, Infinity:1.960 };
+    const getTValue = df => {
+        if (df <= 0) return tTable[1];
+        if (df >= 30) return tTable.Infinity;
+        if (tTable[df]) return tTable[df];
+        const keys = Object.keys(tTable).map(Number).sort((a,b)=>a-b);
+        const lo = keys.filter(k => k <= df).pop();
+        const hi = keys.find(k => k > df);
+        if (!hi) return tTable[lo];
+        // Interpolation linéaire
+        const t = (df - lo) / (hi - lo);
+        return tTable[lo] + t * (tTable[hi] - tTable[lo]);
+    };
+
+    /* ── Calcul principal ────────────────────────────────────── */
+    calculateBtn.addEventListener('click', () => {
+        dashboard.style.display = 'none';
+        errorMessage.style.display = 'none';
+
+        const xValues  = Array.from(document.querySelectorAll('.x-value')).map(i => parseFloat(i.value));
+        const yValues  = Array.from(document.querySelectorAll('.y-value')).map(i => parseFloat(i.value));
+        const unknownY = parseFloat(document.getElementById('unknown-y').value);
+        const pts = xValues.map((x, i) => ({ x, y: yValues[i] })).filter(p => !isNaN(p.x) && !isNaN(p.y));
+
+        if (pts.length < 3 || isNaN(unknownY)) { showError("Veuillez entrer au moins 3 points valides et une valeur Y₀."); return; }
+
+        const model = getModel();
+        const n = pts.length;
+        const cleanX = pts.map(p => p.x);
+        const cleanY = pts.map(p => p.y);
+        let res;
+
+        if (model === 'affine') {
+            res = calcAffine(cleanX, cleanY, unknownY, n);
+        } else {
+            res = calcLinear(cleanX, cleanY, unknownY, n);
+        }
+
+        if (res.error) { showError(res.error); return; }
+
+        displayResults(res, model);
+        displayChart(pts, res, unknownY, model);
+        dashboard.style.display = 'flex';
+        dashboard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    /* ── Modèle AFFINE : Y = ax + b ─────────────────────────── */
+    function calcAffine(cleanX, cleanY, y0, n) {
+        const sumX = cleanX.reduce((a,b)=>a+b,0);
+        const sumY = cleanY.reduce((a,b)=>a+b,0);
+        const meanX = sumX/n, meanY = sumY/n;
+        let Sxx=0, Sxy=0, SST=0;
+        for (let i=0;i<n;i++) { Sxx+=(cleanX[i]-meanX)**2; Sxy+=(cleanX[i]-meanX)*(cleanY[i]-meanY); SST+=(cleanY[i]-meanY)**2; }
+        if (Math.abs(Sxx) < 1e-15) return {error:"Erreur : toutes les valeurs X sont identiques."};
+        const a = Sxy/Sxx;
+        if (Math.abs(a) < 1e-15) return {error:"Erreur : la pente est nulle, calcul impossible."};
+        const b = meanY - a*meanX;
+        const SSR = cleanX.reduce((acc,xi,i)=>acc+(cleanY[i]-(a*xi+b))**2,0);
+        const df = n-2;
+        const Sy = Math.sqrt(SSR/df);
+        const R2 = SST===0 ? 1 : 1-(SSR/SST);
+        const x0 = (y0-b)/a;
+        const m = 1;
+        const uTerm = Math.sqrt(1/m + 1/n + (y0-meanY)**2/(a**2*Sxx));
+        const ux0 = (Sy/Math.abs(a))*uTerm;
+        const k = getTValue(df);
+        return { a, b, R2, Sy, df, x0, ux0, U: k*ux0, k,
+                 LD:(3.3*Sy)/Math.abs(a), LQ:(10*Sy)/Math.abs(a),
+                 meanX, meanY, Sxx };
+    }
+
+    /* ── Modèle LINÉAIRE : Y = ax ───────────────────────────── */
+    function calcLinear(cleanX, cleanY, y0, n) {
+        const Sxx0 = cleanX.reduce((acc,xi)=>acc+xi**2, 0);
+        const Sxy0 = cleanX.reduce((acc,xi,i)=>acc+xi*cleanY[i], 0);
+        if (Math.abs(Sxx0) < 1e-15) return {error:"Erreur : toutes les valeurs X sont nulles."};
+        const a = Sxy0/Sxx0;
+        if (Math.abs(a) < 1e-15) return {error:"Erreur : la pente est nulle, calcul impossible."};
+        const b = 0;
+        // R² pour modèle sans intercept : 1 - SSR/SST₀ avec SST₀=Σyi²
+        const SSR  = cleanX.reduce((acc,xi,i)=>acc+(cleanY[i]-a*xi)**2,0);
+        const SST0 = cleanY.reduce((acc,yi)=>acc+yi**2,0);
+        const R2  = SST0===0 ? 1 : 1-(SSR/SST0);
+        const df  = n-1;
+        const Sy  = Math.sqrt(SSR/df);
+        const x0  = y0/a;
+        const m   = 1;
+        const uTerm = Math.sqrt(1/m + x0**2/Sxx0);
+        const ux0 = (Sy/Math.abs(a))*uTerm;
+        const k = getTValue(df);
+        return { a, b, R2, Sy, df, x0, ux0, U: k*ux0, k,
+                 LD:(3.3*Sy)/Math.abs(a), LQ:(10*Sy)/Math.abs(a),
+                 Sxx0 };
+    }
+
+    /* ── Affichage des résultats ─────────────────────────────── */
+    function displayResults(res, model) {
+        const isAffine = model === 'affine';
+        const rc = document.getElementById('results-container');
+        const tag = document.getElementById('model-tag');
+
+        rc.className = isAffine ? '' : 'model-linear';
+        tag.className = isAffine ? 'tag-affine' : 'tag-linear';
+        tag.textContent = isAffine ? 'Modèle affine — Y = ax + b' : 'Modèle linéaire — Y = ax';
+
+        const bSign = res.b >= 0 ? '+' : '−';
+        const eq = isAffine
+            ? `y = ${res.a.toPrecision(5)}x ${bSign} ${Math.abs(res.b).toPrecision(4)}`
+            : `y = ${res.a.toPrecision(5)}x`;
+        document.getElementById('eq-label').textContent    = isAffine ? '(y = ax + b)' : '(y = ax)';
+        document.getElementById('df-label').textContent    = isAffine ? `(ν = n−2 = ${res.df})` : `(ν = n−1 = ${res.df})`;
+        document.getElementById('equation-result').textContent         = eq;
+        document.getElementById('r2-result').textContent              = res.R2.toFixed(5);
+        document.getElementById('sy-result').textContent              = res.Sy.toPrecision(4);
+        document.getElementById('concentration-result').textContent   = res.x0.toPrecision(4);
+        document.getElementById('uncertainty-result').textContent     = `${res.ux0.toPrecision(3)}  (k=${res.k.toFixed(3)})`;
+        document.getElementById('expanded-uncertainty-result').textContent = `${res.x0.toPrecision(4)} ± ${res.U.toPrecision(3)}`;
+        document.getElementById('ld-result').textContent = res.LD.toPrecision(2);
+        document.getElementById('lq-result').textContent = res.LQ.toPrecision(2);
+
+        // Couleur dynamique des résultats principaux
+        document.querySelectorAll('.main-result .label, .main-result .value').forEach(el => {
+            el.style.color = isAffine ? 'var(--primary-color)' : 'var(--accent-linear)';
+        });
+    }
+
+    /* ── Graphique ───────────────────────────────────────────── */
+    function displayChart(pts, res, y0, model) {
+        if (calibrationChart) calibrationChart.destroy();
+        const isAffine = model === 'affine';
+        const lineColor = isAffine ? 'rgb(50,50,50)' : 'rgb(231,115,42)';
+        const pointColor = isAffine ? 'rgb(0,90,156)' : 'rgb(231,115,42)';
+
+        const xs = pts.map(p=>p.x);
+        const minX = Math.min(...xs), maxX = Math.max(...xs);
+
+        // Droite de régression : on inclut l'origine si modèle linéaire
+        const lineStart = isAffine ? minX : 0;
+        const lineData = [
+            {x: lineStart, y: res.a*lineStart + res.b},
+            {x: maxX,      y: res.a*maxX      + res.b}
+        ];
+
+        // Point prédit (projection y0 → x0)
+        const x0 = res.x0;
+        const projData = [
+            {x: Math.min(x0, lineStart), y: y0},    // horizontal depuis axe Y
+            {x: x0, y: y0}
+        ];
+        const vertData = [
+            {x: x0, y: y0},
+            {x: x0, y: isAffine ? res.a*lineStart+res.b : 0}
+        ];
+
+        const ctx = document.getElementById('calibrationChart').getContext('2d');
+        calibrationChart = new Chart(ctx, {
+            type: 'scatter',
+            data: {
+                datasets: [
+                    {
+                        label: 'Points d\'étalonnage',
+                        data: pts,
+                        backgroundColor: pointColor,
+                        pointRadius: 6,
+                        order: 1
+                    },
+                    {
+                        label: 'Droite de régression',
+                        data: lineData,
+                        type: 'line',
+                        borderColor: lineColor,
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        order: 2
+                    },
+                    {
+                        label: `y₀ = ${y0} → x₀ = ${x0.toPrecision(4)}`,
+                        data: [{x: x0, y: y0}],
+                        backgroundColor: '#dc3545',
+                        pointRadius: 8,
+                        pointStyle: 'crossRot',
+                        order: 0
+                    },
+                    {
+                        label: '_proj_h',
+                        data: projData,
+                        type: 'line',
+                        borderColor: '#dc3545',
+                        borderWidth: 1.5,
+                        borderDash: [6,4],
+                        pointRadius: 0,
+                        order: 3
+                    },
+                    {
+                        label: '_proj_v',
+                        data: vertData,
+                        type: 'line',
+                        borderColor: '#dc3545',
+                        borderWidth: 1.5,
+                        borderDash: [6,4],
+                        pointRadius: 0,
+                        order: 3
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        labels: {
+                            filter: item => !item.text.startsWith('_')
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => {
+                                if (ctx.dataset.label.startsWith('_')) return null;
+                                return `${ctx.dataset.label}: (X=${ctx.parsed.x.toFixed(3)}, Y=${ctx.parsed.y.toFixed(4)})`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        type: 'linear',
+                        position: 'bottom',
+                        title: { display: true, text: 'Concentration (X)' }
+                    },
+                    y: {
+                        title: { display: true, text: 'Réponse (Y)' }
+                    }
+                }
+            }
+        });
+    }
+
+    /* ── Utilitaires ─────────────────────────────────────────── */
+    const showError = msg => { errorMessage.textContent = msg; errorMessage.style.display = 'block'; };
+    accordion.addEventListener('click', function() { this.classList.toggle('active'); });
+
+    /* ── Données d'exemple ───────────────────────────────────── */
+    [{x:0,y:0.05},{x:10,y:0.20},{x:20,y:0.34},{x:30,y:0.49},{x:40,y:0.65}].forEach(p => addRow(p.x, p.y, true));
+    const unknownYInput = document.getElementById('unknown-y');
+    unknownYInput.value = 0.42;
+    unknownYInput.classList.add('example-value');
+    unknownYInput.addEventListener('focus', function() { this.classList.remove('example-value'); }, { once: true });
+});
+
+/* ── Onglets de l'accordion (global) ────────────────────────── */
+function showTab(model) {
+    document.getElementById('panel-affine').className  = 'formula-panel' + (model==='affine' ? ' visible' : '');
+    document.getElementById('panel-linear').className  = 'formula-panel' + (model==='linear' ? ' visible' : '');
+    document.getElementById('tab-affine').className    = 'formula-tab'   + (model==='affine' ? ' active-affine' : '');
+    document.getElementById('tab-linear').className    = 'formula-tab'   + (model==='linear' ? ' active-linear' : '');
+}
+</script>
+
+</body>
+</html>
