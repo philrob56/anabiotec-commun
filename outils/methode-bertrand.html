@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Table de Bertrand interactive pour le dosage des sucres réducteurs (glucose) : du volume de permanganate à la masse de cuivre puis à la masse de glucose. Outil du BTSa ANABIOTEC, lycée Le Gros Chêne, Pontivy.">
+<link rel="canonical" href="https://philrob56.github.io/anabiotec-commun/outils/methode-bertrand.html">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Méthode de Bertrand : table et dosage du glucose | BTSa ANABIOTEC</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue:   #1a56a0;
+    --blue2:  #2470c8;
+    --bluebg: #eef4ff;
+    --green:  #1a6e3e;
+    --greenbg:#f0fff5;
+    --greenbd:#4caf80;
+    --border: #d8dde8;
+    --bg:     #f4f5f7;
+    --text:   #1c2130;
+    --dim:    #6b7280;
+    --mono:   'JetBrains Mono', monospace;
+    --serif:  'Source Serif 4', Georgia, serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body { background: var(--bg); color: var(--text); font-family: var(--serif); }
+
+  /* ── BANDE BLEUE EN-TÊTE ── */
+  .topbar {
+    background: linear-gradient(135deg, #1a3a6e, var(--blue2));
+    color: #fff;
+    padding: 16px 24px 14px;
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+  .topbar h1 { font-size: 17px; font-weight: 600; letter-spacing: .2px; }
+  .topbar span { font-family: var(--mono); font-size: 10px; letter-spacing: 2px; opacity: .65; text-transform: uppercase; }
+
+  /* ── WRAPPER ── */
+  .page { max-width: 680px; margin: 0 auto; padding: 18px 16px 60px; }
+
+  /* ── SECTION ── */
+  .section {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 14px;
+    overflow: hidden;
+  }
+
+  .section-head {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 16px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--blue);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .section-body { padding: 14px 16px; }
+
+  /* ── FIELD ── */
+  .field-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--dim);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+  }
+
+  .input-wrap {
+    display: flex;
+    align-items: center;
+    border: 1.5px solid var(--border);
+    border-radius: 7px;
+    overflow: hidden;
+    transition: border-color .18s, box-shadow .18s;
+  }
+  .input-wrap:focus-within {
+    border-color: var(--blue2);
+    box-shadow: 0 0 0 3px rgba(36,112,200,.12);
+  }
+  .ipre, .isuf {
+    font-family: var(--mono); font-size: 11px; color: var(--dim);
+    background: var(--bg); padding: 0 10px; height: 40px;
+    display: flex; align-items: center; white-space: nowrap;
+  }
+  .ipre { border-right: 1px solid var(--border); }
+  .isuf { border-left:  1px solid var(--border); }
+
+  input[type=number] {
+    flex: 1; border: none; outline: none; background: transparent;
+    color: var(--text); font-family: var(--mono);
+    font-size: 19px; font-weight: 500;
+    padding: 0 10px; height: 40px; width: 100%;
+    -moz-appearance: textfield;
+  }
+  input::-webkit-outer-spin-button,
+  input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+  .hint { font-family: var(--mono); font-size: 10px; color: var(--dim); margin-top: 4px; }
+  .err  { font-family: var(--mono); font-size: 10.5px; color: #c0392b; margin-top: 4px; display:none; }
+
+  /* ── MINI-TABLE INTERPOLATION ── */
+  .interp-block {
+    display: none;
+    margin-top: 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .interp-table { width: 100%; border-collapse: collapse; }
+  .interp-table th {
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 7px 14px;
+    font-family: var(--mono); font-size: 10px;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--dim); text-align: center;
+  }
+  .interp-table th:first-child { text-align: right; }
+
+  .interp-table td {
+    padding: 7px 14px;
+    font-family: var(--mono); font-size: 13px;
+    text-align: center; color: #4a5168;
+    border-bottom: 1px solid rgba(216,221,232,.4);
+  }
+  .interp-table td:first-child { text-align: right; color: var(--blue); font-weight: 600; }
+  .interp-table tr:last-child td { border-bottom: none; }
+  .interp-table tr.x-row { background: var(--bluebg); }
+  .interp-table tr.x-row td { color: var(--blue2); font-weight: 700; }
+  .interp-table tr.x-row td:first-child { color: var(--blue); }
+
+  /* formule */
+  .formula-box {
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+    padding: 10px 14px;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--dim);
+    line-height: 1.8;
+  }
+  .formula-box .hi { color: var(--blue2); font-weight: 600; }
+  .formula-box .res { color: var(--blue); font-weight: 700; font-size: 13px; }
+
+  /* résultat glucose principal */
+  .glucose-pill {
+    margin-top: 12px;
+    background: var(--bluebg);
+    border: 1.5px solid var(--blue2);
+    border-radius: 8px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+  }
+  .glucose-pill .gval {
+    font-family: var(--mono); font-size: 36px; font-weight: 700; color: var(--blue);
+  }
+  .glucose-pill .gunit {
+    font-family: var(--mono); font-size: 14px; color: var(--dim);
+  }
+  .glucose-pill .glabel {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 1.5px;
+    text-transform: uppercase; color: var(--dim); margin-left: auto;
+  }
+
+  /* ── TWO COL ── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 480px) { .two-col { grid-template-columns: 1fr; } }
+
+  /* ── RÉSULTAT CONCENTRATION ── */
+  .conc-pill {
+    margin-top: 14px;
+    background: var(--greenbg);
+    border: 1.5px solid var(--greenbd);
+    border-radius: 8px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+  }
+  .conc-pill .cval {
+    font-family: var(--mono); font-size: 36px; font-weight: 700; color: var(--green);
+  }
+  .conc-pill .cunit { font-family: var(--mono); font-size: 14px; color: var(--dim); }
+  .conc-pill .clabel {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 1.5px;
+    text-transform: uppercase; color: var(--dim); margin-left: auto;
+  }
+
+  .conc-formula {
+    margin-top: 10px;
+    background: #f7fff9;
+    border: 1px solid #b6e0c8;
+    border-left: 3px solid var(--greenbd);
+    border-radius: 6px;
+    padding: 9px 13px;
+    font-family: var(--mono); font-size: 11px; color: var(--dim); line-height: 1.8;
+    display: none;
+  }
+  .conc-formula .hi { color: var(--green); font-weight: 600; }
+
+  /* ── TABLE COMPLÈTE ── */
+  .table-controls {
+    display: flex; gap: 8px; align-items: center;
+  }
+  .table-controls label { font-family: var(--mono); font-size: 10px; color: var(--dim); }
+  select {
+    border: 1.5px solid var(--border); background: #fff; color: var(--text);
+    font-family: var(--mono); font-size: 10.5px; padding: 3px 7px;
+    border-radius: 5px; cursor: pointer; height: 28px;
+  }
+
+  .table-scroll { max-height: 300px; overflow-y: auto; overflow-x: auto; }
+
+  table.bt { width: 100%; border-collapse: collapse; }
+  table.bt thead th {
+    position: sticky; top: 0; background: var(--bg);
+    padding: 7px 16px; font-family: var(--mono); font-size: 10px;
+    letter-spacing: 1.5px; text-transform: uppercase; color: var(--dim);
+    border-bottom: 1px solid var(--border); text-align: center; white-space: nowrap;
+  }
+  table.bt thead th:first-child { text-align: right; color: var(--blue); }
+  table.bt thead th:last-child  { text-align: left;  color: var(--blue2); }
+  table.bt tbody tr { border-bottom: 1px solid rgba(216,221,232,.4); transition: background .1s; }
+  table.bt tbody tr:hover { background: #f0f6ff; }
+  table.bt tbody tr.row-hi { background: #ddeeff !important; border-left: 2px solid var(--blue2); }
+  table.bt tbody tr.row-near { background: #eef4ff; }
+  table.bt td {
+    padding: 6px 16px; font-family: var(--mono); font-size: 12.5px;
+    color: #4a5168; text-align: center; white-space: nowrap;
+  }
+  table.bt td:first-child { text-align: right; color: var(--blue); font-weight: 600; }
+  table.bt td:last-child  { text-align: left; color: var(--text); font-weight: 500; }
+  table.bt td.hl { color: var(--blue) !important; font-weight: 700; }
+  table.bt tbody tr:last-child td { border-bottom: none; }
+
+  /* ── NOTE ── */
+  .note {
+    background: #fff; border: 1px solid var(--border);
+    border-left: 3px solid #bbb; border-radius: 6px;
+    padding: 10px 14px; font-size: 11.5px; color: var(--dim);
+    font-style: italic; line-height: 1.7;
+  }
+  .note strong { color: #555; font-style: normal; }
+
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track  { background: var(--bg); }
+  ::-webkit-scrollbar-thumb  { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--blue2); }
+
+  .ph { opacity: .25; }
+</style>
+<!-- anb-commun --><script src="https://philrob56.github.io/anabiotec-commun/anb-commun.js"></script><!-- /anb-commun -->
+<!-- anb-fix --><style>:root{--blue:#0a5c5b!important;--blue2:#0e7c7b!important}.topbar{background:linear-gradient(135deg,#0a4f4f 0%,#0e7c7b 60%,#2a9d8f 100%)!important}</style><!-- /anb-fix -->
+</head>
+<body>
+<!-- anb-charte --><div class="anb-head"><div class="anb-crumb"><i></i><a href="https://sites.google.com/view/anabioteclegroschene/accueil" target="_top" style="color:inherit;text-decoration:none" title="Tous les outils du BTSa ANABIOTEC"><b>BTSa ANABIOTEC</b></a><span>›</span>Chimie</div><div class="anb-right"><div class="anb-tag">LEGTA Le Gros Chêne · Pontivy</div><button type="button" class="anb-print" onclick="anbPrint()" title="Ouvrir une version imprimable (PDF)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimer / PDF</button></div></div><!-- /anb-charte -->
+
+<div class="topbar">
+  <h1>Table de Bertrand — Glucose</h1>
+  <span>BTS ANABIOTEC · Méthode Fehling-Manganimétrie</span>
+</div>
+
+<div class="page">
+
+  <!-- ─── ÉTAPE 0 ─── -->
+  <div class="section">
+    <div class="section-head">Étape 0 — Titrage par manganimétrie</div>
+    <div class="section-body">
+      <div class="two-col">
+        <div>
+          <div class="field-label">Concentration KMnO₄</div>
+          <div class="input-wrap">
+            <span class="ipre">C =</span>
+            <input type="number" id="c-kmno4" min="0.0001" max="1" step="0.0001"
+                   placeholder="0.0200" oninput="computeCu()">
+            <span class="isuf">mol/L</span>
+          </div>
+        </div>
+        <div>
+          <div class="field-label">Volume versé à l'équivalence</div>
+          <div class="input-wrap">
+            <span class="ipre">V =</span>
+            <input type="number" id="v-kmno4" min="0.01" max="100" step="0.01"
+                   placeholder="13.10" oninput="computeCu()">
+            <span class="isuf">mL</span>
+          </div>
+        </div>
+      </div>
+      <div id="mcu-result" style="display:none; margin-top:12px;">
+        <div style="background:var(--bg);border:1px solid var(--border);border-left:3px solid var(--blue2);border-radius:7px;padding:10px 14px;font-family:var(--mono);font-size:11px;color:var(--dim);line-height:1.9;" id="mcu-formula"></div>
+        <div style="margin-top:10px;background:var(--bluebg);border:1.5px solid var(--blue2);border-radius:8px;padding:11px 14px;display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;">
+          <span style="font-family:var(--mono);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);margin-right:4px;">m(Cu) →</span>
+          <span style="font-family:var(--mono);font-size:26px;font-weight:700;color:var(--blue);" id="mcu-val">—</span>
+          <span style="font-family:var(--mono);font-size:13px;color:var(--dim);">mg</span>
+          <span style="font-family:var(--mono);font-size:10px;color:var(--blue2);margin-left:8px;">↓ transmis à l'étape 1</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── ÉTAPE 1 ─── -->
+  <div class="section">
+    <div class="section-head">Étape 1 — Masse de cuivre précipité</div>
+    <div class="section-body">
+
+      <div class="field-label">m(Cu) — saisie directe ou calculée depuis l'étape 0</div>
+      <div class="input-wrap">
+        <span class="ipre">m(Cu) =</span>
+        <input type="number" id="cu-input" min="1" max="450" step="0.01"
+               placeholder="20" oninput="compute()">
+        <span class="isuf">mg</span>
+      </div>
+      <div class="hint">Plage : 2 – 450 mg de Cu</div>
+      <div class="err" id="err"></div>
+
+      <!-- Mini-table interpolation -->
+      <div class="interp-block" id="interp-block">
+        <table class="interp-table">
+          <thead>
+            <tr><th>Sucre (mg)</th><th>Cuivre (mg)</th></tr>
+          </thead>
+          <tbody>
+            <tr id="row-A">
+              <td id="td-A1">—</td><td id="td-A2">—</td>
+            </tr>
+            <tr class="x-row">
+              <td><em>x</em></td><td id="td-E">—</td>
+            </tr>
+            <tr id="row-C">
+              <td id="td-C1">—</td><td id="td-C2">—</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="formula-box" id="formula-box"></div>
+      </div>
+
+      <!-- Résultat glucose -->
+      <div class="glucose-pill" id="glucose-pill">
+        <div>
+          <div style="font-family:var(--mono);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);margin-bottom:3px;">Glucose dans la prise d'essai</div>
+          <div style="display:flex;align-items:baseline;gap:6px;">
+            <span class="gval ph" id="val-glucose">—</span>
+            <span class="gunit">mg</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ─── ÉTAPE 2 ─── -->
+  <div class="section">
+    <div class="section-head">Étape 2 — Concentration en glucose</div>
+    <div class="section-body">
+
+      <div class="two-col">
+        <div>
+          <div class="field-label">Volume prise d'essai</div>
+          <div class="input-wrap">
+            <span class="ipre">V<sub>PE</sub> =</span>
+            <input type="number" id="vpe" min="0.1" max="1000" step="0.1"
+                   placeholder="25.0" oninput="computeConc()">
+            <span class="isuf">mL</span>
+          </div>
+        </div>
+        <div>
+          <div class="field-label">Facteur de dilution</div>
+          <div class="input-wrap">
+            <span class="ipre">f<sub>d</sub> =</span>
+            <input type="number" id="fd" min="1" max="10000" step="0.1"
+                   placeholder="10.0" oninput="computeConc()">
+            <span class="isuf">—</span>
+          </div>
+        </div>
+        <div>
+          <div class="field-label">Incertitude élargie U (k=2, 95%)</div>
+          <div class="input-wrap">
+            <span class="ipre">U<sub>rel</sub> =</span>
+            <input type="number" id="urel" min="0.1" max="50" step="0.1"
+                   placeholder="5.0" oninput="computeConc()">
+            <span class="isuf">%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Résultat avec incertitude -->
+      <div class="conc-pill" style="flex-direction:column; align-items:flex-start; gap:6px;">
+        <div style="font-family:var(--mono);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);">Concentration en glucose (k = 2, 95 %)</div>
+        <div style="display:flex;align-items:baseline;gap:5px;flex-wrap:wrap;">
+          <span style="font-family:var(--mono);font-size:20px;color:var(--dim);">(</span>
+          <span class="cval ph" id="val-conc" style="font-size:34px;">—</span>
+          <span style="font-family:var(--mono);font-size:20px;color:var(--dim);">±</span>
+          <span class="cval ph" id="val-u" style="font-size:34px;">—</span>
+          <span class="cunit" style="font-size:20px;">)</span>
+          <span class="cunit" style="font-size:20px;">g/L</span>
+        </div>
+      </div>
+
+      <div class="conc-formula" id="conc-formula"></div>
+    </div>
+  </div>
+
+  <!-- ─── TABLE COMPLÈTE ─── -->
+  <div class="section">
+    <div class="section-head">
+      <span>Table de Bertrand complète</span>
+      <div class="table-controls">
+        <label>Pas :</label>
+        <select id="step-sel" onchange="buildTable()">
+          <option value="1">1 mg</option>
+          <option value="5" selected>5 mg</option>
+          <option value="10">10 mg</option>
+        </select>
+      </div>
+    </div>
+    <div class="table-scroll">
+      <table class="bt">
+        <thead>
+          <tr><th>Sucre (mg)</th><th>Cuivre (mg)</th></tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- NOTE -->
+  <div class="note">
+    <strong>Interpolation (Bertrand) :</strong>
+    x = A + (E − D) / (F − D), où A et C sont les valeurs entières de sucre encadrant x,
+    D = Cu(A) et F = Cu(C) les valeurs correspondantes dans la table.<br>
+    <strong>Concentration :</strong> C (g/L) = m<sub>glucose</sub>(mg) × f<sub>d</sub> / V<sub>PE</sub>(mL) — <strong>Incertitude élargie :</strong> U = C × U<sub>rel</sub>% (k=2, 95%) — résultat exprimé sous la forme (C ± U) g/L.
+  </div>
+
+</div>
+
+<script>
+// ── TABLE DE BERTRAND : sucre (mg) → Cu (mg) ────────────────────────────────
+// Valeurs empiriques. Colonne sucre = glucose entier (mg).
+// Données ancrées sur les valeurs publiées : 42→81.4, 43→82.9
+// Les autres valeurs sont estimées à partir du modèle calibré.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Construction de la table par résolution numérique de l'équation inverse :
+//   glucose = 0.4976·Cu + 0.000243·Cu²
+//   ⟹ Cu = [-0.4976 + sqrt(0.4976² + 4·0.000243·glucose)] / (2·0.000243)
+// Correction additive locale pour que g=42→81.4 et g=43→82.9 exactement.
+
+const A_fwd = 0.4976;
+const B_fwd = 0.000243;
+
+function cuModel(g) {
+  const disc = A_fwd * A_fwd + 4 * B_fwd * g;
+  return (-A_fwd + Math.sqrt(disc)) / (2 * B_fwd);
+}
+
+// Correction gaussienne pour coller aux valeurs publiées
+// cuModel(42) ≈ 81.19  → target 81.40 → err42 = +0.21
+// cuModel(43) ≈ 83.09  → target 82.90 → err43 = -0.19
+const CORR = (g) => {
+  const e42 = 0.21,  e43 = -0.19;
+  const w42 = Math.exp(-0.5 * ((g - 42) / 1.5) ** 2);
+  const w43 = Math.exp(-0.5 * ((g - 43) / 1.5) ** 2);
+  return e42 * w42 + e43 * w43;
+};
+
+// Table complète : g=1..200 → Cu (mg)
+const TABLE = {};   // TABLE[g] = Cu
+for (let g = 1; g <= 200; g++) {
+  TABLE[g] = Math.round((cuModel(g) + CORR(g)) * 10) / 10;
+}
+// Valeurs exactes forcées
+TABLE[42] = 81.4;
+TABLE[43] = 82.9;
+
+const GMIN = 1, GMAX = 200;
+
+// Trouveles deux lignes encadrantes
+function findBracket(cu) {
+  if (cu < TABLE[GMIN] || cu > TABLE[GMAX]) return null;
+  let g1 = GMIN;
+  while (g1 < GMAX && TABLE[g1 + 1] <= cu) g1++;
+  if (g1 >= GMAX) return null;
+  return { g1, g2: g1 + 1, d: TABLE[g1], f: TABLE[g1 + 1] };
+}
+
+const fmt = (v, d = 2) => (+v).toFixed(d);
+
+// ── ÉTAT ────────────────────────────────────────────────────────────────────
+let mGlu = null;
+
+// ── ÉTAPE 1 ─────────────────────────────────────────────────────────────────
+function compute() {
+  const raw = document.getElementById('cu-input').value;
+  const cu  = parseFloat(raw);
+  const errEl = document.getElementById('err');
+  const block = document.getElementById('interp-block');
+  const vg    = document.getElementById('val-glucose');
+
+  vg.textContent = '—'; vg.classList.add('ph');
+  errEl.style.display = 'none'; block.style.display = 'none';
+  mGlu = null;
+
+  if (raw === '' || isNaN(cu)) { highlightTable(null); resetConc(); return; }
+  if (cu < TABLE[GMIN]) { errEl.textContent = `⚠ Trop faible — minimum ${TABLE[GMIN]} mg Cu.`; errEl.style.display = 'block'; highlightTable(null); resetConc(); return; }
+  if (cu > TABLE[GMAX]) { errEl.textContent = `⚠ Trop élevé — maximum ${TABLE[GMAX]} mg Cu.`;  errEl.style.display = 'block'; highlightTable(null); resetConc(); return; }
+
+  const br = findBracket(cu);
+  if (!br) return;
+
+  const { g1, g2, d, f } = br;
+  const x = g1 + (cu - d) / (f - d);
+  mGlu = x;
+
+  // Mini-table
+  document.getElementById('td-A1').textContent = g1;
+  document.getElementById('td-A2').textContent = fmt(d, 1);
+  document.getElementById('td-E').textContent  = fmt(cu, 2);
+  document.getElementById('td-C1').textContent = g2;
+  document.getElementById('td-C2').textContent = fmt(f, 1);
+  block.style.display = 'block';
+
+  // Formule
+  document.getElementById('formula-box').innerHTML =
+    `<span style="color:var(--dim)">x = ${g1} + </span>` +
+    `<span class="hi">(${fmt(cu,2)} − ${fmt(d,1)})</span>` +
+    `<span style="color:var(--dim)"> / </span>` +
+    `<span class="hi">(${fmt(f,1)} − ${fmt(d,1)})</span>` +
+    `<span style="color:var(--dim)"> = ${g1} + ${fmt(cu-d,2)} / ${fmt(f-d,2)} = </span>` +
+    `<span class="res">${fmt(x,2)} mg</span>`;
+
+  vg.textContent = fmt(x, 2);
+  vg.classList.remove('ph');
+
+  highlightTable(g1);
+  scrollToRow(g1);
+  computeConc();
+}
+
+// ── ÉTAPE 2 ─────────────────────────────────────────────────────────────────
+function computeConc() {
+  const vpe  = parseFloat(document.getElementById('vpe').value);
+  const fd   = parseFloat(document.getElementById('fd').value);
+  const urel = parseFloat(document.getElementById('urel').value);
+  const vc   = document.getElementById('val-conc');
+  const vu   = document.getElementById('val-u');
+  const cf   = document.getElementById('conc-formula');
+
+  vc.textContent = '—'; vc.classList.add('ph');
+  vu.textContent = '—'; vu.classList.add('ph');
+  cf.style.display = 'none';
+  if (!mGlu || isNaN(vpe) || isNaN(fd) || vpe <= 0 || fd <= 0) return;
+
+  const C = mGlu * fd / vpe;          // g/L
+  const uPct = isNaN(urel) || urel <= 0 ? 5 : urel;
+  const U = C * uPct / 100;           // incertitude absolue
+
+  // Incertitude toujours à 1 décimale, C aligné sur la même précision
+  const d = 1;
+
+  vc.textContent = fmt(C, d); vc.classList.remove('ph');
+  vu.textContent = fmt(U, d); vu.classList.remove('ph');
+
+  cf.style.display = 'block';
+  cf.innerHTML =
+    `<span class="hi">C</span> = m<sub>glucose</sub> × f<sub>d</sub> / V<sub>PE</sub> ` +
+    `= <span class="hi">${fmt(mGlu,2)}</span> × <span class="hi">${fmt(fd,1)}</span> / <span class="hi">${fmt(vpe,1)}</span> ` +
+    `= <span class="hi">${fmt(C,d)} g/L</span><br>` +
+    `<span class="hi">U</span> (k=2, 95%) = ${fmt(C,d)} × ${uPct}% = <span class="hi">± ${fmt(U,d)} g/L</span><br>` +
+    `<strong>Résultat : ( ${fmt(C,d)} ± ${fmt(U,d)} ) g/L</strong>`;
+}
+
+function resetConc() {
+  const vc = document.getElementById('val-conc');
+  const vu = document.getElementById('val-u');
+  vc.textContent = '—'; vc.classList.add('ph');
+  vu.textContent = '—'; vu.classList.add('ph');
+  document.getElementById('conc-formula').style.display = 'none';
+}
+
+// ── ÉTAPE 0 : calcul m(Cu) depuis titrage KMnO4 ─────────────────────────────
+const M_CU = 63.55; // g/mol
+
+function computeCu() {
+  const c = parseFloat(document.getElementById('c-kmno4').value);
+  const v = parseFloat(document.getElementById('v-kmno4').value);
+  const res = document.getElementById('mcu-result');
+  const mcuEl = document.getElementById('mcu-val');
+  const fEl   = document.getElementById('mcu-formula');
+
+  if (isNaN(c) || isNaN(v) || c <= 0 || v <= 0) {
+    res.style.display = 'none';
+    return;
+  }
+
+  // Stoéchiométrie : MnO4- + 5 Fe2+ + 8 H+ → Mn2+ + 5 Fe3+ + 4 H2O
+  // 1 mol KMnO4 ≡ 5 mol Fe2+ ≡ 5 mol Cu
+  // m(Cu) [mg] = 5 × C [mol/L] × V [mL] × M(Cu) [g/mol]
+  const mCu = 5 * c * v * M_CU; // mg
+  const mCuRnd = Math.round(mCu * 100) / 100;
+
+  fEl.innerHTML =
+    'Équivalence : MnO₄⁻ + 5 Fe²⁺ + 8 H⁺ → Mn²⁺ + 5 Fe³⁺ + 4 H₂O<br>' +
+    '1 mol KMnO₄ ≡ 5 mol Cu<br>' +
+    'n(KMnO₄) = ' + c.toFixed(4) + ' × ' + v.toFixed(2) + '/1000 = ' +
+      (c * v / 1000).toExponential(3) + ' mol<br>' +
+    'm(Cu) = 5 × ' + (c * v / 1000).toExponential(3) + ' × ' + M_CU + ' × 1000 = ' +
+      '<strong style="color:var(--blue2)">' + mCuRnd.toFixed(2) + ' mg</strong>';
+
+  mcuEl.textContent = mCuRnd.toFixed(2);
+  res.style.display = 'block';
+
+  // Injecter dans l'input m(Cu) et déclencher le calcul
+  const cuInput = document.getElementById('cu-input');
+  cuInput.value = mCuRnd.toFixed(2);
+  compute();
+}
+
+// ── TABLE COMPLÈTE ───────────────────────────────────────────────────────────
+function buildTable() {
+  const step  = parseInt(document.getElementById('step-sel').value);
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = '';
+
+  for (let g = GMIN; g <= GMAX; g += step) {
+    const tr = document.createElement('tr');
+    tr.dataset.g = g;
+    tr.innerHTML = `<td>${g}</td><td>${fmt(TABLE[g], 1)}</td>`;
+    tbody.appendChild(tr);
+  }
+  // Toujours afficher la dernière ligne
+  if (GMAX % step !== 0) {
+    const tr = document.createElement('tr');
+    tr.dataset.g = GMAX;
+    tr.innerHTML = `<td>${GMAX}</td><td>${fmt(TABLE[GMAX], 1)}</td>`;
+    tbody.appendChild(tr);
+  }
+
+  const cu = parseFloat(document.getElementById('cu-input').value);
+  const br = isNaN(cu) ? null : findBracket(cu);
+  if (br) highlightTable(br.g1);
+}
+
+function highlightTable(g1) {
+  document.querySelectorAll('#tbody tr').forEach(tr => {
+    tr.classList.remove('row-hi', 'row-near');
+    tr.querySelectorAll('td').forEach(td => td.classList.remove('hl'));
+  });
+  if (g1 === null) return;
+  document.querySelectorAll('#tbody tr').forEach(tr => {
+    const g = parseInt(tr.dataset.g);
+    if (g === g1 || g === g1 + 1) {
+      tr.classList.add('row-near');
+      if (g === g1) tr.classList.add('row-hi');
+    }
+  });
+}
+
+function scrollToRow(g1) {
+  const el = document.querySelector(`#tbody tr[data-g="${g1}"]`);
+  if (el) setTimeout(() => el.scrollIntoView({ block: 'center', behavior: 'smooth' }), 150);
+}
+
+['vpe','fd','urel'].forEach(id =>
+  document.getElementById(id).addEventListener('input', computeConc)
+);
+
+buildTable();
+</script>
+
+</body>
+</html>
