@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+<meta name="description" content="Calculez la masse molaire d’un composé chimique à partir de sa formule brute. Outil de chimie du BTSa ANABIOTEC, lycée Le Gros Chêne, Pontivy.">
+<link rel="canonical" href="https://philrob56.github.io/anabiotec-commun/outils/masse-molaire.html">
+    <title>Calculateur de masse molaire à partir de la formule brute | BTSa ANABIOTEC</title>
+    <style>
+        :root {
+            --primary-color: #6c63ff;
+            --primary-hover: #5a52e0;
+            --bg-color: #f8f9fa;
+            --text-color: #2d3436;
+            --input-bg: #ffffff;
+            --card-bg: #ffffff;
+            --shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+            --border-radius: 15px;
+        }
+
+        [data-theme="dark"] {
+            --primary-color: #8f88ff;
+            --primary-hover: #7a73ff;
+            --bg-color: #1a1b1e;
+            --text-color: #ffffff;
+            --input-bg: #2d2d2d;
+            --card-bg: #2d2d2d;
+            --shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: all 0.3s ease;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            padding: 2rem;
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 2.2rem;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        input {
+            width: 100%;
+            padding: 1rem 1.5rem;
+            font-size: 1.1rem;
+            border: 2px solid transparent;
+            border-radius: var(--border-radius);
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            text-align: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.2);
+        }
+
+        input::placeholder {
+            color: #888;
+        }
+
+        button {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(108, 99, 255, 0.2);
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(108, 99, 255, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        #result {
+            text-align: center;
+            font-size: 1.2em;
+            margin-top: 1.5rem;
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            transition: all 0.3s ease;
+        }
+
+        .result-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin: 1rem 0;
+            color: var(--primary-color);
+        }
+
+        .theme-switch {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: var(--card-bg);
+            padding: 0.8rem;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+            font-size: 1.2rem;
+        }
+
+        .theme-switch:hover {
+            transform: rotate(15deg);
+        }
+
+        .error {
+            color: #ff4757;
+            background-color: rgba(255, 71, 87, 0.1);
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .formula {
+            font-size: 1.3rem;
+            color: var(--text-color);
+            margin-bottom: 0.5rem;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 1.5rem;
+            }
+
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .result-value {
+                font-size: 1.6rem;
+            }
+        }
+    </style>
+<!-- anb-commun --><script src="https://philrob56.github.io/anabiotec-commun/anb-commun.js"></script><!-- /anb-commun -->
+<!-- anb-charte --><style>body{flex-direction:column!important;justify-content:flex-start!important;align-items:center!important}@media (max-width:700px){body>*{max-width:100%;box-sizing:border-box}}</style><!-- /anb-charte -->
+<!-- anb-fix --><style>:root{--primary-color:#0e7c7b!important}</style><!-- /anb-fix -->
+</head>
+<body>
+<!-- anb-charte --><div class="anb-head"><div class="anb-crumb"><i></i><a href="https://sites.google.com/view/anabioteclegroschene/accueil" target="_top" style="color:inherit;text-decoration:none" title="Tous les outils du BTSa ANABIOTEC"><b>BTSa ANABIOTEC</b></a><span>›</span>Chimie</div><div class="anb-right"><div class="anb-tag">LEGTA Le Gros Chêne · Pontivy</div><button type="button" class="anb-print" onclick="anbPrint()" title="Ouvrir une version imprimable (PDF)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimer / PDF</button></div></div><!-- /anb-charte -->
+    <div class="theme-switch" onclick="toggleTheme()" title="Changer le thème">
+        🌙
+    </div>
+    
+    <div class="container">
+        <h1>Calculateur de Masse Molaire</h1>
+        
+        <div class="input-group">
+            <input type="text" id="formula" placeholder="Entrez la formule moléculaire (ex: CuSO4,5H2O)" 
+                   autocomplete="off" spellcheck="false"/>
+        </div>
+        
+        <button onclick="calculateMolarMass()">Calculer</button>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const atomicMasses = {
+            H: 1.008,
+            He: 4.003,
+            Li: 6.941,
+            Be: 9.012,
+            B: 10.811,
+            C: 12.011,
+            N: 14.007,
+            O: 15.999,
+            F: 18.998,
+            Ne: 20.180,
+            Na: 22.990,
+            Mg: 24.305,
+            Al: 26.982,
+            Si: 28.086,
+            P: 30.974,
+            S: 32.065,
+            Cl: 35.453,
+            K: 39.098,
+            Ca: 40.078,
+            Fe: 55.845,
+            Cu: 63.546,
+            Zn: 65.380,
+            Br: 79.904,
+            I: 126.904,
+	Ba: 137.327,
+	Mn: 54.938,
+	Co: 58.933,
+	Ni: 58.6934,
+	Cr:51.9961,
+	Ag:107.8682,
+	Mo: 95.95,
+	Ti:47.867,
+	Ce:140.116
+		
+        };
+
+        function calculatePartMass(formula) {
+            let result = 0;
+            let element = '';
+            let number = '';
+            let i = 0;
+
+            while (i < formula.length) {
+                if (formula[i].match(/[A-Z]/)) {
+                    if (element) {
+                        if (!atomicMasses[element]) {
+                            throw new Error(`Élément inconnu : ${element}`);
+                        }
+                        result += atomicMasses[element] * (number ? parseInt(number) : 1);
+                        number = '';
+                    }
+                    element = formula[i];
+                    if (i + 1 < formula.length && formula[i + 1].match(/[a-z]/)) {
+                        element += formula[i + 1];
+                        i++;
+                    }
+                } else if (formula[i].match(/[0-9]/)) {
+                    number += formula[i];
+                } else if (formula[i] !== ' ') {
+                    throw new Error("Caractère invalide dans la formule");
+                }
+                i++;
+            }
+            
+            if (element) {
+                if (!atomicMasses[element]) {
+                    throw new Error(`Élément inconnu : ${element}`);
+                }
+                result += atomicMasses[element] * (number ? parseInt(number) : 1);
+            }
+
+            return result;
+        }
+
+        function calculateMolarMass() {
+            const formulaInput = document.getElementById('formula').value.trim();
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                if (!formulaInput) {
+                    throw new Error("Veuillez entrer une formule moléculaire");
+                }
+
+                const parts = formulaInput.split(',');
+                let totalMass = calculatePartMass(parts[0]);
+
+                if (parts.length > 1) {
+                    for (let i = 1; i < parts.length; i++) {
+                        let part = parts[i].trim();
+                        let multiplier = 1;
+                        
+                        const multiplierMatch = part.match(/^(\d+(\.\d+)?)/);
+                        if (multiplierMatch) {
+                            multiplier = parseFloat(multiplierMatch[1]);
+                            part = part.substring(multiplierMatch[0].length);
+                        }
+                        
+                        totalMass += multiplier * calculatePartMass(part);
+                    }
+                }
+
+                resultDiv.innerHTML = `
+                    <div class="formula">${formulaInput}</div>
+                    <div class="result-value">${totalMass.toFixed(3)} g/mol</div>
+                `;
+                resultDiv.className = '';
+
+                // Animation du résultat
+                resultDiv.style.opacity = '0';
+                setTimeout(() => {
+                    resultDiv.style.opacity = '1';
+                }, 50);
+
+            } catch (error) {
+                resultDiv.innerHTML = error.message;
+                resultDiv.className = 'error';
+            }
+        }
+
+        function toggleTheme() {
+            const body = document.body;
+            const themeSwitch = document.querySelector('.theme-switch');
+            if (body.getAttribute('data-theme') === 'dark') {
+                body.removeAttribute('data-theme');
+                themeSwitch.textContent = '🌙';
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                themeSwitch.textContent = '☀️';
+            }
+        }
+
+        document.getElementById('formula').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                calculateMolarMass();
+            }
+        });
+    </script>
+
+</body>
+</html>
