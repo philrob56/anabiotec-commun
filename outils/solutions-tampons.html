@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+<meta name="description" content="Calculez les quantités d’acide et de base conjuguée pour préparer une solution tampon de pH donné, avec l’équation de Henderson-Hasselbalch. Outil du BTSa ANABIOTEC, lycée Le Gros Chêne, Pontivy.">
+<link rel="canonical" href="https://philrob56.github.io/anabiotec-commun/outils/solutions-tampons.html">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculateur de solutions tampons (Henderson-Hasselbalch) | BTSa ANABIOTEC</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      padding: 10px;
+    }
+    .container { max-width: 500px; margin: 0 auto; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow: hidden; }
+    header { background: #0e7c7b; color: white; padding: 15px; text-align: center; }
+    header h1 { font-size: 18px; margin-bottom: 4px; font-weight: bold; }
+    header p { font-size: 11px; opacity: 0.9; }
+    .content { padding: 15px; }
+    
+    .tab-buttons { display: flex; gap: 8px; margin-bottom: 20px; }
+    .tab-btn { 
+      flex: 1; 
+      padding: 14px 10px; 
+      border: 2px solid #ddd; 
+      background: white; 
+      border-radius: 6px; 
+      cursor: pointer; 
+      font-size: 18px; 
+      font-weight: bold;
+      transition: all 0.3s;
+    }
+    .tab-btn:hover { border-color: #0e7c7b; background: #f5f7ff; }
+    .tab-btn.active { background: #0e7c7b; color: white; border-color: #0e7c7b; box-shadow: 0 2px 8px rgba(14,124,123, 0.3); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    
+    .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    .input-group { display: flex; flex-direction: column; }
+    .input-group label { font-size: 11px; font-weight: bold; color: #333; margin-bottom: 3px; }
+    .input-group input { padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; }
+    
+    button { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; }
+    .btn-calc { background: #0e7c7b; color: white; width: 100%; margin-bottom: 10px; }
+    .btn-calc:hover { background: #5568d3; }
+    
+    .result { background: #eef6f5; border-left: 4px solid #0e7c7b; padding: 12px; border-radius: 4px; text-align: center; display: none; margin-top: 10px; }
+    .result.show { display: block; }
+    .result-label { font-size: 11px; color: #666; font-weight: bold; }
+    .result-value { font-size: 28px; color: #0e7c7b; font-weight: bold; margin: 6px 0; }
+    .result-unit { font-size: 12px; color: #999; }
+  </style>
+<style id="responsive-patch">
+@media (max-width: 700px) {
+*,*::before,*::after{box-sizing:border-box}
+img,svg,video,canvas{max-width:100%}
+body{padding-left:8px;padding-right:8px}
+.input-group{flex-wrap:wrap;min-width:0;max-width:100%}
+.input-group>*{min-width:0}
+}
+</style>
+<!-- anb-commun --><script src="https://philrob56.github.io/anabiotec-commun/anb-commun.js"></script><!-- /anb-commun -->
+</head>
+<body>
+<!-- anb-charte --><div class="anb-head"><div class="anb-crumb"><i></i><a href="https://sites.google.com/view/anabioteclegroschene/accueil" target="_top" style="color:inherit;text-decoration:none" title="Tous les outils du BTSa ANABIOTEC"><b>BTSa ANABIOTEC</b></a><span>›</span>Chimie</div><div class="anb-right"><div class="anb-tag">LEGTA Le Gros Chêne · Pontivy</div><button type="button" class="anb-print" onclick="anbPrint()" title="Ouvrir une version imprimable (PDF)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimer / PDF</button></div></div><!-- /anb-charte -->
+  <div class="container">
+    <header>
+      <h1>Calculateur tampons</h1>
+      <p>Calcul rapide des volumes</p>
+    </header>
+    
+    <div class="content">
+      <div class="tab-buttons">
+        <button class="tab-btn active" onclick="switchTab('cas1')">Cas 1</button>
+        <button class="tab-btn" onclick="switchTab('cas2')">Cas 2</button>
+        <button class="tab-btn" onclick="switchTab('cas3')">Cas 3</button>
+      </div>
+      
+      <!-- CAS 1 -->
+      <div id="cas1" class="tab-content active">
+        <div style="background: #e7f3f2; padding: 15px; border-radius: 6px; margin-bottom: 15px; border-left: 5px solid #0e7c7b;">
+          <div style="font-size: 24px; font-weight: bold; color: #0e7c7b;">CAS 1</div>
+          <div style="font-size: 13px; color: #555; margin-top: 4px;">AH + A⁻ → Mélange direct</div>
+        </div>
+        <div class="input-grid">
+          <div class="input-group">
+            <label>pH</label>
+            <input type="number" id="c1_pH" step="0.1" value="4.6">
+          </div>
+          <div class="input-group">
+            <label>pKa</label>
+            <input type="number" id="c1_pKa" step="0.01" value="4.75">
+          </div>
+          <div class="input-group">
+            <label>Ca (mol/L)</label>
+            <input type="number" id="c1_Ca" step="0.01" value="0.200">
+          </div>
+          <div class="input-group">
+            <label>Cb (mol/L)</label>
+            <input type="number" id="c1_Cb" step="0.01" value="0.100">
+          </div>
+          <div class="input-group">
+            <label>V total (mL)</label>
+            <input type="number" id="c1_V" step="10" value="1000">
+          </div>
+        </div>
+        <button class="btn-calc" onclick="calculateCas1()">Calculer</button>
+        <div id="c1_result" class="result">
+          <div class="result-label">Volume base (mL)</div>
+          <div class="result-value" id="c1_vb">—</div>
+        </div>
+      </div>
+      
+      <!-- CAS 2 -->
+      <div id="cas2" class="tab-content">
+        <div style="background: #f3e5f5; padding: 15px; border-radius: 6px; margin-bottom: 15px; border-left: 5px solid #0e7c7b;">
+          <div style="font-size: 24px; font-weight: bold; color: #0e7c7b;">CAS 2</div>
+          <div style="font-size: 13px; color: #555; margin-top: 4px;">AH + base forte → Neutralisation partielle</div>
+        </div>
+        <div class="input-grid">
+          <div class="input-group">
+            <label>pH</label>
+            <input type="number" id="c2_pH" step="0.1" value="4.6">
+          </div>
+          <div class="input-group">
+            <label>pKa</label>
+            <input type="number" id="c2_pKa" step="0.01" value="4.75">
+          </div>
+          <div class="input-group">
+            <label>Ca (mol/L)</label>
+            <input type="number" id="c2_Ca" step="0.01" value="0.100">
+          </div>
+          <div class="input-group">
+            <label>Va (mL)</label>
+            <input type="number" id="c2_Va" step="10" value="500">
+          </div>
+          <div class="input-group">
+            <label>Cb (mol/L)</label>
+            <input type="number" id="c2_Cb" step="0.01" value="0.500">
+          </div>
+        </div>
+        <button class="btn-calc" onclick="calculateCas2()">Calculer</button>
+        <div id="c2_result" class="result">
+          <div class="result-label">Volume base à ajouter (mL)</div>
+          <div class="result-value" id="c2_vb">—</div>
+        </div>
+      </div>
+      
+      <!-- CAS 3 -->
+      <div id="cas3" class="tab-content">
+        <div style="background: #e8f5e9; padding: 15px; border-radius: 6px; margin-bottom: 15px; border-left: 5px solid #0e7c7b;">
+          <div style="font-size: 24px; font-weight: bold; color: #0e7c7b;">CAS 3</div>
+          <div style="font-size: 13px; color: #555; margin-top: 4px;">A⁻ + acide fort → Neutralisation partielle</div>
+        </div>
+        <div class="input-grid">
+          <div class="input-group">
+            <label>pH</label>
+            <input type="number" id="c3_pH" step="0.1" value="9.0">
+          </div>
+          <div class="input-group">
+            <label>pKa</label>
+            <input type="number" id="c3_pKa" step="0.01" value="9.25">
+          </div>
+          <div class="input-group">
+            <label>Cb (mol/L)</label>
+            <input type="number" id="c3_Cb" step="0.01" value="0.100">
+          </div>
+          <div class="input-group">
+            <label>Vb (mL)</label>
+            <input type="number" id="c3_Vb" step="10" value="100">
+          </div>
+          <div class="input-group">
+            <label>Ca (mol/L)</label>
+            <input type="number" id="c3_Ca" step="0.01" value="0.500">
+          </div>
+        </div>
+        <button class="btn-calc" onclick="calculateCas3()">Calculer</button>
+        <div id="c3_result" class="result">
+          <div class="result-label">Volume acide à ajouter (mL)</div>
+          <div class="result-value" id="c3_va">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+  
+  <script>
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.getElementById(tabName).classList.add('active');
+      event.target.classList.add('active');
+    }
+    
+    function round(num, decimals = 2) {
+      return Math.round(num * Math.pow(10, decimals)) / Math.pow(10, decimals);
+    }
+    
+    function calculateCas1() {
+      const pH = parseFloat(document.getElementById('c1_pH').value);
+      const pKa = parseFloat(document.getElementById('c1_pKa').value);
+      const Ca = parseFloat(document.getElementById('c1_Ca').value);
+      const Cb = parseFloat(document.getElementById('c1_Cb').value);
+      const V = parseFloat(document.getElementById('c1_V').value);
+      
+      const ratio = Math.pow(10, pH - pKa);
+      const Vb = (ratio * Ca * V) / (Cb + ratio * Ca);
+      
+      document.getElementById('c1_vb').textContent = round(Vb);
+      document.getElementById('c1_result').classList.add('show');
+    }
+    
+    function calculateCas2() {
+      const pH = parseFloat(document.getElementById('c2_pH').value);
+      const pKa = parseFloat(document.getElementById('c2_pKa').value);
+      const Ca = parseFloat(document.getElementById('c2_Ca').value);
+      const Va = parseFloat(document.getElementById('c2_Va').value);
+      const Cb = parseFloat(document.getElementById('c2_Cb').value);
+      
+      const ratio = Math.pow(10, pH - pKa);
+      const Vb = (ratio * Ca * Va) / (Cb * (1 + ratio));
+      
+      document.getElementById('c2_vb').textContent = round(Vb);
+      document.getElementById('c2_result').classList.add('show');
+    }
+    
+    function calculateCas3() {
+      const pH = parseFloat(document.getElementById('c3_pH').value);
+      const pKa = parseFloat(document.getElementById('c3_pKa').value);
+      const Cb = parseFloat(document.getElementById('c3_Cb').value);
+      const Vb = parseFloat(document.getElementById('c3_Vb').value);
+      const Ca = parseFloat(document.getElementById('c3_Ca').value);
+      
+      const ratio = Math.pow(10, pH - pKa);
+      const Va = (Cb * Vb) / (Ca * (1 + ratio));
+      
+      document.getElementById('c3_va').textContent = round(Va);
+      document.getElementById('c3_result').classList.add('show');
+    }
+  </script>
+
+</body>
+</html>
