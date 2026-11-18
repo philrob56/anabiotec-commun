@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+<meta name="description" content="Calculateur pour mettre en évidence une erreur systématique : comparaison d’une moyenne de mesures à une valeur de référence par un test statistique. Outil du BTSa ANABIOTEC, lycée Le Gros Chêne, Pontivy.">
+<link rel="canonical" href="https://philrob56.github.io/anabiotec-commun/outils/erreur-systematique.html">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test d’erreur systématique (biais) d’une méthode d’analyse | BTSa ANABIOTEC</title>
+    <style>
+        :root {
+            --primary-color: #0e7c7b;
+            --primary-hover: #0a5c5b;
+            --secondary-color: #6c757d;
+            --secondary-hover: #5a6268;
+            --success-bg: #eaf7ec;
+            --success-text: #2a6336;
+            --error-bg: #fdecea;
+            --error-text: #8a2a29;
+            --light-gray: #f0f2f5;
+            --border-color: #dee2e6;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: var(--light-gray);
+            margin: 0;
+            padding: 1em;
+            box-sizing: border-box;
+        }
+
+        .container {
+            background: white;
+            padding: 2em;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+            width: 100%;
+            max-width: 550px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 1.5em;
+            font-size: 1.8em;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 1em;
+            margin-bottom: 1.5em;
+        }
+
+        .form-group {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            margin-bottom: .5em;
+            color: #555;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        input[type="text"], select, textarea {
+            width: 100%;
+            padding: .75em;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            box-sizing: border-box;
+            background-color: #fafafa;
+            font-size: 1rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        
+        input[type="text"]:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(14,124,123, 0.2);
+        }
+
+        textarea {
+            resize: vertical;
+            font-family: "SF Mono", "Fira Code", "Courier New", monospace;
+            min-height: 120px;
+        }
+
+        .button-group {
+            text-align: center;
+            margin-top: 2em;
+        }
+
+        button {
+            padding: .8em 1.8em;
+            border: none;
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: background-color 0.2s, transform 0.1s;
+        }
+        
+        button.primary { background-color: var(--primary-color); }
+        button.primary:hover { background-color: var(--primary-hover); }
+        button.reset { background-color: var(--secondary-color); }
+        button.reset:hover { background-color: var(--secondary-hover); }
+        button:active { transform: translateY(1px); }
+
+        #results {
+            display: none;
+            margin-top: 2.5em;
+            border-top: 1px solid var(--border-color);
+            padding-top: 2em;
+        }
+        
+        #results h2 { text-align: center; margin-top: 0; }
+        
+        #conclusion-banner {
+            font-weight: 600;
+            text-align: center;
+            padding: 1em;
+            border-radius: 6px;
+            margin-bottom: 1.5em;
+        }
+
+        .conclusion-ok { background-color: var(--success-bg); color: var(--success-text); }
+        .conclusion-error { background-color: var(--error-bg); color: var(--error-text); }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: .9em;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        tr:last-child td { border-bottom: none; }
+        
+        td:first-child { color: #555; }
+        
+        td:last-child {
+            text-align: right;
+            font-weight: 600;
+            font-family: "SF Mono", "Fira Code", "Courier New", monospace;
+        }
+
+        @media (max-width: 600px) {
+            .form-row {
+                flex-direction: column;
+            }
+            h1 { font-size: 1.5em; }
+            .container { padding: 1.5em; }
+        }
+
+    </style>
+<!-- anb-commun --><script src="https://philrob56.github.io/anabiotec-commun/anb-commun.js"></script><!-- /anb-commun -->
+<!-- anb-charte --><style>body{flex-direction:column!important;justify-content:flex-start!important;align-items:center!important}@media (max-width:700px){body>*{max-width:100%;box-sizing:border-box}}</style><!-- /anb-charte -->
+</head>
+<body>
+<!-- anb-charte --><div class="anb-head"><div class="anb-crumb"><i></i><a href="https://sites.google.com/view/anabioteclegroschene/accueil" target="_top" style="color:inherit;text-decoration:none" title="Tous les outils du BTSa ANABIOTEC"><b>BTSa ANABIOTEC</b></a><span>›</span>Incertitude</div><div class="anb-right"><div class="anb-tag">LEGTA Le Gros Chêne · Pontivy</div><button type="button" class="anb-print" onclick="anbPrint()" title="Ouvrir une version imprimable (PDF)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimer / PDF</button></div></div><!-- /anb-charte -->
+    <div class="container">
+        <h1>Test d'Erreur Systématique</h1>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="true-value">Valeur Vraie (xv)</label>
+                <input type="text" id="true-value" placeholder="Ex: 20.00">
+            </div>
+            <div class="form-group">
+                <label for="confidence-level">Niveau de confiance</label>
+                <select id="confidence-level">
+                    <option value="90">90 %</option>
+                    <option value="95" selected>95 %</option>
+                    <option value="98">98 %</option>
+                    <option value="99">99 %</option>
+                    <option value="99.9">99.9 %</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="exp-values">Série Expérimentale (saisir ou coller)</label>
+            <textarea id="exp-values" rows="8" placeholder="20.1&#10;20.3&#10;19.9&#10;..."></textarea>
+        </div>
+
+        <div class="button-group">
+            <button class="primary" onclick="calculateAndDisplay()">Lancer le Test</button>
+            <button class="reset" onclick="resetApp()">Réinitialiser</button>
+        </div>
+
+        <div id="results">
+            <h2>Résultats du Test</h2>
+            <div id="conclusion-banner"></div>
+            <table>
+                <tbody>
+                    <tr><td>Nombre de mesures (N)</td><td id="res-n"></td></tr>
+                    <tr><td>Moyenne (x̄)</td><td id="res-mean"></td></tr>
+                    <tr><td>Écart Type (s)</td><td id="res-std-dev"></td></tr>
+                    <tr><td>Valeur de t (calculée)</td><td id="res-t-value"></td></tr>
+                    <tr><td>Écart |x̄ - xv|</td><td id="res-deviation"></td></tr>
+                    <tr><td>Seuil de comparaison (t*s/√N)</td><td id="res-threshold"></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const studentTTable = {
+            1:{90:6.314,95:12.706,98:31.821,99:63.657,99.9:636.619},2:{90:2.92,95:4.303,98:6.965,99:9.925,99.9:31.599},3:{90:2.353,95:3.182,98:4.541,99:5.841,99.9:12.924},4:{90:2.132,95:2.776,98:3.747,99:4.604,99.9:8.61},5:{90:2.015,95:2.571,98:3.365,99:4.032,99.9:6.869},6:{90:1.943,95:2.447,98:3.143,99:3.707,99.9:5.959},7:{90:1.895,95:2.365,98:2.998,99:3.499,99.9:5.408},8:{90:1.86,95:2.306,98:2.896,99:3.355,99.9:5.041},9:{90:1.833,95:2.262,98:2.821,99:3.25,99.9:4.781},10:{90:1.812,95:2.228,98:2.764,99:3.169,99.9:4.587},11:{90:1.796,95:2.201,98:2.718,99:3.106,99.9:4.437},12:{90:1.782,95:2.179,98:2.681,99:3.055,99.9:4.318},13:{90:1.771,95:2.16,98:2.65,99:3.012,99.9:4.221},14:{90:1.761,95:2.145,98:2.624,99:2.977,99.9:4.14},15:{90:1.753,95:2.131,98:2.602,99:2.947,99.9:4.073},16:{90:1.746,95:2.12,98:2.583,99:2.921,99.9:4.015},17:{90:1.74,95:2.11,98:2.567,99:2.898,99.9:3.965},18:{90:1.734,95:2.101,98:2.552,99:2.878,99.9:3.922},19:{90:1.729,95:2.093,98:2.539,99:2.861,99.9:3.883},20:{90:1.725,95:2.086,98:2.528,99:2.845,99.9:3.85},21:{90:1.721,95:2.08,98:2.518,99:2.831,99.9:3.819},22:{90:1.717,95:2.074,98:2.508,99:2.819,99.9:3.792},23:{90:1.714,95:2.069,98:2.5,99:2.807,99.9:3.768},24:{90:1.711,95:2.064,98:2.492,99:2.797,99.9:3.745},25:{90:1.708,95:2.06,98:2.485,99:2.787,99.9:3.725},26:{90:1.706,95:2.056,98:2.479,99:2.779,99.9:3.707},27:{90:1.703,95:2.052,98:2.473,99:2.771,99.9:3.69},28:{90:1.701,95:2.048,98:2.467,99:2.763,99.9:3.674},29:{90:1.699,95:2.045,98:2.462,99:2.756,99.9:3.659},30:{90:1.697,95:2.042,98:2.457,99:2.75,99.9:3.646}
+        };
+
+        function getTValue(df, confidence) {
+            if (df < 1) return null;
+            const ddlKey = Math.min(df, 30);
+            return studentTTable[ddlKey] ? studentTTable[ddlKey][confidence] : null;
+        }
+
+        function calculateAndDisplay() {
+            const trueValueStr = document.getElementById('true-value').value.trim();
+            const confidenceLevel = document.getElementById('confidence-level').value;
+            const expValuesStr = document.getElementById('exp-values').value.trim();
+
+            if (!trueValueStr || !expValuesStr) {
+                alert("Veuillez entrer la valeur vraie et la série expérimentale."); return;
+            }
+
+            const expValues = expValuesStr.replace(/[,;\s]+/g, '\n').split('\n').filter(v => v.trim() !== '').map(v => parseFloat(v.replace(',', '.')));
+            const trueValue = parseFloat(trueValueStr.replace(',', '.'));
+            
+            if (isNaN(trueValue) || expValues.some(isNaN)) {
+                alert("Saisie invalide. Assurez-vous que toutes les valeurs sont des nombres."); return;
+            }
+
+            const N = expValues.length;
+            if (N < 2) {
+                alert("Veuillez entrer au moins deux valeurs expérimentales."); return;
+            }
+
+            const df = N - 1;
+            const tValue = getTValue(df, confidenceLevel);
+            if (!tValue) {
+                alert(`Impossible de trouver la valeur de t pour N=${N}.`); return;
+            }
+
+            const mean = expValues.reduce((a, b) => a + b, 0) / N;
+            const variance = expValues.map(v => Math.pow(v - mean, 2)).reduce((a, b) => a + b, 0) / (N - 1);
+            const stdDev = Math.sqrt(variance);
+            const deviation = Math.abs(mean - trueValue);
+            const threshold = tValue * stdDev / Math.sqrt(N);
+            
+            const conclusionEl = document.getElementById('conclusion-banner');
+            if (deviation > threshold) {
+                conclusionEl.innerHTML = `❌ Erreur systématique significative`;
+                conclusionEl.className = "conclusion-error";
+            } else {
+                conclusionEl.innerHTML = `✅ Pas d'erreur systématique significative`;
+                conclusionEl.className = "conclusion-ok";
+            }
+            
+            document.getElementById('res-n').textContent = N;
+            document.getElementById('res-mean').textContent = mean.toFixed(4);
+            document.getElementById('res-std-dev').textContent = stdDev.toFixed(4);
+            document.getElementById('res-t-value').textContent = `${tValue} (ddl=${df}, ${confidenceLevel}%)`;
+            document.getElementById('res-deviation').textContent = deviation.toFixed(4);
+            document.getElementById('res-threshold').textContent = threshold.toFixed(4);
+            
+            document.getElementById('results').style.display = 'block';
+        }
+
+        function resetApp() {
+            document.getElementById('true-value').value = '';
+            document.getElementById('exp-values').value = '';
+            document.getElementById('confidence-level').value = '95';
+            document.getElementById('results').style.display = 'none';
+        }
+    </script>
+
+</body>
+</html>
