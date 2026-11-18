@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+<meta name="description" content="Calculateur du test de Shapiro-Wilk pour vérifier si une série de mesures suit une loi normale avant d’appliquer un test statistique. Outil du BTSa ANABIOTEC, lycée Le Gros Chêne, Pontivy.">
+<link rel="canonical" href="https://philrob56.github.io/anabiotec-commun/outils/test-normalite.html">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de normalité de Shapiro-Wilk | BTSa ANABIOTEC</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+
+        :root {
+            --bg-color: #f0f2f5;
+            --container-bg: #ffffff;
+            --primary-accent: #8e44ad; /* Violet pour le thème de la normalité */
+            --primary-accent-dark: #732d91;
+            --text-color: #333;
+            --label-color: #555;
+            --border-color: #dbe2e8;
+            --success-color: #27ae60;
+            --error-color: #c0392b;
+            --info-color: #0a5c5b;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1rem;
+            box-sizing: border-box;
+        }
+
+        .container {
+            background: var(--container-bg);
+            padding: 1.5rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 380px;
+            box-sizing: border-box;
+            border: 1px solid var(--border-color);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        h1 {
+            color: var(--primary-accent);
+            margin: 0 0 0.25rem 0;
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+        
+        header p {
+            margin: 0;
+            color: var(--label-color);
+        }
+
+        .input-section {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--label-color);
+        }
+
+        select, input[type="number"] {
+            width: 100%;
+            padding: 0.6rem 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 1rem;
+            background-color: #fdfdfd;
+            transition: all 0.2s ease-in-out;
+        }
+        
+        input[type="number"] {
+            margin-bottom: 0.5rem;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-accent);
+            box-shadow: 0 0 0 3px rgba(142, 68, 173, 0.2);
+        }
+
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none; margin: 0;
+        }
+        input[type=number] { -moz-appearance: textfield; }
+
+        .results {
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1.5rem;
+            text-align: center;
+        }
+        
+        #result-summary {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .result-details p {
+            margin: 0.4rem 0;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: var(--label-color);
+        }
+        .result-details strong {
+            color: var(--text-color);
+        }
+
+        .normal { color: var(--success-color); }
+        .not-normal { color: var(--error-color); }
+        .info { color: var(--info-color); }
+
+        footer {
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+
+        #clear-button {
+            background-image: linear-gradient(to right, #e52d27 0%, #b31217  51%, #e52d27  100%);
+            color: #fff;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1rem;
+            font-weight: 500;
+            background-size: 200% auto;
+        }
+
+        #clear-button:hover {
+            background-position: right center;
+            box-shadow: 0 4px 15px rgba(192, 57, 43, 0.4);
+        }
+    </style>
+<!-- anb-commun --><script src="https://philrob56.github.io/anabiotec-commun/anb-commun.js"></script><!-- /anb-commun -->
+<!-- anb-charte --><style>body{flex-direction:column!important;justify-content:flex-start!important;align-items:center!important}@media (max-width:700px){body>*{max-width:100%;box-sizing:border-box}}</style><!-- /anb-charte -->
+</head>
+<body>
+<!-- anb-charte --><div class="anb-head"><div class="anb-crumb"><i></i><a href="https://sites.google.com/view/anabioteclegroschene/accueil" target="_top" style="color:inherit;text-decoration:none" title="Tous les outils du BTSa ANABIOTEC"><b>BTSa ANABIOTEC</b></a><span>›</span>Statistiques</div><div class="anb-right"><div class="anb-tag">LEGTA Le Gros Chêne · Pontivy</div><button type="button" class="anb-print" onclick="anbPrint()" title="Ouvrir une version imprimable (PDF)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimer / PDF</button></div></div><!-- /anb-charte -->
+    <div class="container">
+        <header>
+            <h1>Test de Normalité</h1>
+            <p>d'après Shapiro-Wilk (N=3 à 50)</p>
+        </header>
+        <main>
+            <div class="input-section">
+                <label for="alpha">Niveau de risque (alpha) :</label>
+                <select id="alpha">
+                    <option value="0.05" selected>5%</option>
+                    <option value="0.10">10%</option>
+                </select>
+            </div>
+            <label>Valeurs (Flèche bas pour ajouter) :</label>
+            <div id="values-container">
+                <input type="number" placeholder="Entrez une valeur">
+            </div>
+            <div class="results">
+                <div id="result-summary" class="info">En attente de données...</div>
+                <div class="result-details">
+                    <p><span>Statistique W calculée :</span> <strong id="w-calculated">N/A</strong></p>
+                    <p><span>Valeur W critique :</span> <strong id="w-critical">N/A</strong></p>
+                </div>
+            </div>
+        </main>
+        <footer>
+            <button id="clear-button">Effacer</button>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const valuesContainer = document.getElementById('values-container');
+            const alphaSelect = document.getElementById('alpha');
+            const resultSummary = document.getElementById('result-summary');
+            const wCalculatedSpan = document.getElementById('w-calculated');
+            const wCriticalSpan = document.getElementById('w-critical');
+            const clearButton = document.getElementById('clear-button');
+            
+            // Les coefficients 'a' pour le test de Shapiro-Wilk sont complexes à calculer.
+            // Pour une implémentation JS, on se fie souvent à des bibliothèques ou des tables pré-calculées.
+            // Ici, nous utilisons une table de valeurs critiques de W au lieu des coefficients 'a'.
+            // Source: Tableaux statistiques standards pour le test de Shapiro-Wilk.
+            const wCriticalValues = {
+                '0.05': {3: 0.767, 4: 0.748, 5: 0.762, 6: 0.788, 7: 0.803, 8: 0.818, 9: 0.829, 10: 0.842, 11: 0.850, 12: 0.859, 13: 0.866, 14: 0.874, 15: 0.881, 16: 0.887, 17: 0.892, 18: 0.897, 19: 0.901, 20: 0.905, 21: 0.908, 22: 0.911, 23: 0.914, 24: 0.916, 25: 0.918, 30: 0.927, 35: 0.934, 40: 0.940, 45: 0.945, 50: 0.947},
+                '0.10': {3: 0.789, 4: 0.792, 5: 0.806, 6: 0.826, 7: 0.838, 8: 0.851, 9: 0.859, 10: 0.869, 11: 0.876, 12: 0.883, 13: 0.889, 14: 0.895, 15: 0.900, 16: 0.904, 17: 0.908, 18: 0.912, 19: 0.915, 20: 0.918, 21: 0.920, 22: 0.923, 23: 0.926, 24: 0.928, 25: 0.930, 30: 0.939, 35: 0.945, 40: 0.950, 45: 0.955, 50: 0.957}
+            };
+             // Coefficients 'a' pour le calcul de W (source : Algorithme AS R94) - Simplifié
+            const aCoefficients = { 3: [0.7071], 4: [0.6872, 0.1677], 5: [0.6646, 0.2413], 6: [0.6431, 0.2806, 0.0875], 7: [0.6233, 0.3031, 0.1401], 8: [0.6052, 0.3164, 0.1743, 0.0561], 9: [0.5888, 0.3244, 0.1976, 0.0947], 10: [0.5739, 0.3291, 0.2141, 0.1224, 0.0399], 11: [0.5601, 0.3315, 0.2260, 0.1429, 0.0695], 12: [0.5475, 0.3325, 0.2347, 0.1586, 0.0912, 0.0303], 13: [0.5359, 0.3325, 0.2412, 0.1706, 0.1099, 0.0539], 14: [0.5251, 0.3318, 0.2460, 0.1802, 0.1240, 0.0727, 0.0240], 15: [0.5150, 0.3306, 0.2495, 0.1878, 0.1359, 0.0880, 0.0433], 16: [0.5056, 0.3290, 0.2521, 0.1939, 0.1459, 0.1005, 0.0593, 0.0196], 17: [0.4968, 0.3273, 0.2540, 0.1988, 0.1544, 0.1113, 0.0725, 0.0359], 18: [0.4886, 0.3253, 0.2553, 0.2027, 0.1618, 0.1207, 0.0837, 0.0496, 0.0163], 19: [0.4808, 0.3232, 0.2561, 0.2059, 0.1684, 0.1290, 0.0932, 0.0602, 0.0284], 20: [0.4734, 0.3211, 0.2565, 0.2085, 0.1736, 0.1362, 0.1013, 0.0696, 0.0392, 0.0097], 30: [0.4254, 0.2985, 0.2605, 0.2287, 0.1998, 0.1726, 0.1465, 0.1212, 0.0964, 0.0719, 0.0476, 0.0235], 40: [0.3957, 0.2736, 0.2483, 0.2255, 0.2040, 0.1834, 0.1636, 0.1442, 0.1252, 0.1065, 0.0881, 0.0698, 0.0516, 0.0335, 0.0154], 50: [0.3751, 0.2574, 0.2376, 0.2195, 0.2024, 0.1860, 0.1701, 0.1547, 0.1396, 0.1248, 0.1103, 0.0960, 0.0818, 0.0678, 0.0539, 0.0401, 0.0263, 0.0126] };
+
+            const addValueInput = () => {
+                if (valuesContainer.querySelectorAll('input').length < 50) {
+                    const newInput = document.createElement('input');
+                    newInput.type = 'number';
+                    newInput.placeholder = 'Entrez une valeur';
+                    valuesContainer.appendChild(newInput);
+                    newInput.focus();
+                }
+            };
+
+            const calculateShapiroWilk = () => {
+                const inputs = Array.from(valuesContainer.querySelectorAll('input'));
+                const values = inputs.map(input => parseFloat(input.value)).filter(v => !isNaN(v) && v !== null);
+
+                if (values.length < 3 || values.length > 50) {
+                    resultSummary.textContent = "Le test nécessite entre 3 et 50 valeurs.";
+                    resultSummary.className = 'info';
+                    wCalculatedSpan.textContent = "N/A";
+                    wCriticalSpan.textContent = "N/A";
+                    return;
+                }
+
+                values.sort((a, b) => a - b);
+                const n = values.length;
+                const alpha = alphaSelect.value;
+                const mean = values.reduce((acc, val) => acc + val, 0) / n;
+                
+                // Calcul de la statistique W
+                const coeffsN = Object.keys(aCoefficients).reverse().find(key => n >= key);
+                const a = aCoefficients[coeffsN];
+                if (!a) {
+                     resultSummary.textContent = `Coefficients non disponibles pour N=${n}.`;
+                     resultSummary.className = 'info';
+                     return;
+                }
+                
+                let b = 0;
+                for (let i = 0; i < Math.floor(n / 2); i++) {
+                    b += a[i] * (values[n - 1 - i] - values[i]);
+                }
+                const S2 = values.reduce((acc, val) => acc + (val - mean) ** 2, 0);
+                const wCalculated = (S2 > 0) ? b ** 2 / S2 : 1;
+                
+                // Recherche de la valeur critique
+                const criticalN = Object.keys(wCriticalValues[alpha]).reverse().find(key => n >= key);
+                const wCritical = wCriticalValues[alpha][criticalN];
+                
+                wCalculatedSpan.textContent = wCalculated.toFixed(4);
+                wCriticalSpan.textContent = wCritical.toFixed(4);
+
+                // Hypothèse H0: La distribution est normale. On rejette H0 si Wcalc < Wcrit.
+                if (wCalculated < wCritical) {
+                    resultSummary.textContent = "La distribution ne semble PAS normale.";
+                    resultSummary.className = 'not-normal';
+                } else {
+                    resultSummary.textContent = "La distribution semble normale.";
+                    resultSummary.className = 'normal';
+                }
+            };
+
+            valuesContainer.addEventListener('input', calculateShapiroWilk);
+            alphaSelect.addEventListener('change', calculateShapiroWilk);
+            valuesContainer.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowDown' && e.target.nodeName === 'INPUT') {
+                    e.preventDefault();
+                    addValueInput();
+                }
+            });
+            
+            clearButton.addEventListener('click', () => {
+                valuesContainer.innerHTML = '<input type="number" placeholder="Entrez une valeur">';
+                valuesContainer.querySelector('input').focus();
+                calculateShapiroWilk();
+            });
+
+            calculateShapiroWilk();
+        });
+    </script>
+
+</body>
+</html>
