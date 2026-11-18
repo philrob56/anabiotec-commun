@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+<meta name="description" content="Calculateur des temps de rinçage (flush) et d’injection en électrophorèse capillaire selon le diamètre, la longueur du capillaire, la pression et le fluide. Outil du BTSa ANABIOTEC, lycée Le Gros Chêne, Pontivy.">
+<link rel="canonical" href="https://philrob56.github.io/anabiotec-commun/outils/temps-flush-injection.html">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Électrophorèse capillaire : calcul des temps de flush et d’injection | BTSa ANABIOTEC</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0e7c7b 0%, #0a4f4f 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 950px;
+            width: 100%;
+            padding: 25px;
+        }
+
+        h1 {
+            color: #0e7c7b;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .params-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .section-title {
+            font-weight: 600;
+            color: #0e7c7b;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+
+        .inputs-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .fluid-temp-container {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 15px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 0.8rem;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        input[type="number"], select {
+            width: 100%;
+            padding: 8px 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        input[type="number"] {
+            padding-right: 40px;
+        }
+
+        input[type="number"]:focus, select:focus {
+            outline: none;
+            border-color: #0e7c7b;
+            box-shadow: 0 0 0 3px rgba(14,124,123, 0.1);
+        }
+
+        select {
+            cursor: pointer;
+        }
+
+        .unit {
+            position: absolute;
+            right: 10px;
+            color: #666;
+            font-weight: 500;
+            font-size: 0.85rem;
+            pointer-events: none;
+        }
+
+        .viscosity-display {
+            background: linear-gradient(135deg, #e7f3f2 0%, #b9dfdb 100%);
+            padding: 10px 15px;
+            border-radius: 8px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .viscosity-label {
+            font-size: 0.75rem;
+            color: #333;
+            margin-bottom: 3px;
+        }
+
+        .viscosity-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #0a5c5b;
+        }
+
+        .volume-display {
+            text-align: center;
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .volume-value {
+            font-weight: 600;
+            color: #0e7c7b;
+            font-size: 1rem;
+        }
+
+        .results {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .result-card {
+            background: linear-gradient(135deg, #0e7c7b 0%, #0a4f4f 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(14,124,123, 0.3);
+            text-align: center;
+        }
+
+        .result-card:nth-child(2) {
+            background: linear-gradient(135deg, #f2a541 0%, #d9822b 100%);
+        }
+
+        .result-label {
+            font-size: 0.85rem;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .result-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+
+        .formula-box {
+            background: #f5f7fa;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #0e7c7b;
+        }
+
+        .formula-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .formula {
+            font-family: 'Courier New', monospace;
+            color: #555;
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            .inputs-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .fluid-temp-container {
+                grid-template-columns: 1fr;
+            }
+
+            .results {
+                grid-template-columns: 1fr;
+            }
+
+            .result-value {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+<!-- anb-commun --><script src="https://philrob56.github.io/anabiotec-commun/anb-commun.js"></script><!-- /anb-commun -->
+<!-- anb-charte --><style>body{background:#f6f8f7!important;background-image:none!important}body{flex-direction:column!important;justify-content:flex-start!important;align-items:center!important}@media (max-width:700px){body>*{max-width:100%;box-sizing:border-box}}</style><!-- /anb-charte -->
+</head>
+<body>
+<!-- anb-charte --><div class="anb-head"><div class="anb-crumb"><i></i><a href="https://sites.google.com/view/anabioteclegroschene/accueil" target="_top" style="color:inherit;text-decoration:none" title="Tous les outils du BTSa ANABIOTEC"><b>BTSa ANABIOTEC</b></a><span>›</span>Électrophorèse</div><div class="anb-right"><div class="anb-tag">LEGTA Le Gros Chêne · Pontivy</div><button type="button" class="anb-print" onclick="anbPrint()" title="Ouvrir une version imprimable (PDF)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimer / PDF</button></div></div><!-- /anb-charte -->
+    <div class="container">
+        <h1>🔬 Temps de Flush & Injection - Électrophorèse Capillaire</h1>
+
+        <div class="params-section">
+            <div class="section-title">⚙️ Paramètres du capillaire</div>
+            <div class="inputs-container">
+                <div class="input-group">
+                    <label for="diameter">Diamètre</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="diameter" value="75" min="10" max="200" step="1">
+                        <span class="unit">μm</span>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="length">Longueur</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="length" value="46.5" min="10" max="100" step="0.1">
+                        <span class="unit">cm</span>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="pressureFlush">P flush</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="pressureFlush" value="880" min="1" max="2000" step="1">
+                        <span class="unit">mbar</span>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="pressureInjection">P injection</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="pressureInjection" value="50" min="1" max="500" step="1">
+                        <span class="unit">mbar</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="params-section">
+            <div class="section-title">🌡️ Conditions du fluide</div>
+            <div class="fluid-temp-container">
+                <div class="input-group">
+                    <label for="fluidType">Type de fluide</label>
+                    <select id="fluidType">
+                        <option value="water" selected>Solution aqueuse / Eau</option>
+                        <option value="methanol">Méthanol</option>
+                        <option value="ethanol">Éthanol</option>
+                        <option value="acetonitrile">Acétonitrile</option>
+                        <option value="acetone">Acétone</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label for="temperature">Température</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="temperature" value="25" min="15" max="40" step="1">
+                        <span class="unit">°C</span>
+                    </div>
+                </div>
+
+                <div class="viscosity-display">
+                    <div class="viscosity-label">Viscosité (η)</div>
+                    <div class="viscosity-value" id="viscosityDisplay">-</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="volume-display">
+            Volume du capillaire : <span class="volume-value" id="volumeDisplay">-</span>
+        </div>
+
+        <div class="results">
+            <div class="result-card">
+                <div class="result-label">⏱️ Temps de Flush (10 volumes)</div>
+                <div class="result-value" id="flushTime">-</div>
+            </div>
+
+            <div class="result-card">
+                <div class="result-label">💉 Temps d'Injection (1% du volume)</div>
+                <div class="result-value" id="injectionTime">-</div>
+            </div>
+        </div>
+
+        <div class="formula-box">
+            <div class="formula-title">📐 Formules utilisées</div>
+            <div class="formula">
+                <strong>Flush (10 volumes) :</strong> t = (320 × η × L²) / (ΔP<sub>flush</sub> × d²)<br>
+                <strong>Injection (1% volume) :</strong> t = (0,32 × η × L²) / (ΔP<sub>injection</sub> × d²)<br>
+                <strong>Volume capillaire :</strong> V = π × (d/2)² × L<br>
+                <strong>η</strong> = viscosité dynamique calculée selon le fluide et la température
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Base de données des viscosités (en mPa·s) pour différents solvants à différentes températures
+        const viscosityData = {
+            water: {
+                // Solution aqueuse / Eau
+                15: 1.140,
+                20: 1.002,
+                25: 0.890,
+                30: 0.798,
+                35: 0.719,
+                40: 0.653
+            },
+            methanol: {
+                15: 0.632,
+                20: 0.597,
+                25: 0.544,
+                30: 0.510,
+                35: 0.456,
+                40: 0.426
+            },
+            ethanol: {
+                15: 1.340,
+                20: 1.200,
+                25: 1.074,
+                30: 0.950,
+                35: 0.850,
+                40: 0.760
+            },
+            acetonitrile: {
+                15: 0.400,
+                20: 0.369,
+                25: 0.341,
+                30: 0.320,
+                35: 0.294,
+                40: 0.276
+            },
+            acetone: {
+                15: 0.380,
+                20: 0.326,
+                25: 0.306,
+                30: 0.280,
+                35: 0.260,
+                40: 0.242
+            }
+        };
+
+        // Éléments du DOM
+        const diameterInput = document.getElementById('diameter');
+        const lengthInput = document.getElementById('length');
+        const pressureFlushInput = document.getElementById('pressureFlush');
+        const pressureInjectionInput = document.getElementById('pressureInjection');
+        const fluidTypeSelect = document.getElementById('fluidType');
+        const temperatureInput = document.getElementById('temperature');
+        const viscosityDisplay = document.getElementById('viscosityDisplay');
+        const volumeDisplay = document.getElementById('volumeDisplay');
+        const flushTime = document.getElementById('flushTime');
+        const injectionTime = document.getElementById('injectionTime');
+
+        // Fonction d'interpolation linéaire pour la viscosité
+        function getViscosity(fluidType, temperature) {
+            const data = viscosityData[fluidType];
+            const temps = Object.keys(data).map(Number).sort((a, b) => a - b);
+            
+            // Si la température correspond exactement à une valeur
+            if (data[temperature] !== undefined) {
+                return data[temperature];
+            }
+            
+            // Trouver les températures encadrantes
+            let lowerTemp = temps[0];
+            let upperTemp = temps[temps.length - 1];
+            
+            for (let i = 0; i < temps.length - 1; i++) {
+                if (temperature >= temps[i] && temperature <= temps[i + 1]) {
+                    lowerTemp = temps[i];
+                    upperTemp = temps[i + 1];
+                    break;
+                }
+            }
+            
+            // Interpolation linéaire
+            const lowerVisc = data[lowerTemp];
+            const upperVisc = data[upperTemp];
+            const ratio = (temperature - lowerTemp) / (upperTemp - lowerTemp);
+            
+            return lowerVisc + ratio * (upperVisc - lowerVisc);
+        }
+
+        // Fonction de formatage du temps
+        function formatTime(seconds) {
+            if (seconds < 0.001) {
+                return (seconds * 1e6).toFixed(1) + ' μs';
+            } else if (seconds < 1) {
+                return (seconds * 1000).toFixed(1) + ' ms';
+            } else if (seconds < 60) {
+                return seconds.toFixed(1) + ' s';
+            } else {
+                const minutes = Math.floor(seconds / 60);
+                const secs = (seconds % 60).toFixed(1);
+                return `${minutes} min ${secs} s`;
+            }
+        }
+
+        // Fonction de formatage du volume
+        function formatVolume(nL) {
+            if (nL < 1) {
+                return (nL * 1000).toFixed(2) + ' pL';
+            } else if (nL < 1000) {
+                return nL.toFixed(2) + ' nL';
+            } else {
+                return (nL / 1000).toFixed(2) + ' μL';
+            }
+        }
+
+        // Fonction de calcul
+        function calculate() {
+            // Récupération des valeurs
+            const d = parseFloat(diameterInput.value); // en μm
+            const L = parseFloat(lengthInput.value); // en cm
+            const P_flush = parseFloat(pressureFlushInput.value); // en mbar
+            const P_injection = parseFloat(pressureInjectionInput.value); // en mbar
+            const fluidType = fluidTypeSelect.value;
+            const temperature = parseFloat(temperatureInput.value); // en °C
+
+            // Validation
+            if (isNaN(d) || isNaN(L) || isNaN(P_flush) || isNaN(P_injection) || isNaN(temperature) ||
+                d <= 0 || L <= 0 || P_flush <= 0 || P_injection <= 0) {
+                volumeDisplay.textContent = '-';
+                flushTime.textContent = '-';
+                injectionTime.textContent = '-';
+                viscosityDisplay.textContent = '-';
+                return;
+            }
+
+            // Calcul de la viscosité
+            const viscosity_mPas = getViscosity(fluidType, temperature);
+            const ETA = viscosity_mPas * 0.001; // mPa·s → Pa·s
+            
+            // Affichage de la viscosité
+            viscosityDisplay.textContent = viscosity_mPas.toFixed(3) + ' mPa·s';
+
+            // Conversion des unités
+            const d_m = d * 1e-6; // μm → m
+            const L_m = L * 0.01; // cm → m
+            const P_flush_Pa = P_flush * 100; // mbar → Pa
+            const P_injection_Pa = P_injection * 100; // mbar → Pa
+
+            // Calcul du volume du capillaire (en nL)
+            const r_m = d_m / 2;
+            const V_m3 = Math.PI * r_m * r_m * L_m;
+            const V_nL = V_m3 * 1e12; // m³ → nL
+
+            volumeDisplay.textContent = formatVolume(V_nL);
+
+            // Calcul du temps de flush
+            // t_flush = (320 × η × L²) / (ΔP_flush × d²)
+            const numerator_flush = 320 * ETA * (L_m * L_m);
+            const denominator_flush = P_flush_Pa * (d_m * d_m);
+            const t_flush = numerator_flush / denominator_flush;
+
+            // Calcul du temps d'injection
+            // t_injection = (0.32 × η × L²) / (ΔP_injection × d²)
+            const numerator_injection = 0.32 * ETA * (L_m * L_m);
+            const denominator_injection = P_injection_Pa * (d_m * d_m);
+            const t_injection = numerator_injection / denominator_injection;
+
+            // Affichage des résultats
+            // Pour le flush : afficher en s et en min avec une seule décimale
+            const t_flush_s = t_flush.toFixed(1);
+            const t_flush_min = (t_flush / 60).toFixed(1);
+            flushTime.textContent = `${t_flush_s} s (${t_flush_min} min)`;
+
+            injectionTime.textContent = formatTime(t_injection);
+        }
+
+        // Événements sur les inputs
+        diameterInput.addEventListener('input', calculate);
+        lengthInput.addEventListener('input', calculate);
+        pressureFlushInput.addEventListener('input', calculate);
+        pressureInjectionInput.addEventListener('input', calculate);
+        fluidTypeSelect.addEventListener('change', calculate);
+        temperatureInput.addEventListener('input', calculate);
+
+        // Calcul initial
+        calculate();
+    </script>
+
+</body>
+</html>
