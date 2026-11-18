@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+<meta name="description" content="Simulateur d’électrophorèse 2D : séparation des protéines par électrofocalisation selon le pI, puis par SDS-PAGE selon la masse moléculaire. Outil du BTSa ANABIOTEC, lycée Le Gros Chêne, Pontivy.">
+<link rel="canonical" href="https://philrob56.github.io/anabiotec-commun/outils/electrophorese-2d.html">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulation d’électrophorèse bidimensionnelle (2D-PAGE) | BTSa ANABIOTEC</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0e7c7b 0%, #0a4f4f 100%);
+            min-height: 100vh;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .app-container {
+            max-width: 1600px;
+            width: 98vw;
+            height: calc(100vh - 16px);
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: linear-gradient(90deg, #2c5aa0 0%, #1e3c72 100%);
+            color: white;
+            padding: 12px 20px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .header h1 {
+            font-size: 1.6rem;
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 380px 1fr; 
+            gap: 0;
+            flex-grow: 1;
+            min-height: 0;
+        }
+
+        .controls-panel {
+            background: #f8fafc;
+            padding: 20px;
+            border-right: 1px solid #e2e8f0;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .dimension-section {
+            margin-bottom: 15px;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            border-left: 4px solid #2c5aa0;
+        }
+        
+        .dimension-section.table-section {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .dimension-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #2c5aa0;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .dimension-title::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #2c5aa0;
+            border-radius: 50%;
+        }
+
+        .control-group {
+            margin-bottom: 10px;
+        }
+
+        .control-label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 5px;
+        }
+        
+        .input-field {
+            width: 100%;
+            padding: 6px 8px;
+            font-size: 0.8rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            background-color: #f8fafc;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #2c5aa0;
+            box-shadow: 0 0 0 2px rgba(44, 90, 160, 0.2);
+        }
+
+        .slider-container {
+            position: relative;
+        }
+
+        .slider {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #e5e7eb;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+            cursor: pointer;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: #2c5aa0;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+            transition: all 0.2s ease;
+        }
+
+        .slider::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            background: #1e3c72;
+        }
+
+        .slider-value {
+            position: absolute;
+            top: -26px;
+            right: 0;
+            background: #2c5aa0;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        .protein-selection-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .select-button {
+            flex: 1;
+            padding: 5px;
+            font-size: 0.7rem;
+            border: 1px solid #cbd5e1;
+            background-color: #f1f5f9;
+            color: #475569;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        .select-button:hover {
+            background-color: #e2e8f0;
+            color: #1e293b;
+        }
+
+        .protein-table-container {
+            flex-grow: 1;
+            min-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            background: #fafafa;
+        }
+
+        .protein-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.75rem;
+        }
+
+        .protein-table th, .protein-table td {
+            padding: 5px 6px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .protein-table thead th {
+            background-color: #f1f5f9;
+            font-weight: 600;
+            color: #475569;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .protein-table th[data-sort] {
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .protein-table th[data-sort]::after {
+            content: '';
+            display: inline-block;
+            margin-left: 5px;
+            opacity: 0.4;
+        }
+
+        .protein-table th.sort-asc::after { content: '▲'; opacity: 1; }
+        .protein-table th.sort-desc::after { content: '▼'; opacity: 1; }
+
+        .protein-table tbody tr.row-highlight,
+        .protein-table tbody tr:hover { 
+            background-color: #e0e7ff; 
+        }
+        
+        .protein-table td:nth-child(3), .protein-table td:nth-child(4) {
+            text-align: right; font-feature-settings: "tnum";
+        }
+
+        .action-button {
+            width: 100%;
+            padding: 8px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 15px;
+            margin-bottom: 0;
+        }
+
+        .primary-button { background: linear-gradient(135deg, #2c5aa0, #1e3c72); color: white; }
+        .primary-button:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(44, 90, 160, 0.3); }
+        .secondary-button { background: linear-gradient(135deg, #dc2626, #991b1b); color: white; }
+        .secondary-button:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(220, 38, 38, 0.3); }
+        .reset-button { background: linear-gradient(135deg, #6b7280, #4b5563); color: white; margin-top: 10px; }
+        .reset-button:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(107, 114, 128, 0.3); }
+
+        .visualization-area {
+            background: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .gel-container {
+            width: 96%;
+            height: 96%;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            position: relative;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .gel-grid {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: 
+                linear-gradient(rgba(148, 163, 184, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(148, 163, 184, 0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .protein-spot {
+            position: absolute;
+            border-radius: 50%;
+            transition: top 2.5s ease-out, left 1.5s ease-in-out, transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+        }
+        
+        .protein-spot.spot-highlight {
+            transform: scale(1.5);
+            box-shadow: 0 0 15px rgba(44, 90, 160, 0.7);
+            z-index: 100;
+        }
+
+        .status-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 8px 15px;
+            background: rgba(34, 197, 94, 0.9);
+            color: white;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 200;
+        }
+
+        .status-indicator.show { opacity: 1; }
+
+        .gel-strip {
+            position: absolute;
+            width: 80%;
+            height: 6px;
+            background: linear-gradient(90deg, #3b82f6, #ef4444, #10b981, #f59e0b);
+            border-radius: 3px;
+            top: 10px;
+            left: 10%;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            opacity: 0;
+            transition: all 0.5s ease;
+        }
+
+        .gel-strip.show { opacity: 1; }
+
+        .gel-strip::before {
+            content: 'Gel IEF';
+            position: absolute;
+            top: -20px;
+            left: 0;
+            font-size: 0.7rem;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .dimension-2-section { border-left-color: #dc2626; }
+        .dimension-2-section .dimension-title { color: #dc2626; }
+        .dimension-2-section .dimension-title::before { background: #dc2626; }
+        
+        .add-protein-section { border-left-color: #16a34a; }
+        .add-protein-section .dimension-title { color: #16a34a; }
+        .add-protein-section .dimension-title::before { background: #16a34a; }
+
+        .loading-animation {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+        }
+
+        .loading-spinner {
+            width: 40px; height: 40px;
+            border: 4px solid #e5e7eb;
+            border-top: 4px solid #2c5aa0;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .axis-graduated {
+            position: absolute;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            pointer-events: none;
+        }
+
+        .gel-container.axes-visible .axis-graduated { opacity: 1; }
+        .x-axis-graduated { top: 5%; left: 10%; width: 80%; height: 1px; border-bottom: 1px dashed #475569; }
+        .y-axis-graduated { top: 5%; left: 10%; width: 1px; height: 90%; border-right: 1px dashed #475569; }
+        .tick { position: absolute; background: #475569; }
+        .x-axis-graduated .tick { width: 1px; height: 5px; top: -2px; }
+        .y-axis-graduated .tick { width: 5px; height: 1px; right: -2px; }
+        .tick-label {
+            position: absolute;
+            font-size: 0.7rem;
+            color: #475569;
+            background: rgba(255, 255, 255, 0.7);
+            padding: 0 2px;
+            border-radius: 2px;
+        }
+        .x-axis-graduated .tick-label { top: -20px; transform: translateX(-50%); }
+        .y-axis-graduated .tick-label { right: 8px; transform: translateY(-50%); }
+        .axis-unit-label { font-weight: bold; }
+        .x-axis-unit { right: -25px; top: 50%; transform: translateY(-50%); }
+        .y-axis-unit { top: -10px; left: 50%; transform: translateX(-50%); }
+        
+        .pole-label {
+            position: absolute;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #475569;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 2px 5px;
+            border-radius: 4px;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        .gel-container.dim1-active .pole-dim1,
+        .gel-container.dim2-active .pole-dim2 {
+            opacity: 1;
+        }
+        #dim1-anode { left: 8%; top: 30px; }
+        #dim1-cathode { right: 8%; top: 30px; }
+        #dim2-cathode { top: 10px; left: 50%; transform: translateX(-50%); }
+        #dim2-anode { bottom: 10px; left: 50%; transform: translateX(-50%); }
+        
+        #mw-ladder {
+            position: absolute;
+            right: 5%;
+            top: 5%;
+            height: 90%;
+            width: 20px;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        .gel-container.dim2-active #mw-ladder { opacity: 1; }
+        .ladder-band {
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background-color: #3b82f6;
+        }
+        .ladder-label {
+            position: absolute;
+            left: 25px;
+            transform: translateY(-50%);
+            font-size: 0.7rem;
+            color: #3b82f6;
+        }
+        
+        /* =========================================== */
+        /* MEDIA QUERIES POUR LE RESPONSIVE            */
+        /* =========================================== */
+        @media (max-width: 900px) {
+            body {
+                padding: 0;
+                align-items: flex-start;
+            }
+
+            .app-container {
+                width: 100%;
+                height: auto;
+                min-height: 100vh;
+                border-radius: 0;
+                box-shadow: none;
+            }
+
+            .main-content {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+            
+            .controls-panel {
+                max-height: none;
+                overflow-y: visible;
+                border-right: none;
+                border-bottom: 1px solid #e2e8f0;
+            }
+
+            .visualization-area {
+                min-height: 50vh;
+                flex-grow: 1;
+            }
+            
+            .header h1 {
+                font-size: 1.3rem;
+            }
+            .header p {
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+<!-- anb-commun --><script src="https://philrob56.github.io/anabiotec-commun/anb-commun.js"></script><!-- /anb-commun -->
+<!-- anb-charte --><style>body{background:#f6f8f7!important;background-image:none!important}body{flex-direction:column!important;justify-content:flex-start!important;align-items:center!important}@media (max-width:700px){body>*{max-width:100%;box-sizing:border-box}}</style><!-- /anb-charte -->
+<!-- anb-fix --><style>header.header{background:linear-gradient(135deg,#0a4f4f 0%,#0e7c7b 60%,#2a9d8f 100%)!important}</style><!-- /anb-fix -->
+</head>
+<body>
+<!-- anb-charte --><div class="anb-head"><div class="anb-crumb"><i></i><a href="https://sites.google.com/view/anabioteclegroschene/accueil" target="_top" style="color:inherit;text-decoration:none" title="Tous les outils du BTSa ANABIOTEC"><b>BTSa ANABIOTEC</b></a><span>›</span>Électrophorèse</div><div class="anb-right"><div class="anb-tag">LEGTA Le Gros Chêne · Pontivy</div><button type="button" class="anb-print" onclick="anbPrint()" title="Ouvrir une version imprimable (PDF)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimer / PDF</button></div></div><!-- /anb-charte -->
+    <div class="app-container">
+        <header class="header">
+            <h1>Simulation d'Électrophorèse Bidimensionnelle</h1>
+            <p>2D-PAGE - Analyse et séparation de protéines</p>
+        </header>
+
+        <main class="main-content">
+            <aside class="controls-panel">
+                <section class="dimension-section">
+                    <h3 class="dimension-title">1ère Dimension : Électrofocalisation (IEF)</h3>
+                    <div class="control-group">
+                        <label class="control-label">pH Min (+):</label>
+                        <div class="slider-container">
+                            <input type="range" class="slider" id="ph-min" min="1" max="7" value="2" step="0.1">
+                            <span class="slider-value" id="ph-min-value">2.0</span>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">pH Max (-):</label>
+                        <div class="slider-container">
+                            <input type="range" class="slider" id="ph-max" min="7" max="14" value="12" step="0.1">
+                            <span class="slider-value" id="ph-max-value">12.0</span>
+                        </div>
+                    </div>
+                    <button class="action-button primary-button" id="run-dimension-1">
+                        🔬 Lancer Électrofocalisation
+                    </button>
+                </section>
+                
+                <section class="dimension-section table-section">
+                    <h3 class="dimension-title">Protéines à analyser</h3>
+                    <div class="protein-selection-controls">
+                        <button class="select-button" id="select-all">Tout Sélectionner</button>
+                        <button class="select-button" id="deselect-all">Tout Désélectionner</button>
+                    </div>
+                    <div class="protein-table-container">
+                        <table class="protein-table">
+                            <thead>
+                                <tr>
+                                    <th><input type="checkbox" id="select-all-header"></th>
+                                    <th data-sort="name">Nom</th>
+                                    <th data-sort="pi">pI</th>
+                                    <th data-sort="mw">Masse (kDa)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="protein-table-body"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section class="dimension-section add-protein-section">
+                    <h3 class="dimension-title">Ajouter une Protéine</h3>
+                    <div class="control-group">
+                        <label class="control-label" for="new-protein-name">Nom de la protéine :</label>
+                        <input type="text" id="new-protein-name" class="input-field" placeholder="Ex: Catalase">
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label" for="new-protein-pi">Point Isoélectrique (pI) :</label>
+                        <input type="number" id="new-protein-pi" class="input-field" placeholder="Ex: 5.4" step="0.1" min="1" max="14">
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label" for="new-protein-mw">Masse Moléculaire (kDa) :</label>
+                        <input type="number" id="new-protein-mw" class="input-field" placeholder="Ex: 240" step="0.1" min="1">
+                    </div>
+                    <button class="action-button primary-button" id="add-protein-button" style="background: #16a34a;">
+                        ➕ Ajouter au Tableau
+                    </button>
+                </section>
+
+                <section class="dimension-section dimension-2-section">
+                    <h3 class="dimension-title">2ème Dimension : SDS-PAGE</h3>
+                    <div class="control-group">
+                        <label class="control-label">Acrylamide:</label>
+                        <div class="slider-container">
+                            <input type="range" class="slider" id="acrylamide" min="8" max="20" value="12" step="1">
+                            <span class="slider-value" id="acrylamide-value">12 %</span>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">Tension:</label>
+                        <div class="slider-container">
+                            <input type="range" class="slider" id="tension" min="50" max="300" value="150" step="10">
+                            <span class="slider-value" id="tension-value">150 V</span>
+                        </div>
+                    </div>
+                    <button class="action-button secondary-button" id="run-dimension-2">
+                        ⚡ Lancer SDS-PAGE
+                    </button>
+                </section>
+
+                <button class="action-button reset-button" id="reset-all">
+                    🔄 Réinitialiser Tout
+                </button>
+            </aside>
+
+            <section class="visualization-area">
+                <div class="gel-container" id="gel-container">
+                    <div class="gel-grid"></div>
+                    <div class="gel-strip show" id="gel-strip"></div>
+                    <div class="axis-graduated x-axis-graduated" id="x-axis-graduated"></div>
+                    <div class="axis-graduated y-axis-graduated" id="y-axis-graduated"></div>
+                    
+                    <div class="gel-poles">
+                        <div class="pole-label pole-dim1" id="dim1-anode">(+) Anode</div>
+                        <div class="pole-label pole-dim1" id="dim1-cathode">Cathode (-)</div>
+                        <div class="pole-label pole-dim2" id="dim2-cathode">Cathode (-)</div>
+                        <div class="pole-label pole-dim2" id="dim2-anode">(+) Anode</div>
+                    </div>
+
+                    <div id="mw-ladder"></div>
+
+                    <div class="status-indicator" id="status-indicator"></div>
+                </div>
+                <div class="loading-animation" id="loading">
+                    <div class="loading-spinner"></div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        let PROTEIN_DATA = [
+            { id: 'myosin', name: 'Myosine', mw: 205, pi: 5.8, checked: false },
+            { id: 'b-galactosidase', name: 'β-Galactosidase', mw: 116, pi: 5.3, checked: false },
+            { id: 'phosphorylase', name: 'Phosphorylase B', mw: 97, pi: 6.8, checked: false },
+            { id: 'albumin', name: 'Albumine sérique', mw: 66, pi: 4.7, checked: true },
+            { id: 'hemoglobin', name: 'Hémoglobine A', mw: 64, pi: 6.8, checked: false },
+            { id: 'ovalbumin', name: 'Ovalbumine', mw: 45, pi: 4.5, checked: false },
+            { id: 'actin', name: 'Actine', mw: 42, pi: 5.2, checked: false },
+            { id: 'pepsin', name: 'Pepsine', mw: 35, pi: 1.5, checked: false },
+            { id: 'gfp', name: 'GFP', mw: 27, pi: 6.2, checked: false },
+            { id: 'anhydrase', name: 'Anhydrase carbonique', mw: 29, pi: 5.9, checked: false },
+            { id: 'gst', name: 'GST', mw: 26, pi: 6.5, checked: false },
+            { id: 'trypsinogen', name: 'Trypsinogène', mw: 24, pi: 9.3, checked: false },
+            { id: 'myoglobin', name: 'Myoglobine', mw: 17, pi: 7.2, checked: false },
+            { id: 'lysozyme', name: 'Lysozyme', mw: 14, pi: 11.4, checked: false },
+            { id: 'cytochrome', name: 'Cytochrome C', mw: 12, pi: 10.1, checked: false },
+            { id: 'insulin', name: 'Insuline', mw: 5.8, pi: 5.3, checked: false },
+            { id: 'protein-x', name: 'Protéine Inconnue', mw: 35, pi: 5.5, checked: true }
+        ];
+
+        class Electrophoresis2D {
+            constructor() {
+                this.proteins = [];
+                this.dimension1Complete = false;
+                this.dimension2Complete = false;
+                this.sortColumn = 'name';
+                this.sortDirection = 'asc';
+                this.initializeElements();
+                this.randomizeUnknownProtein();
+                this.setupEventListeners();
+                this.updateSliderValues();
+                this.populateProteinTable();
+            }
+
+            initializeElements() {
+                this.phMinSlider = document.getElementById('ph-min');
+                this.phMaxSlider = document.getElementById('ph-max');
+                this.acrylamideSlider = document.getElementById('acrylamide');
+                this.tensionSlider = document.getElementById('tension');
+                this.gelContainer = document.getElementById('gel-container');
+                this.gelStrip = document.getElementById('gel-strip');
+                this.statusIndicator = document.getElementById('status-indicator');
+                this.loading = document.getElementById('loading');
+                this.proteinTBody = document.getElementById('protein-table-body');
+                this.mwLadder = document.getElementById('mw-ladder');
+            }
+
+            setupEventListeners() {
+                this.phMinSlider.addEventListener('input', () => this.updateSliderValues());
+                this.phMaxSlider.addEventListener('input', () => this.updateSliderValues());
+                this.acrylamideSlider.addEventListener('input', () => this.updateSliderValues());
+                this.tensionSlider.addEventListener('input', () => this.updateSliderValues());
+
+                document.getElementById('run-dimension-1').addEventListener('click', () => this.runDimension1());
+                document.getElementById('run-dimension-2').addEventListener('click', () => this.runDimension2());
+                document.getElementById('reset-all').addEventListener('click', () => this.resetAll());
+                
+                document.getElementById('select-all').addEventListener('click', () => this.selectAllProteins(true));
+                document.getElementById('deselect-all').addEventListener('click', () => this.selectAllProteins(false));
+                document.getElementById('select-all-header').addEventListener('click', (e) => this.selectAllProteins(e.target.checked));
+
+                document.querySelectorAll('.protein-table th[data-sort]').forEach(header => {
+                    header.addEventListener('click', () => this.handleSort(header.dataset.sort));
+                });
+                
+                this.gelContainer.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('protein-spot')) {
+                        this.highlightProtein(e.target.id.replace('spot-', ''));
+                    } else {
+                        this.clearHighlights();
+                    }
+                });
+                
+                document.getElementById('add-protein-button').addEventListener('click', () => this.addCustomProtein());
+            }
+
+            updateSliderValues() {
+                document.getElementById('ph-min-value').textContent = parseFloat(this.phMinSlider.value).toFixed(1);
+                document.getElementById('ph-max-value').textContent = parseFloat(this.phMaxSlider.value).toFixed(1);
+                document.getElementById('acrylamide-value').textContent = this.acrylamideSlider.value + ' %';
+                document.getElementById('tension-value').textContent = this.tensionSlider.value + ' V';
+                
+                if (this.dimension1Complete && this.dimension2Complete) {
+                    this.updateProteinPositions();
+                    this.drawAxesAndLadder();
+                }
+            }
+
+            updateProteinSelection() {
+                this.proteins = [];
+                const checkboxes = document.querySelectorAll('.protein-table .protein-checkbox');
+                checkboxes.forEach((checkbox) => {
+                    const protein = PROTEIN_DATA.find(p => p.id === checkbox.dataset.id);
+                    if (protein) {
+                        protein.checked = checkbox.checked;
+                        if (protein.checked) {
+                            this.proteins.push({ ...protein, color: this.getProteinColor(protein.id) });
+                        }
+                    }
+                });
+            }
+
+            getProteinColor(proteinId) {
+                const colors = {
+                    'myosin': '#a855f7', 'b-galactosidase': '#16a34a', 'phosphorylase': '#22c55e',
+                    'albumin': '#06b6d4', 'hemoglobin': '#0ea5e9', 'ovalbumin': '#8b5cf6',
+                    'actin': '#6366f1', 'pepsin': '#f43f5e', 'gfp': '#bef264', 'anhydrase': '#14b8a6', 'gst': '#facc15',
+                    'trypsinogen': '#10b981', 'myoglobin': '#e11d48', 'lysozyme': '#c084fc',
+                    'cytochrome': '#f59e0b', 'insulin': '#f97316', 'protein-x': '#d946ef'
+                };
+                
+                if (proteinId.startsWith('custom-')) {
+                    let hash = 0;
+                    for (let i = 0; i < proteinId.length; i++) {
+                        hash = proteinId.charCodeAt(i) + ((hash << 5) - hash);
+                    }
+                    let color = '#';
+                    for (let i = 0; i < 3; i++) {
+                        let value = (hash >> (i * 8)) & 0xFF;
+                        color += ('00' + value.toString(16)).substr(-2);
+                    }
+                    return color;
+                }
+                
+                return colors[proteinId] || '#6b7280';
+            }
+
+            showStatus(message, duration = 2000) {
+                this.statusIndicator.textContent = message;
+                this.statusIndicator.classList.add('show');
+                setTimeout(() => {
+                    this.statusIndicator.classList.remove('show');
+                }, duration);
+            }
+
+            showLoading(duration = 1000) {
+                this.loading.style.display = 'block';
+                return new Promise(resolve => setTimeout(() => {
+                    this.loading.style.display = 'none';
+                    resolve();
+                }, duration));
+            }
+
+            async runDimension1() {
+                this.showStatus('Dépôt de l\'échantillon...');
+                this.updateProteinSelection();
+                
+                this.dimension1Complete = true;
+                this.dimension2Complete = false;
+                this.gelContainer.classList.remove('axes-visible', 'dim2-active');
+                this.gelContainer.classList.add('dim1-active');
+                
+                document.querySelectorAll('.protein-spot').forEach(e => e.remove());
+                
+                this.proteins.forEach((protein) => {
+                    const spot = this.createProteinSpot(protein);
+                    this.gelContainer.appendChild(spot);
+                    spot.style.transition = 'none';
+                    spot.style.left = '50%';
+                    spot.style.top = '8px';
+                    spot.style.width = '8px';
+                    spot.style.height = '8px';
+                });
+
+                setTimeout(() => {
+                    this.proteins.forEach(protein => {
+                        const spot = document.getElementById(`spot-${protein.id}`);
+                        if (spot) {
+                            spot.style.transition = 'top 2.5s ease-out, left 1.5s ease-in-out, transform 0.2s ease, box-shadow 0.2s ease';
+                            const phRange = parseFloat(this.phMaxSlider.value) - parseFloat(this.phMinSlider.value);
+                            const finalXPos = ((protein.pi - parseFloat(this.phMinSlider.value)) / phRange) * 80 + 10;
+                            spot.style.left = `${Math.max(10, Math.min(90, finalXPos))}%`;
+                        }
+                    });
+                }, 50);
+
+                await this.showLoading(1800);
+                this.showStatus('1ère dimension terminée !', 3000);
+            }
+
+            async runDimension2() {
+                if (!this.dimension1Complete) {
+                    this.showStatus('Veuillez d\'abord exécuter la 1ère dimension !', 3000);
+                    return;
+                }
+
+                this.showStatus('Préparation du SDS-PAGE...');
+                await this.showLoading(500);
+                
+                this.dimension2Complete = true;
+                this.gelContainer.classList.remove('dim1-active');
+                this.gelContainer.classList.add('dim2-active');
+                this.updateProteinPositions();
+                
+                this.drawAxesAndLadder();
+                this.gelContainer.classList.add('axes-visible');
+
+                this.showStatus('2ème dimension terminée !', 3000);
+            }
+
+            createProteinSpot(protein) {
+                const spot = document.createElement('div');
+                spot.className = 'protein-spot';
+                spot.id = `spot-${protein.id}`;
+                spot.style.backgroundColor = protein.color;
+                
+                const titleText = protein.id === 'protein-x' 
+                    ? `Protéine Inconnue (pI: ${protein.pi.toFixed(1)}, MW: ${protein.mw.toFixed(1)} kDa)`
+                    : `${protein.name} (pI: ${protein.pi.toFixed(1)}, MW: ${protein.mw.toFixed(1)} kDa)`;
+                spot.title = titleText;
+                
+                return spot;
+            }
+
+            updateProteinPositions() {
+                const duration = 5 - (this.tensionSlider.value / 300) * 4;
+                const acrylamide = this.acrylamideSlider.value;
+                const acrylamideFraction = (acrylamide - 8) / (20 - 8);
+                const minCalibMW = 20 - acrylamideFraction * 15;
+                const maxCalibMW = 300 - acrylamideFraction * 220;
+                const logMin = Math.log10(minCalibMW);
+                const logMax = Math.log10(maxCalibMW);
+
+                this.proteins.forEach(protein => {
+                    const spot = document.getElementById(`spot-${protein.id}`);
+                    if (spot) {
+                        const phMin = parseFloat(this.phMinSlider.value);
+                        const phMax = parseFloat(this.phMaxSlider.value);
+                        const phRange = phMax - phMin;
+                        let xPos = ((protein.pi - phMin) / phRange) * 80 + 10;
+                        xPos = Math.max(5, Math.min(95, xPos));
+                        
+                        const logMW = Math.log10(protein.mw);
+                        const yFraction = (logMW - logMin) / (logMax - logMin);
+                        let yPos = 90 - (yFraction * 80);
+                        yPos = Math.max(5, Math.min(95, yPos));
+
+                        spot.style.transition = `top ${duration}s ease-out, left 1.5s ease-in-out, transform 0.2s ease, box-shadow 0.2s ease`;
+                        spot.style.left = `${xPos}%`;
+                        spot.style.top = `${yPos}%`;
+                        
+                        const spotSize = Math.max(8, 16 - (acrylamide - 8) * 0.5);
+                        spot.style.width = `${spotSize}px`;
+                        spot.style.height = `${spotSize}px`;
+                    }
+                });
+            }
+
+            resetAll() {
+                this.dimension1Complete = false;
+                this.dimension2Complete = false;
+                document.querySelectorAll('.protein-spot').forEach(e => e.remove());
+                this.gelContainer.classList.remove('axes-visible', 'dim1-active', 'dim2-active');
+                
+                this.phMinSlider.value = 2;
+                this.phMaxSlider.value = 12;
+                this.acrylamideSlider.value = 12;
+                this.tensionSlider.value = 150;
+                this.updateSliderValues();
+                
+                this.randomizeUnknownProtein();
+                this.populateProteinTable();
+                this.showStatus('Simulation réinitialisée');
+            }
+            
+            addCustomProtein() {
+                const nameInput = document.getElementById('new-protein-name');
+                const piInput = document.getElementById('new-protein-pi');
+                const mwInput = document.getElementById('new-protein-mw');
+
+                const name = nameInput.value.trim();
+                const pi = parseFloat(piInput.value);
+                const mw = parseFloat(mwInput.value);
+
+                if (!name || isNaN(pi) || isNaN(mw) || pi < 1 || pi > 14 || mw <= 0) {
+                    this.showStatus('Veuillez entrer des données valides !', 3000);
+                    return;
+                }
+                
+                const newProtein = {
+                    id: `custom-${Date.now()}`,
+                    name: name,
+                    mw: mw,
+                    pi: pi,
+                    checked: true
+                };
+
+                PROTEIN_DATA.push(newProtein);
+                this.populateProteinTable();
+                this.updateProteinSelection();
+                this.showStatus(`"${name}" a été ajouté !`, 2500);
+
+                nameInput.value = '';
+                piInput.value = '';
+                mwInput.value = '';
+            }
+
+            selectAllProteins(selected) {
+                document.querySelectorAll('.protein-table .protein-checkbox').forEach(checkbox => {
+                    checkbox.checked = selected;
+                });
+                document.getElementById('select-all-header').checked = selected;
+                this.updateProteinSelection();
+            }
+
+            randomizeUnknownProtein() {
+                const unknownProtein = PROTEIN_DATA.find(p => p.id === 'protein-x');
+                if (unknownProtein) {
+                    unknownProtein.mw = parseFloat((Math.random() * (150 - 15) + 15).toFixed(1));
+                    unknownProtein.pi = parseFloat((Math.random() * (10 - 4) + 4).toFixed(1));
+                }
+            }
+
+            populateProteinTable() {
+                this.proteinTBody.innerHTML = '';
+                this.sortData(false);
+                
+                PROTEIN_DATA.forEach(p => {
+                    const row = document.createElement('tr');
+                    row.id = `row-${p.id}`;
+                    const isUnknown = p.id === 'protein-x';
+                    const isCustom = p.id.startsWith('custom-');
+                    row.innerHTML = `
+                        <td><input type="checkbox" class="protein-checkbox" data-id="${p.id}" ${p.checked ? 'checked' : ''}></td>
+                        <td>${p.name} ${isCustom ? '<em>(custom)</em>' : ''}</td>
+                        <td>${isUnknown ? '?' : p.pi.toFixed(1)}</td>
+                        <td>${isUnknown ? '?' : p.mw.toFixed(1)}</td>
+                    `;
+                    row.addEventListener('mouseover', () => this.highlightProtein(p.id));
+                    row.addEventListener('mouseout', () => this.clearHighlights());
+                    this.proteinTBody.appendChild(row);
+                });
+                this.proteinTBody.querySelectorAll('.protein-checkbox').forEach(checkbox => {
+                    checkbox.addEventListener('change', () => this.updateProteinSelection());
+                });
+            }
+            
+            highlightProtein(proteinId) {
+                this.clearHighlights();
+                const spot = document.getElementById(`spot-${proteinId}`);
+                const row = document.getElementById(`row-${proteinId}`);
+                if (spot) {
+                    spot.classList.add('spot-highlight');
+                }
+                if (row) {
+                    row.classList.add('row-highlight');
+                    row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            }
+
+            clearHighlights() {
+                document.querySelectorAll('.spot-highlight').forEach(el => el.classList.remove('spot-highlight'));
+                document.querySelectorAll('.row-highlight').forEach(el => el.classList.remove('row-highlight'));
+            }
+
+            handleSort(column) {
+                if (this.sortColumn === column) {
+                    this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+                } else {
+                    this.sortColumn = column;
+                    this.sortDirection = 'asc';
+                }
+                this.populateProteinTable();
+            }
+
+            sortData(toggleDirection = true) {
+                if (toggleDirection) {
+                    if (this.sortColumn === column) {
+                        this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        this.sortColumn = column;
+                        this.sortDirection = 'asc';
+                    }
+                }
+                
+                const direction = this.sortDirection === 'asc' ? 1 : -1;
+                PROTEIN_DATA.sort((a, b) => {
+                    if (a.id === 'protein-x') return 1;
+                    if (b.id === 'protein-x') return -1;
+                    
+                    const valA = a[this.sortColumn];
+                    const valB = b[this.sortColumn];
+                    if (typeof valA === 'string') return valA.localeCompare(valB) * direction;
+                    return (valA - valB) * direction;
+                });
+
+                document.querySelectorAll('.protein-table th[data-sort]').forEach(th => {
+                    th.classList.remove('sort-asc', 'sort-desc');
+                    if (th.dataset.sort === this.sortColumn) {
+                        th.classList.add(`sort-${this.sortDirection}`);
+                    }
+                });
+            }
+
+            drawAxesAndLadder() {
+                const xAxisContainer = document.getElementById('x-axis-graduated');
+                const yAxisContainer = document.getElementById('y-axis-graduated');
+                this.mwLadder.innerHTML = '';
+                xAxisContainer.innerHTML = '';
+                yAxisContainer.innerHTML = '';
+
+                const phMin = parseFloat(this.phMinSlider.value);
+                const phMax = parseFloat(this.phMaxSlider.value);
+                const phRange = phMax - phMin;
+
+                for (let ph = Math.ceil(phMin); ph <= Math.floor(phMax); ph++) {
+                    const xPosPercent = ((ph - phMin) / phRange) * 100;
+                    if (xPosPercent >= 0 && xPosPercent <= 100) {
+                        const tick = document.createElement('div'); tick.className = 'tick'; tick.style.left = `${xPosPercent}%`;
+                        const label = document.createElement('div'); label.className = 'tick-label'; label.textContent = ph; label.style.left = `${xPosPercent}%`;
+                        xAxisContainer.appendChild(tick); xAxisContainer.appendChild(label);
+                    }
+                }
+                const phUnit = document.createElement('div'); phUnit.className = 'tick-label axis-unit-label x-axis-unit'; phUnit.textContent = 'pH';
+                xAxisContainer.appendChild(phUnit);
+
+                const mwMarkers = [250, 150, 100, 75, 50, 37, 25, 15, 10];
+                const acrylamide = this.acrylamideSlider.value;
+                const acrylamideFraction = (acrylamide - 8) / (20 - 8);
+                const minCalibMW = 20 - acrylamideFraction * 15;
+                const maxCalibMW = 300 - acrylamideFraction * 220;
+                const logMin = Math.log10(minCalibMW);
+                const logMax = Math.log10(maxCalibMW);
+
+                mwMarkers.forEach(mw => {
+                    const logMW = Math.log10(mw);
+                    const yFraction = (logMW - logMin) / (logMax - logMin);
+                    const yPosPercent = 95 - (yFraction * 90);
+                    
+                    if (yPosPercent >= 5 && yPosPercent <= 95) {
+                        const band = document.createElement('div');
+                        band.className = 'ladder-band';
+                        band.style.top = `${yPosPercent}%`;
+                        
+                        const label = document.createElement('div');
+                        label.className = 'ladder-label';
+                        label.textContent = mw;
+                        label.style.top = `${yPosPercent}%`;
+
+                        this.mwLadder.appendChild(band);
+                        this.mwLadder.appendChild(label);
+                    }
+                });
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            new Electrophoresis2D();
+        });
+    </script>
+
+</body>
+</html>
