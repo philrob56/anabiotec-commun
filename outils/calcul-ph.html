@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Calculateur de pH pour les acides et bases forts ou faibles et leurs mélanges, à partir de la concentration et du pKa. Outil de chimie analytique du BTSa ANABIOTEC, lycée Le Gros Chêne, Pontivy.">
+<link rel="canonical" href="https://philrob56.github.io/anabiotec-commun/outils/calcul-ph.html">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculateur de pH des solutions aqueuses : acides et bases | BTSa ANABIOTEC</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,600;0,8..60,700;1,8..60,300&family=JetBrains+Mono:wght@400;600&display=swap');
+
+  :root {
+    --bg:        #f7f5f0;
+    --surface:   #ffffff;
+    --border:    #d8d3c8;
+    --text:      #1a1a1a;
+    --muted:     #666;
+    --bleu:      #1a4b8c;
+    --bleu-l:    #e8eef8;
+    --vert:      #1a6b3c;
+    --vert-l:    #e8f5ed;
+    --orange:    #b05a00;
+    --orange-l:  #fff3e6;
+    --viol:      #5b2c8d;
+    --viol-l:    #f3eefb;
+    --rouge:     #c0392b;
+    --rouge-l:   #fdecea;
+    --ok-bg:     #e8f5ed;
+    --ok-txt:    #1a6b3c;
+    --err-bg:    #fdecea;
+    --err-txt:   #c0392b;
+    --radius:    10px;
+    --mono:      'JetBrains Mono', monospace;
+    --serif:     'Source Serif 4', Georgia, serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--serif);
+    min-height: 100vh;
+    padding: 0 0 60px;
+  }
+
+  /* ── Header ────────────────────────────────── */
+  header {
+    background: var(--bleu);
+    color: #fff;
+    padding: 28px 40px 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  header::after {
+    content: "";
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(
+      45deg, transparent, transparent 40px,
+      rgba(255,255,255,.03) 40px, rgba(255,255,255,.03) 80px
+    );
+    pointer-events: none;
+  }
+  header h1 {
+    font-size: 1.7rem;
+    font-weight: 600;
+    letter-spacing: -.01em;
+  }
+  header p {
+    font-size: .9rem;
+    opacity: .75;
+    font-style: italic;
+    margin-top: 4px;
+  }
+
+  /* ── Layout ─────────────────────────────────── */
+  .layout {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 32px 24px 0;
+    display: grid;
+    grid-template-columns: 1fr 1.15fr;
+    gap: 28px;
+    align-items: start;
+  }
+
+  @media (max-width: 820px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+
+  /* ── Card ────────────────────────────────────── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .card-head {
+    padding: 14px 20px;
+    font-weight: 600;
+    font-size: .95rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-body {
+    padding: 20px;
+  }
+
+  /* ── Type selector ──────────────────────────── */
+  .type-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .type-btn {
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 10px;
+    cursor: pointer;
+    transition: all .15s;
+    background: var(--surface);
+    text-align: center;
+    font-family: var(--serif);
+    font-size: .88rem;
+  }
+  .type-btn .icon { font-size: 1.5rem; display: block; }
+  .type-btn .label { font-weight: 600; margin: 4px 0 2px; }
+  .type-btn .ex { font-size: .75rem; color: var(--muted); font-style: italic; }
+
+  .type-btn[data-type="af"]:hover,  .type-btn[data-type="af"].active  { border-color: var(--bleu);   background: var(--bleu-l);   }
+  .type-btn[data-type="bf"]:hover,  .type-btn[data-type="bf"].active  { border-color: var(--vert);   background: var(--vert-l);   }
+  .type-btn[data-type="afb"]:hover, .type-btn[data-type="afb"].active { border-color: var(--orange); background: var(--orange-l); }
+  .type-btn[data-type="bfb"]:hover, .type-btn[data-type="bfb"].active { border-color: var(--viol);   background: var(--viol-l);   }
+
+  /* ── Inputs ──────────────────────────────────── */
+  .inputs { display: flex; flex-direction: column; gap: 14px; margin-top: 18px; }
+  .field label {
+    display: block;
+    font-size: .82rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    margin-bottom: 5px;
+  }
+  .field input {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    font-family: var(--mono);
+    font-size: 1rem;
+    background: var(--bg);
+    transition: border-color .15s;
+    outline: none;
+  }
+  .field input:focus { border-color: var(--bleu); background: #fff; }
+  .field .hint {
+    font-size: .75rem;
+    color: var(--muted);
+    margin-top: 3px;
+    font-style: italic;
+  }
+
+  /* ── Bouton calcul ─────────────────────────── */
+  .btn-calc {
+    margin-top: 20px;
+    width: 100%;
+    padding: 13px;
+    background: var(--bleu);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    font-family: var(--serif);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: .02em;
+    transition: background .15s;
+  }
+  .btn-calc:hover { background: #163e77; }
+
+  /* ── Résultats ───────────────────────────────── */
+  #result { display: none; }
+
+  .ph-display {
+    text-align: center;
+    padding: 22px 16px 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .ph-display .label-ph {
+    font-size: .8rem;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .ph-value {
+    font-size: 3.6rem;
+    font-weight: 700;
+    line-height: 1.1;
+    font-family: var(--mono);
+    margin: 4px 0;
+  }
+  .ph-bar-wrap { margin: 8px auto 0; max-width: 320px; }
+  .ph-bar {
+    height: 12px;
+    border-radius: 6px;
+    background: linear-gradient(to right,
+      #c0392b 0%, #e74c3c 5%,
+      #e67e22 14%, #f1c40f 21%,
+      #2ecc71 28%, #27ae60 42%,
+      #1abc9c 50%,
+      #27ae60 58%, #2ecc71 72%,
+      #f1c40f 79%, #e67e22 86%,
+      #e74c3c 95%, #8e44ad 100%
+    );
+    position: relative;
+  }
+  .ph-needle {
+    position: absolute;
+    top: -4px;
+    width: 3px;
+    height: 20px;
+    background: #1a1a1a;
+    border-radius: 2px;
+    transform: translateX(-50%);
+    transition: left .4s cubic-bezier(.34,1.56,.64,1);
+    box-shadow: 0 1px 3px rgba(0,0,0,.4);
+  }
+  .ph-ticks {
+    display: flex;
+    justify-content: space-between;
+    font-size: .7rem;
+    color: var(--muted);
+    font-family: var(--mono);
+    margin-top: 3px;
+  }
+
+  /* ── Étapes de calcul ────────────────────────── */
+  .steps { padding: 16px 20px; display: flex; flex-direction: column; gap: 14px; }
+
+  .step {
+    border-left: 3px solid var(--border);
+    padding: 10px 14px;
+    border-radius: 0 6px 6px 0;
+    background: var(--bg);
+    transition: border-color .2s;
+  }
+  .step.ok   { border-left-color: var(--vert);   background: var(--vert-l); }
+  .step.warn { border-left-color: var(--orange);  background: var(--orange-l); }
+  .step.info { border-left-color: var(--bleu);    background: var(--bleu-l); }
+  .step.err  { border-left-color: var(--rouge);   background: var(--rouge-l); }
+
+  .step-num {
+    font-size: .7rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    font-weight: 700;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .step-text {
+    font-size: .9rem;
+    line-height: 1.55;
+  }
+  .step-formula {
+    margin-top: 6px;
+    font-family: var(--mono);
+    font-size: .9rem;
+    background: rgba(0,0,0,.05);
+    padding: 5px 10px;
+    border-radius: 5px;
+    display: inline-block;
+    font-weight: 600;
+  }
+  .step-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: .75rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    margin-left: 6px;
+  }
+  .badge-ok  { background: var(--ok-bg);  color: var(--ok-txt); }
+  .badge-err { background: var(--err-bg); color: var(--err-txt); }
+
+  /* ── Logigramme ──────────────────────────────── */
+  .logi {
+    max-width: 1120px;
+    margin: 28px auto 0;
+    padding: 0 24px;
+  }
+
+  .logi-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .logi-flow {
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+
+  .logi-step {
+    flex: 1;
+    min-width: 180px;
+    max-width: 260px;
+    position: relative;
+  }
+  .logi-step:not(:last-child)::after {
+    content: "→";
+    position: absolute;
+    right: -14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.2rem;
+    color: var(--muted);
+    z-index: 1;
+  }
+
+  .logi-node {
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    background: var(--surface);
+    margin: 0 14px;
+    font-size: .83rem;
+    line-height: 1.5;
+    height: 100%;
+    transition: all .15s;
+  }
+  .logi-node .node-num {
+    font-size: .7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-bottom: 6px;
+    opacity: .6;
+  }
+  .logi-node .node-title { font-weight: 600; margin-bottom: 4px; }
+  .logi-node .node-desc  { color: var(--muted); font-size: .8rem; }
+
+  .logi-node.active { border-color: var(--bleu); background: var(--bleu-l); box-shadow: 0 0 0 3px rgba(26,75,140,.12); }
+  .logi-node.active .node-num { opacity: 1; color: var(--bleu); }
+
+  /* ── Tableau récap ───────────────────────────── */
+  .recap {
+    max-width: 1120px;
+    margin: 28px auto 0;
+    padding: 0 24px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .83rem;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 9px 12px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th {
+    background: var(--bleu);
+    color: #fff;
+    font-weight: 600;
+    font-size: .8rem;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+  tr.row-af td:first-child  { border-left: 3px solid var(--bleu);   background: var(--bleu-l); }
+  tr.row-bf td:first-child  { border-left: 3px solid var(--vert);   background: var(--vert-l); }
+  tr.row-afb td:first-child { border-left: 3px solid var(--orange); background: var(--orange-l); }
+  tr.row-bfb td:first-child { border-left: 3px solid var(--viol);   background: var(--viol-l); }
+  tr.row-af.highlight  td { background: var(--bleu-l);   }
+  tr.row-bf.highlight  td { background: var(--vert-l);   }
+  tr.row-afb.highlight td { background: var(--orange-l); }
+  tr.row-bfb.highlight td { background: var(--viol-l);   }
+
+  code {
+    font-family: var(--mono);
+    background: rgba(0,0,0,.06);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: .9em;
+  }
+
+  /* ── Footer ─────────────────────────────────── */
+  footer {
+    max-width: 1120px;
+    margin: 36px auto 0;
+    padding: 0 24px;
+    font-size: .78rem;
+    color: var(--muted);
+    text-align: center;
+    font-style: italic;
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+  }
+</style>
+<!-- anb-commun --><script src="https://philrob56.github.io/anabiotec-commun/anb-commun.js"></script><!-- /anb-commun -->
+<!-- anb-fix --><style>header{background:linear-gradient(135deg,#0a4f4f 0%,#0e7c7b 60%,#2a9d8f 100%)!important}.btn-calc{background:#0e7c7b!important}.btn-calc:hover{background:#0a5c5b!important}th{background:#0a5c5b!important}</style><!-- /anb-fix -->
+</head>
+<body>
+<!-- anb-charte --><div class="anb-head"><div class="anb-crumb"><i></i><a href="https://sites.google.com/view/anabioteclegroschene/accueil" target="_top" style="color:inherit;text-decoration:none" title="Tous les outils du BTSa ANABIOTEC"><b>BTSa ANABIOTEC</b></a><span>›</span>Chimie</div><div class="anb-right"><div class="anb-tag">LEGTA Le Gros Chêne · Pontivy</div><button type="button" class="anb-print" onclick="anbPrint()" title="Ouvrir une version imprimable (PDF)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimer / PDF</button></div></div><!-- /anb-charte -->
+
+<header>
+  <h1>Calculateur de pH — Solutions aqueuses</h1>
+  <p>BTS ANABIOTEC · LEGTA Le Gros Chêne, Pontivy · Cours de chimie analytique</p>
+</header>
+
+<!-- ═══════════════ LOGIGRAMME ═══════════════ -->
+<div class="logi">
+  <div class="logi-title">📋 Logigramme de décision</div>
+  <div class="logi-flow">
+
+    <div class="logi-step">
+      <div class="logi-node" id="logi1">
+        <div class="node-num">Étape 1</div>
+        <div class="node-title">Identifier</div>
+        <div class="node-desc">Acide ou base ? Fort(e) ou faible ?</div>
+      </div>
+    </div>
+
+    <div class="logi-step">
+      <div class="logi-node" id="logi2">
+        <div class="node-num">Étape 2</div>
+        <div class="node-title">Entrer C et pKₐ</div>
+        <div class="node-desc">Concentration en mol/L, pKₐ si espèce faible</div>
+      </div>
+    </div>
+
+    <div class="logi-step">
+      <div class="logi-node" id="logi3">
+        <div class="node-num">Étape 3</div>
+        <div class="node-title">Vérifier l'approximation</div>
+        <div class="node-desc">C/K<sub>A</sub> &gt; 100 ? Sinon → 2<sup>nd</sup> degré</div>
+      </div>
+    </div>
+
+    <div class="logi-step">
+      <div class="logi-node" id="logi4">
+        <div class="node-num">Étape 4</div>
+        <div class="node-title">Calculer le pH</div>
+        <div class="node-desc">Formule simplifiée ou équation 2<sup>nd</sup> degré</div>
+      </div>
+    </div>
+
+    <div class="logi-step">
+      <div class="logi-node" id="logi5">
+        <div class="node-num">Étape 5</div>
+        <div class="node-title">Vérifier</div>
+        <div class="node-desc">Terme négligé &lt; 1/10 du terme conservé ?</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════ MAIN LAYOUT ═══════════════ -->
+<div class="layout">
+
+  <!-- Col gauche : saisie -->
+  <div>
+    <!-- Type -->
+    <div class="card">
+      <div class="card-head">🔬 Type de solution</div>
+      <div class="card-body">
+        <div class="type-grid">
+          <button class="type-btn" data-type="af">
+            <span class="icon">🧪</span>
+            <span class="label">Acide fort</span>
+            <span class="ex">HCl, HNO₃, HClO₄…</span>
+          </button>
+          <button class="type-btn" data-type="bf">
+            <span class="icon">🔵</span>
+            <span class="label">Base forte</span>
+            <span class="ex">NaOH, KOH…</span>
+          </button>
+          <button class="type-btn" data-type="afb">
+            <span class="icon">🟡</span>
+            <span class="label">Acide faible</span>
+            <span class="ex">CH₃COOH, HF, NH₄⁺…</span>
+          </button>
+          <button class="type-btn" data-type="bfb">
+            <span class="icon">🟣</span>
+            <span class="label">Base faible</span>
+            <span class="ex">NH₃, CH₃COO⁻…</span>
+          </button>
+        </div>
+
+        <div class="inputs">
+          <div class="field">
+            <label>Concentration C (mol/L)</label>
+            <input type="number" id="inputC" placeholder="ex : 0.1" min="0" step="any">
+            <div class="hint">Entrer une valeur positive &gt; 0</div>
+          </div>
+          <div class="field" id="pkaField" style="display:none">
+            <label>pKₐ du couple</label>
+            <input type="number" id="inputPka" placeholder="ex : 4.76" step="any">
+            <div class="hint">CH₃COOH/CH₃COO⁻ : 4,76 · NH₄⁺/NH₃ : 9,25 · HF/F⁻ : 3,17</div>
+          </div>
+        </div>
+
+        <button class="btn-calc" onclick="calculerPH()">Calculer le pH ▶</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Col droite : résultats -->
+  <div id="result" class="card">
+    <div class="card-head">📊 Résultat</div>
+
+    <div class="ph-display">
+      <div class="label-ph">pH calculé</div>
+      <div class="ph-value" id="phValue">—</div>
+      <div class="ph-bar-wrap">
+        <div class="ph-bar"><div class="ph-needle" id="phNeedle" style="left:50%"></div></div>
+        <div class="ph-ticks">
+          <span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
+          <span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span>
+          <span>12</span><span>13</span><span>14</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="steps" id="steps"></div>
+  </div>
+
+</div>
+
+<!-- ═══════════════ TABLEAU RÉCAP ═══════════════ -->
+<div class="recap">
+  <div class="logi-title" style="margin-top:8px">📋 Tableau récapitulatif des formules</div>
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Formule simplifiée</th>
+          <th>Condition de validité</th>
+          <th>Équation 2<sup>nd</sup> degré (si non valide)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="row-af" id="trow-af">
+          <td><strong>Acide fort</strong><br><span style="color:var(--muted);font-size:.8em">Concentration C</span></td>
+          <td><code>pH = −log C</code></td>
+          <td>pH &lt; 6,5 <br><span style="color:var(--muted)">C &gt; 3×10<sup>−7</sup> mol/L</span></td>
+          <td><code>[H₃O⁺]² − C·[H₃O⁺] − K<sub>e</sub> = 0</code></td>
+        </tr>
+        <tr class="row-bf" id="trow-bf">
+          <td><strong>Base forte</strong><br><span style="color:var(--muted);font-size:.8em">Concentration C</span></td>
+          <td><code>pH = 14 + log C</code></td>
+          <td>pH &gt; 7,5<br><span style="color:var(--muted)">C &gt; 3×10<sup>−8</sup> mol/L</span></td>
+          <td><code>[H₃O⁺]² + C·[H₃O⁺] − K<sub>e</sub> = 0</code></td>
+        </tr>
+        <tr class="row-afb" id="trow-afb">
+          <td><strong>Acide faible</strong><br><span style="color:var(--muted);font-size:.8em">C, pK<sub>A</sub></span></td>
+          <td><code>pH = ½(pK<sub>A</sub> − log C)</code></td>
+          <td>C/K<sub>A</sub> &gt; 100 <br><span style="color:var(--muted)">(α &lt; 10 %)</span></td>
+          <td><code>[H₃O⁺]² + K<sub>A</sub>·[H₃O⁺] − K<sub>A</sub>·C = 0</code></td>
+        </tr>
+        <tr class="row-bfb" id="trow-bfb">
+          <td><strong>Base faible</strong><br><span style="color:var(--muted);font-size:.8em">C, pK<sub>A</sub> du couple BH⁺/B</span></td>
+          <td><code>pH = 7 + ½(pK<sub>A</sub> + log C)</code></td>
+          <td>C·K<sub>A</sub>/K<sub>e</sub> &gt; 100 <br><span style="color:var(--muted)">(α &lt; 10 %)</span></td>
+          <td><code>C·[H₃O⁺]² − K<sub>e</sub>·[H₃O⁺] − K<sub>A</sub>·K<sub>e</sub> = 0</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<footer>
+  BTS ANABIOTEC · LEGTA Le Gros Chêne, Pontivy · Cours de chimie analytique · Application pédagogique
+</footer>
+
+<script>
+const Ke = 1e-14;
+let currentType = null;
+
+// ── Sélection du type ─────────────────────────────────────────────────────
+document.querySelectorAll('.type-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentType = btn.dataset.type;
+    const needPka = (currentType === 'afb' || currentType === 'bfb');
+    document.getElementById('pkaField').style.display = needPka ? 'block' : 'none';
+    highlightLogi(1);
+    document.getElementById('result').style.display = 'none';
+    highlightTable(null);
+  });
+});
+
+function highlightLogi(step) {
+  for (let i = 1; i <= 5; i++) {
+    const el = document.getElementById('logi' + i);
+    if (el) el.classList.toggle('active', i === step);
+  }
+}
+
+function highlightTable(type) {
+  ['af','bf','afb','bfb'].forEach(t => {
+    const row = document.getElementById('trow-' + t);
+    if (row) row.classList.toggle('highlight', t === type);
+  });
+}
+
+// ax² + bx + c = 0 → racine positive
+function solveQuadratic(a, b, c) {
+  const delta = b*b - 4*a*c;
+  if (delta < 0) return null;
+  const x1 = (-b + Math.sqrt(delta)) / (2*a);
+  const x2 = (-b - Math.sqrt(delta)) / (2*a);
+  return x1 > 0 ? x1 : (x2 > 0 ? x2 : null);
+}
+
+function fmtSci(x) {
+  if (x === 0) return "0";
+  const e = Math.floor(Math.log10(Math.abs(x)));
+  const m = x / Math.pow(10, e);
+  if (Math.abs(e) < 3) return x.toPrecision(3);
+  return m.toFixed(2) + " × 10<sup>" + e + "</sup>";
+}
+
+function badge(ok, txtOk, txtErr) {
+  return ok
+    ? `<span class="step-badge badge-ok">✔ ${txtOk}</span>`
+    : `<span class="step-badge badge-err">✗ ${txtErr}</span>`;
+}
+
+function addStep(container, num, text, cssClass='info', formula='') {
+  const d = document.createElement('div');
+  d.className = 'step ' + cssClass;
+  d.innerHTML = `<div class="step-num">${num}</div>
+    <div class="step-text">${text}</div>
+    ${formula ? `<div class="step-formula">${formula}</div>` : ''}`;
+  container.appendChild(d);
+}
+
+// ── Calcul principal ──────────────────────────────────────────────────────
+function calculerPH() {
+  if (!currentType) { alert("Veuillez d'abord sélectionner le type de solution."); return; }
+  const C = parseFloat(document.getElementById('inputC').value);
+  if (isNaN(C) || C <= 0) { alert("Entrer une concentration strictement positive."); return; }
+
+  let pKa = NaN, Ka = NaN;
+  if (currentType === 'afb' || currentType === 'bfb') {
+    pKa = parseFloat(document.getElementById('inputPka').value);
+    if (isNaN(pKa)) { alert("Entrer une valeur de pKₐ."); return; }
+    Ka = Math.pow(10, -pKa);
+  }
+
+  const sd = document.getElementById('steps');
+  sd.innerHTML = '';
+  highlightTable(currentType);
+  highlightLogi(2);
+
+  let pH, h3o;
+
+  // ════════════════════════════════════════════════════════════════════
+  if (currentType === 'af') {
+
+    addStep(sd, 'Réaction',
+      `Acide fort — dissociation <strong>totale</strong> : AH → A<sup>−</sup> + H₃O<sup>+</sup><br>
+       ENS : [H₃O⁺] = [HO⁻] + [A<sup>−</sup>] &nbsp;|&nbsp; CM : [A<sup>−</sup>] = C`,
+      'info');
+
+    const pHapprox = -Math.log10(C);
+    const v1 = pHapprox < 6.5;
+    addStep(sd, 'Approximation',
+      `Milieu acide → <strong>[HO⁻] &lt;&lt; [H₃O⁺]</strong> dans l'ENS → [H₃O⁺] = C<br>
+       Condition : pH &lt; 6,5`,
+      v1 ? 'ok' : 'warn',
+      `pH approché = −log(${C}) = ${pHapprox.toFixed(3)} &nbsp;${badge(v1,'Valide','Non valide → équation 2nd degré')}`);
+
+    if (v1) {
+      pH = pHapprox;
+      addStep(sd, 'Calcul', `Formule simplifiée :`, 'ok',
+        `pH = −log C = −log(${C}) = <strong>${pH.toFixed(3)}</strong>`);
+    } else {
+      const h = solveQuadratic(1, -C, -Ke);
+      pH = -Math.log10(h); h3o = h;
+      addStep(sd, 'Calcul',
+        `[H₃O⁺]² − C·[H₃O⁺] − K<sub>e</sub> = 0`, 'warn',
+        `Δ = C² + 4·K<sub>e</sub> &nbsp;→&nbsp; [H₃O⁺] = ${fmtSci(h)} mol/L &nbsp;→&nbsp; pH = <strong>${pH.toFixed(3)}</strong>`);
+    }
+
+    h3o = Math.pow(10, -pH);
+    const ho = Ke / h3o;
+    const vf = ho < h3o / 10;
+    addStep(sd, 'Vérification',
+      `[HO⁻] = K<sub>e</sub>/[H₃O⁺] = ${fmtSci(ho)} mol/L &nbsp;vs&nbsp; [H₃O⁺]/10 = ${fmtSci(h3o/10)} mol/L`,
+      vf ? 'ok' : 'err',
+      vf ? `✔ [HO⁻] &lt; [H₃O⁺]/10 — approximation confirmée`
+         : `⚠ Approximation limite (solution très diluée)`);
+
+  // ════════════════════════════════════════════════════════════════════
+  } else if (currentType === 'bf') {
+
+    addStep(sd, 'Réaction',
+      `Base forte — protonation <strong>totale</strong> : B + H₂O → BH<sup>+</sup> + HO<sup>−</sup><br>
+       ENS : [H₃O⁺] + [BH<sup>+</sup>] = [HO<sup>−</sup>] &nbsp;|&nbsp; CM : [BH<sup>+</sup>] = C`,
+      'info');
+
+    const pHapprox = 14 + Math.log10(C);
+    const v1 = pHapprox > 7.5;
+    addStep(sd, 'Approximation',
+      `Milieu basique → <strong>[H₃O⁺] &lt;&lt; [HO⁻]</strong> dans l'ENS → [HO⁻] = C<br>
+       Condition : pH &gt; 7,5`,
+      v1 ? 'ok' : 'warn',
+      `pH approché = 14 + log(${C}) = ${pHapprox.toFixed(3)} &nbsp;${badge(v1,'Valide','Non valide → équation 2nd degré')}`);
+
+    if (v1) {
+      pH = pHapprox;
+      addStep(sd, 'Calcul', `Formule simplifiée :`, 'ok',
+        `pH = 14 + log C = 14 + log(${C}) = <strong>${pH.toFixed(3)}</strong>`);
+    } else {
+      const h = solveQuadratic(1, C, -Ke);
+      pH = -Math.log10(h); h3o = h;
+      addStep(sd, 'Calcul',
+        `[H₃O⁺]² + C·[H₃O⁺] − K<sub>e</sub> = 0`, 'warn',
+        `[H₃O⁺] = ${fmtSci(h)} mol/L &nbsp;→&nbsp; pH = <strong>${pH.toFixed(3)}</strong>`);
+    }
+
+    h3o = Math.pow(10, -pH);
+    const ho = Ke / h3o;
+    const vf = h3o < ho / 10;
+    addStep(sd, 'Vérification',
+      `[H₃O⁺] = ${fmtSci(h3o)} mol/L &nbsp;vs&nbsp; [HO⁻]/10 = ${fmtSci(ho/10)} mol/L`,
+      vf ? 'ok' : 'err',
+      vf ? `✔ [H₃O⁺] &lt; [HO⁻]/10 — approximation confirmée`
+         : `⚠ Approximation limite`);
+
+  // ════════════════════════════════════════════════════════════════════
+  } else if (currentType === 'afb') {
+    /*
+     *  Système de départ :
+     *    Ka = [H₃O⁺][A⁻] / [AH]
+     *    Ke = [H₃O⁺][HO⁻]
+     *    ENS : [H₃O⁺] = [HO⁻] + [A⁻]
+     *    CM  : [AH] + [A⁻] = C
+     *
+     *  1ère approximation (posée) : milieu acide → [HO⁻] << [H₃O⁺]
+     *    Dans l'ENS : [H₃O⁺] ≈ [A⁻]
+     *    Système réduit : Ka = [H₃O⁺]² / (C − [H₃O⁺])
+     *    → [H₃O⁺]² + Ka·[H₃O⁺] − Ka·C = 0   (équation après 1ère approx seule)
+     *
+     *  2ème approximation : [H₃O⁺] << C → [AH] ≈ C
+     *    Ka ≈ [H₃O⁺]² / C  →  [H₃O⁺] = √(Ka·C)
+     *    Condition a priori : C/Ka > 100
+     *    → pH = ½(pKa − log C)
+     */
+
+    addStep(sd, 'Réaction',
+      `Acide faible (pK<sub>A</sub> = ${pKa}, K<sub>A</sub> = ${fmtSci(Ka)}) — équilibre <strong>partiel</strong> : AH ⇌ A<sup>−</sup> + H₃O<sup>+</sup><br>
+       ENS : [H₃O⁺] = [HO⁻] + [A<sup>−</sup>] &nbsp;|&nbsp; CM : [AH] + [A<sup>−</sup>] = C`,
+      'info');
+
+    // ── 1ère approximation (posée, vérifiée a posteriori) ─────────────
+    addStep(sd, '1ère approximation — posée',
+      `Milieu acide (pH attendu &lt; 7) → on suppose <strong>[HO⁻] &lt;&lt; [H₃O⁺]</strong><br>
+       Dans l'ENS : [H₃O⁺] ≈ [A<sup>−</sup>]<br>
+       Système réduit : K<sub>A</sub> = [H₃O⁺]² / (C − [H₃O⁺])<br>
+       <em>⚠ Cette hypothèse sera vérifiée a posteriori.</em>`,
+      'info',
+      `[H₃O⁺]² + K<sub>A</sub>·[H₃O⁺] − K<sub>A</sub>·C = 0 &nbsp;← équation après 1ère approximation seule`);
+
+    // ── 2ème approximation (vérifiée a priori) ────────────────────────
+    const ratio2 = C / Ka;
+    const v2 = ratio2 > 100;
+    addStep(sd, '2ème approximation — vérification a priori',
+      `On suppose <strong>[H₃O⁺] &lt;&lt; C</strong> → dans la CM : [AH] ≈ C<br>
+       Condition : C/K<sub>A</sub> &gt; 100<br>
+       C/K<sub>A</sub> = ${fmtSci(C)} / ${fmtSci(Ka)} = <strong>${ratio2.toFixed(1)}</strong>`,
+      v2 ? 'ok' : 'warn',
+      v2
+        ? `${badge(true,'Valide','')}&nbsp; [AH] ≈ C → K<sub>A</sub> ≈ [H₃O⁺]²/C → <strong>formule simplifiée applicable</strong>`
+        : `${badge(false,'','Non valide')}&nbsp; [H₃O⁺] n'est pas négligeable devant C → <strong>équation du 2nd degré après 1ère approx</strong>`);
+
+    highlightLogi(3);
+
+    // ── Calcul ────────────────────────────────────────────────────────
+    if (v2) {
+      pH = 0.5 * (pKa - Math.log10(C));
+      h3o = Math.pow(10, -pH);
+      addStep(sd, 'Calcul',
+        `Les deux approximations sont valides — formule simplifiée :`, 'ok',
+        `pH = ½(pK<sub>A</sub> − log C) = ½(${pKa} − log ${C}) = <strong>${pH.toFixed(3)}</strong>`);
+    } else {
+      // Seule la 1ère approx est utilisée : [H₃O⁺]² + Ka·[H₃O⁺] − Ka·C = 0
+      h3o = solveQuadratic(1, Ka, -Ka * C);
+      pH = -Math.log10(h3o);
+      addStep(sd, 'Calcul',
+        `2ème approximation invalide — résolution de l'équation du 2<sup>nd</sup> degré :<br>
+         [H₃O⁺]² + K<sub>A</sub>·[H₃O⁺] − K<sub>A</sub>·C = 0`, 'warn',
+        `Δ = K<sub>A</sub>² + 4·K<sub>A</sub>·C = ${fmtSci(Ka*Ka + 4*Ka*C)}<br>
+         [H₃O⁺] = (−K<sub>A</sub> + √Δ) / 2 = ${fmtSci(h3o)} mol/L &nbsp;→&nbsp; pH = <strong>${pH.toFixed(3)}</strong>`);
+    }
+
+    highlightLogi(4);
+
+    // ── Vérification a posteriori des deux approximations ─────────────
+    const ho   = Ke / h3o;
+    const tau  = (h3o / C) * 100;
+    const vA1  = ho < h3o / 10;       // 1ère : [HO⁻] < [H₃O⁺]/10
+    const vA2  = h3o < C / 10;        // 2ème : [H₃O⁺] < C/10
+
+    addStep(sd, 'Vérification — 1ère approximation',
+      `[HO⁻] = K<sub>e</sub>/[H₃O⁺] = ${fmtSci(ho)} mol/L &nbsp;vs&nbsp; [H₃O⁺]/10 = ${fmtSci(h3o/10)} mol/L<br>
+       Condition : [HO⁻] &lt; [H₃O⁺]/10 &nbsp;(équivalent à pH &lt; 6,5)`,
+      vA1 ? 'ok' : 'err',
+      vA1
+        ? `✔ [HO⁻] &lt; [H₃O⁺]/10 — hypothèse confirmée (pH = ${pH.toFixed(2)} &lt; 6,5)`
+        : `⚠ pH = ${pH.toFixed(2)} ≥ 6,5 — 1ère approximation non vérifiée (solution très diluée)`);
+
+    addStep(sd, 'Vérification — 2ème approximation',
+      `[H₃O⁺] = ${fmtSci(h3o)} mol/L &nbsp;vs&nbsp; C/10 = ${fmtSci(C/10)} mol/L<br>
+       Taux de dissociation : α = [H₃O⁺]/C = ${tau.toFixed(1)} %<br>
+       Condition : [H₃O⁺] &lt; C/10 &nbsp;(α &lt; 10 %)`,
+      vA2 ? 'ok' : v2 ? 'err' : 'ok',
+      vA2
+        ? `✔ [H₃O⁺] &lt; C/10 — hypothèse confirmée (α = ${tau.toFixed(1)} % &lt; 10 %)`
+        : v2
+          ? `⚠ α = ${tau.toFixed(1)} % &gt; 10 % — approximation non vérifiée a posteriori (erreur sur pH)`
+          : `ℹ α = ${tau.toFixed(1)} % — approximation correctement rejetée, équation 2nd degré utilisée`);
+
+  // ════════════════════════════════════════════════════════════════════
+  } else if (currentType === 'bfb') {
+    /*
+     *  Système de départ :
+     *    Ka = [H₃O⁺][B] / [BH⁺]   (Ka du couple BH⁺/B)
+     *    Ke = [H₃O⁺][HO⁻]
+     *    ENS : [H₃O⁺] + [BH⁺] = [HO⁻]
+     *    CM  : [B] + [BH⁺] = C
+     *
+     *  1ère approximation (posée) : milieu basique → [H₃O⁺] << [HO⁻]
+     *    Dans l'ENS : [HO⁻] ≈ [BH⁺]   et   [HO⁻] = Ke/[H₃O⁺]
+     *    Ka = [H₃O⁺]·(C − Ke/[H₃O⁺]) / (Ke/[H₃O⁺])
+     *    → C·[H₃O⁺]² − Ke·[H₃O⁺] − Ka·Ke = 0   (équation après 1ère approx seule)
+     *
+     *  2ème approximation : [HO⁻] << C → [B] ≈ C
+     *    Ka ≈ [H₃O⁺]·C / (Ke/[H₃O⁺])  →  [H₃O⁺]² = Ka·Ke/C
+     *    Condition a priori : C·Ka/Ke > 100   (équiv. C/Kb > 100, Kb = Ke/Ka)
+     *    → pH = 7 + ½(pKa + log C)
+     */
+
+    addStep(sd, 'Réaction',
+      `Base faible (pK<sub>A</sub>(BH<sup>+</sup>/B) = ${pKa}, K<sub>A</sub> = ${fmtSci(Ka)}) — équilibre <strong>partiel</strong> : B + H₂O ⇌ BH<sup>+</sup> + HO<sup>−</sup><br>
+       ENS : [H₃O⁺] + [BH<sup>+</sup>] = [HO<sup>−</sup>] &nbsp;|&nbsp; CM : [B] + [BH<sup>+</sup>] = C`,
+      'info');
+
+    // ── 1ère approximation ────────────────────────────────────────────
+    addStep(sd, '1ère approximation — posée',
+      `Milieu basique (pH attendu &gt; 7) → on suppose <strong>[H₃O⁺] &lt;&lt; [HO⁻]</strong><br>
+       Dans l'ENS : [HO⁻] ≈ [BH<sup>+</sup>]  →  [HO⁻] = K<sub>e</sub>/[H₃O⁺]<br>
+       Système réduit : K<sub>A</sub> = [H₃O⁺]·(C − K<sub>e</sub>/[H₃O⁺]) / (K<sub>e</sub>/[H₃O⁺])<br>
+       <em>⚠ Cette hypothèse sera vérifiée a posteriori.</em>`,
+      'info',
+      `C·[H₃O⁺]² − K<sub>e</sub>·[H₃O⁺] − K<sub>A</sub>·K<sub>e</sub> = 0 &nbsp;← équation après 1ère approximation seule`);
+
+    // ── 2ème approximation ────────────────────────────────────────────
+    const ratio2 = (C * Ka) / Ke;
+    const v2 = ratio2 > 100;
+    addStep(sd, '2ème approximation — vérification a priori',
+      `On suppose <strong>[HO⁻] &lt;&lt; C</strong> → dans la CM : [B] ≈ C<br>
+       Condition : C·K<sub>A</sub>/K<sub>e</sub> &gt; 100 &nbsp;(équivalent à C/K<sub>B</sub> &gt; 100)<br>
+       C·K<sub>A</sub>/K<sub>e</sub> = ${fmtSci(C)}×${fmtSci(Ka)} / ${fmtSci(Ke)} = <strong>${ratio2.toFixed(1)}</strong>`,
+      v2 ? 'ok' : 'warn',
+      v2
+        ? `${badge(true,'Valide','')}&nbsp; [B] ≈ C → <strong>formule simplifiée applicable</strong>`
+        : `${badge(false,'','Non valide')}&nbsp; [HO⁻] non négligeable devant C → <strong>équation du 2nd degré après 1ère approx</strong>`);
+
+    highlightLogi(3);
+
+    // ── Calcul ────────────────────────────────────────────────────────
+    if (v2) {
+      pH = 7 + 0.5 * (pKa + Math.log10(C));
+      h3o = Math.pow(10, -pH);
+      addStep(sd, 'Calcul',
+        `Les deux approximations sont valides — formule simplifiée :`, 'ok',
+        `pH = 7 + ½(pK<sub>A</sub> + log C) = 7 + ½(${pKa} + log ${C}) = <strong>${pH.toFixed(3)}</strong>`);
+    } else {
+      h3o = solveQuadratic(C, -Ke, -Ka * Ke);
+      pH = -Math.log10(h3o);
+      addStep(sd, 'Calcul',
+        `2ème approximation invalide — résolution de l'équation du 2<sup>nd</sup> degré :<br>
+         C·[H₃O⁺]² − K<sub>e</sub>·[H₃O⁺] − K<sub>A</sub>·K<sub>e</sub> = 0`, 'warn',
+        `Δ = K<sub>e</sub>² + 4·C·K<sub>A</sub>·K<sub>e</sub> = ${fmtSci(Ke*Ke + 4*C*Ka*Ke)}<br>
+         [H₃O⁺] = (K<sub>e</sub> + √Δ) / (2C) = ${fmtSci(h3o)} mol/L &nbsp;→&nbsp; pH = <strong>${pH.toFixed(3)}</strong>`);
+    }
+
+    highlightLogi(4);
+
+    // ── Vérifications a posteriori ────────────────────────────────────
+    const ho   = Ke / h3o;
+    const tau  = (ho / C) * 100;
+    const vB1  = h3o < ho / 10;       // 1ère : [H₃O⁺] < [HO⁻]/10
+    const vB2  = ho < C / 10;         // 2ème : [HO⁻] < C/10
+
+    addStep(sd, 'Vérification — 1ère approximation',
+      `[H₃O⁺] = ${fmtSci(h3o)} mol/L &nbsp;vs&nbsp; [HO⁻]/10 = ${fmtSci(ho/10)} mol/L<br>
+       Condition : [H₃O⁺] &lt; [HO⁻]/10 &nbsp;(équivalent à pH &gt; 7,5)`,
+      vB1 ? 'ok' : 'err',
+      vB1
+        ? `✔ [H₃O⁺] &lt; [HO⁻]/10 — hypothèse confirmée (pH = ${pH.toFixed(2)} &gt; 7,5)`
+        : `⚠ pH = ${pH.toFixed(2)} ≤ 7,5 — 1ère approximation non vérifiée (solution très diluée)`);
+
+    addStep(sd, 'Vérification — 2ème approximation',
+      `[HO⁻] = K<sub>e</sub>/[H₃O⁺] = ${fmtSci(ho)} mol/L &nbsp;vs&nbsp; C/10 = ${fmtSci(C/10)} mol/L<br>
+       Taux de protonation : α = [HO⁻]/C = ${tau.toFixed(1)} %<br>
+       Condition : [HO⁻] &lt; C/10 &nbsp;(α &lt; 10 %)`,
+      vB2 ? 'ok' : v2 ? 'err' : 'ok',
+      vB2
+        ? `✔ [HO⁻] &lt; C/10 — hypothèse confirmée (α = ${tau.toFixed(1)} % &lt; 10 %)`
+        : v2
+          ? `⚠ α = ${tau.toFixed(1)} % &gt; 10 % — approximation non vérifiée a posteriori`
+          : `ℹ α = ${tau.toFixed(1)} % — approximation correctement rejetée, équation 2nd degré utilisée`);
+  }
+
+  // ── Afficher le pH ──────────────────────────────────────────────────────
+  const phClamped = Math.min(14, Math.max(0, pH));
+  document.getElementById('phValue').textContent = pH.toFixed(3);
+  document.getElementById('phNeedle').style.left = (phClamped / 14 * 100) + '%';
+
+  const res = document.getElementById('result');
+  res.style.display = 'block';
+  highlightLogi(5);
+  res.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+</script>
+
+
+</body>
+</html>
