@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<!-- anb-commun --><script src="https://philrob56.github.io/anabiotec-commun/anb-commun.js"></script><!-- /anb-commun -->
+<meta charset="utf-8">
+<meta name="description" content="Simulateur interactif pour comprendre et calculer la limite de détection (LD), la limite de quantification (LQ) et l’intervalle de mesure à partir du rapport signal/bruit. Outil du BTSa ANABIOTEC, lycée Le Gros Chêne, Pontivy.">
+<link rel="canonical" href="https://philrob56.github.io/anabiotec-commun/outils/ld-lq.html">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Limite de détection (LD) et de quantification (LQ) : simulateur | BTSa ANABIOTEC</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f3f0e8;--paper:#fffdf8;--ink:#14213d;--ink2:#5b6683;--line:#e1dbcc;--nd:#c8553d;--det:#e09f3e;--q:#2a9d8f;--sat:#7b5ea7;--acc:#1d4e89;
+  --mono:'JetBrains Mono',ui-monospace,monospace;--disp:'Space Grotesk',Inter,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:920px;margin:0 auto;padding:0 16px}
+header{padding:26px 0 8px}
+.eyebrow{font:600 11px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--acc)}
+h1{font:700 clamp(24px,5.5vw,36px)/1.1 var(--disp);margin:8px 0 6px;letter-spacing:-.02em}
+.sub{color:var(--ink2);margin:0;font-size:15px}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:18px;margin-top:16px;box-shadow:0 14px 30px -24px rgba(20,33,61,.4)}
+h2{font:700 19px/1.2 var(--disp);margin:0 0 4px}
+.muted{color:var(--ink2);font-size:14px;margin:0}
+/* notions */
+.defs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+.def{border-radius:14px;padding:12px 14px;background:color-mix(in srgb,var(--c) 10%,#fff);border:1.5px solid color-mix(in srgb,var(--c) 45%,#fff)}
+.def>b{display:block;font:700 22px var(--disp);color:color-mix(in srgb,var(--c) 80%,#000)}
+.def span{display:inline-block;font:600 12px var(--mono);background:var(--c);color:#fff;border-radius:6px;padding:2px 7px;margin:4px 0 6px}
+.def p{margin:0;font-size:14px}
+/* simulateur */
+canvas{display:block;width:100%;aspect-ratio:2/1;max-height:420px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.btn{border:0;background:var(--acc);color:#fff;font:600 14px Inter;padding:10px 16px;border-radius:12px;cursor:pointer;min-height:44px}
+.btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line)}
+.ctrl{margin-top:14px}
+.ctrl label{display:flex;justify-content:space-between;font-weight:600;font-size:14px;margin-bottom:8px}
+.ctrl label span{font:600 14px var(--mono);color:var(--acc)}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:8px;border-radius:8px;background:linear-gradient(90deg,var(--acc) var(--p,50%),#e6e1d5 var(--p,50%));outline:none;margin:6px 0}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;border-radius:50%;background:#fff;border:4px solid var(--acc);cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.2)}
+input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#fff;border:4px solid var(--acc)}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.chip{flex:1 1 auto;border:1.5px solid var(--line);background:#fff;font:600 13px Inter;padding:9px 12px;border-radius:999px;cursor:pointer;min-height:40px;white-space:nowrap}
+.chip i{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--c);margin-right:6px}
+.seg{display:flex;background:#eee9dd;border-radius:12px;padding:4px}
+.seg button{flex:1;border:0;background:transparent;font:600 13px Inter;padding:9px 6px;border-radius:9px;cursor:pointer;color:var(--ink2);min-height:40px}
+.seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.result{display:grid;grid-template-columns:auto 1fr;gap:12px;margin-top:16px;align-items:stretch}
+.sn{background:var(--ink);color:#fff;border-radius:16px;padding:14px 18px;min-width:150px;display:flex;flex-direction:column;justify-content:center}
+.sn small{font:600 11px Inter;letter-spacing:.08em;text-transform:uppercase;opacity:.7}
+.sn b{font:600 36px/1.1 var(--mono)}
+.sn em{font:500 12px var(--mono);font-style:normal;opacity:.75}
+.verdict{--vc:var(--q);border-radius:16px;padding:14px 16px;background:color-mix(in srgb,var(--vc) 11%,#fff);border:1.5px solid color-mix(in srgb,var(--vc) 55%,#fff);transition:.3s}
+.verdict h3{margin:0 0 3px;font:700 20px/1.2 var(--disp);color:color-mix(in srgb,var(--vc) 75%,#000)}
+.verdict p{margin:0;font-size:14px}
+.verdict .rep{margin-top:8px;font-size:14px;background:#fff;border-radius:10px;padding:7px 10px;border:1px dashed color-mix(in srgb,var(--vc) 60%,#fff)}
+.chart-row{display:grid;grid-template-columns:minmax(0,1fr) 112px;gap:12px;align-items:stretch}
+.vslider{display:flex;flex-direction:column;align-items:center;gap:6px;background:#f6f2e8;border:1px solid var(--line);border-radius:14px;padding:10px 4px}
+.vs-title{font:700 10px Inter;text-transform:uppercase;letter-spacing:.06em;color:var(--ink2)}
+.vs-val{font:600 13px/1.15 var(--mono);color:var(--acc);text-align:center;min-height:30px}
+.vs-title .short{display:none}
+.vs-end{font:500 11px var(--mono);color:var(--ink2)}
+.vslider{min-height:0;overflow:hidden}
+.vs-track{flex:1 1 0;position:relative;width:100%;min-height:0}
+.vs-track input[type=range]{position:absolute;left:50%;top:14px;bottom:14px;transform:translateX(-50%);writing-mode:vertical-lr;direction:rtl;width:8px;height:auto;margin:0;
+  background:linear-gradient(0deg,var(--acc) var(--p,50%),#e6e1d5 var(--p,50%))}
+/* jauge */
+.gauge-box{margin-top:18px}
+.glims{position:relative;height:30px}
+.glim{position:absolute;transform:translateX(-50%);font:700 12px/1.1 var(--mono);text-align:center;white-space:nowrap;transition:left .3s}
+.glim small{display:block;font-weight:500;color:var(--ink2)}
+.gauge{position:relative;height:30px;border-radius:10px;display:flex;overflow:visible}
+.gauge div.z{height:100%;transition:width .3s}
+.gauge .z:first-child{border-radius:10px 0 0 10px}.gauge .z:nth-child(4){border-radius:0 10px 10px 0}
+.gmark{position:absolute;top:-6px;bottom:-6px;width:4px;margin-left:-2px;background:var(--ink);border-radius:3px;box-shadow:0 0 0 2px #fff;transition:left .25s}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:12px;font-size:13px;color:var(--ink2)}
+.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--c);margin-right:6px;vertical-align:-1px}
+/* quiz */
+.qgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.qbtn{border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:12px;font:600 14px Inter;cursor:pointer;display:flex;align-items:center;gap:8px;min-height:50px;text-align:left}
+.qbtn i{width:12px;height:12px;border-radius:50%;background:var(--c);flex:none}
+.qbtn.good{border-color:var(--q);background:#e6f4f1}.qbtn.bad{border-color:var(--nd);background:#fbe9e5}
+.qfb{margin-top:10px;font-size:14px;min-height:22px}
+.score{font:600 14px var(--mono);color:var(--ink2)}
+footer{color:var(--ink2);font-size:12px;text-align:center;padding:22px 16px 34px}
+@media(max-width:640px){
+  .chart-row{grid-template-columns:minmax(0,1fr) 62px;gap:8px}
+  .chart-row canvas{aspect-ratio:1/1}
+  .vs-val{font-size:11.5px}
+  .vs-title .long{display:none}.vs-title .short{display:inline;font-size:14px}
+  .defs{grid-template-columns:1fr}
+  .def{display:grid;grid-template-columns:auto 1fr;gap:0 12px;align-items:center}
+  .def>b{grid-row:span 2;font-size:20px;min-width:52px}
+  .def span{margin:0;justify-self:start}
+  .def p{grid-column:2}
+  canvas{aspect-ratio:4/3}
+  .result{grid-template-columns:1fr}
+  .sn{flex-direction:row;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .sn b{font-size:30px}
+  .qgrid{grid-template-columns:1fr}
+  .card{padding:14px;border-radius:16px}
+}
+</style>
+<!-- anb-charte --><style>body{flex-direction:column!important;justify-content:flex-start!important;align-items:center!important}@media (max-width:700px){body>*{max-width:100%;box-sizing:border-box}}</style><!-- /anb-charte -->
+</head>
+<body>
+<!-- anb-charte --><div class="anb-head"><div class="anb-crumb"><i></i><a href="https://sites.google.com/view/anabioteclegroschene/accueil" target="_top" style="color:inherit;text-decoration:none" title="Tous les outils du BTSa ANABIOTEC"><b>BTSa ANABIOTEC</b></a><span>›</span>Incertitude</div><div class="anb-right"><div class="anb-tag">LEGTA Le Gros Chêne · Pontivy</div><button type="button" class="anb-print" onclick="anbPrint()" title="Ouvrir une version imprimable (PDF)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimer / PDF</button></div></div><!-- /anb-charte -->
+<header class="wrap">
+  <div class="eyebrow">BTSa ANABIOTEC · Chimie analytique</div>
+  <h1>LD, LQ et intervalle de mesure</h1>
+  <p class="sub">Faites varier la concentration et regardez le pic sortir du bruit… jusqu'à saturer le détecteur.</p>
+</header>
+<main class="wrap">
+
+<section class="card">
+  <h2>L'essentiel</h2>
+  <p class="muted">On compare la hauteur du pic <b>H</b> au bruit de la ligne de base <b>h</b> : <b style="font-family:var(--mono)">S/N = H / h</b></p>
+  <div class="defs">
+    <div class="def" style="--c:var(--det)"><b>LD</b><span>S/N = 3</span><p>Limite de détection : on peut dire que l'analyte est <b>présent</b>, sans pouvoir le doser.</p></div>
+    <div class="def" style="--c:var(--q)"><b>LQ</b><span>S/N = 10</span><p>Limite de quantification : on peut <b>doser</b> l'analyte de façon fiable.</p></div>
+    <div class="def" style="--c:var(--sat)"><b>[LQ ; L<sub>sup</sub>]</b><span>zone validée</span><p>Intervalle de mesure : de la LQ jusqu'à la limite où la réponse n'est plus linéaire.</p></div>
+  </div>
+</section>
+
+<section class="card">
+  <div class="top">
+    <div><h2>Le chromatogramme</h2><p class="muted">Pic de l'analyte à 5 min</p></div>
+    <button class="btn" id="btnInject">▶ Injecter</button>
+  </div>
+  <div class="chart-row">
+    <canvas id="cv"></canvas>
+    <div class="vslider">
+      <span class="vs-title"><span class="long">Concentration</span><span class="short">C</span></span>
+      <span class="vs-val" id="lblC"></span>
+      <div class="vs-track"><input type="range" id="rgC" min="0" max="1000" step="1" aria-label="Concentration" orient="vertical"></div>
+      <span class="vs-end">µg/L</span>
+    </div>
+  </div>
+
+  <div class="result">
+    <div class="sn"><small>Signal / bruit</small><b id="sn">—</b><em id="hh"></em></div>
+    <div class="verdict" id="verdict"><h3 id="vT"></h3><p id="vP"></p><div class="rep" id="vR"></div></div>
+  </div>
+
+  <div class="ctrl">
+    <label>Aller directement à…</label>
+    <div class="chips">
+      <button class="chip" style="--c:#999" data-p="blank"><i></i>Blanc</button>
+      <button class="chip" style="--c:var(--det)" data-p="ld"><i></i>≈ LD</button>
+      <button class="chip" style="--c:var(--q)" data-p="lq"><i></i>≈ LQ</button>
+      <button class="chip" style="--c:var(--q)" data-p="mid"><i></i>Milieu de gamme</button>
+      <button class="chip" style="--c:var(--sat)" data-p="sat"><i></i>Saturation</button>
+    </div>
+  </div>
+  <div class="ctrl">
+    <label>Bruit de fond</label>
+    <div class="seg" id="seg"><button data-h="0.3">Faible</button><button data-h="0.6">Moyen</button><button data-h="1.5">Fort</button></div>
+  </div>
+
+  <div class="gauge-box">
+    <div class="glims" id="glims"></div>
+    <div class="gauge" id="gauge"><div class="z" id="z1" style="background:var(--nd)"></div><div class="z" id="z2" style="background:var(--det)"></div><div class="z" id="z3" style="background:var(--q)"></div><div class="z" id="z4" style="background:var(--sat)"></div><div class="gmark" id="gm"></div></div>
+    <div class="legend"><span style="--c:var(--nd)">Non détecté</span><span style="--c:var(--det)">Détecté, &lt; LQ</span><span style="--c:var(--q)">Intervalle de mesure</span><span style="--c:var(--sat)">Hors intervalle</span></div>
+    <p class="muted" style="margin-top:10px">Avec un bruit plus faible, LD et LQ baissent : on détecte des concentrations plus petites.</p>
+  </div>
+</section>
+
+<section class="card">
+  <div class="top"><div><h2>À vous !</h2><p class="muted">Quel est le bon verdict pour ce chromatogramme ?</p></div><span class="score">Score <b id="score">0</b>/<span id="tot">0</span></span></div>
+  <canvas id="cvQ"></canvas>
+  <div class="qgrid">
+    <button class="qbtn" style="--c:var(--nd)" data-a="nd"><i></i>Non détecté</button>
+    <button class="qbtn" style="--c:var(--det)" data-a="det"><i></i>Détecté, &lt; LQ</button>
+    <button class="qbtn" style="--c:var(--q)" data-a="q"><i></i>Quantifiable</button>
+    <button class="qbtn" style="--c:var(--sat)" data-a="sat"><i></i>Hors intervalle</button>
+  </div>
+  <div class="qfb" id="qfb"></div>
+  <button class="btn ghost" id="qNext" style="margin-top:6px">Chromatogramme suivant →</button>
+</section>
+</main>
+<footer>Simulation pédagogique · convention S/N = H/h (la Pharmacopée européenne utilise 2H/h) · limite haute à 5 % d'écart à la linéarité.</footer>
+
+<script>
+(()=>{
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const COL={nd:'#c8553d',det:'#e09f3e',q:'#2a9d8f',sat:'#7b5ea7',ink:'#14213d',ink2:'#5b6683',acc:'#1d4e89',grid:'#efeadf',line:'#d9d2c2'};
+const nf=(v,s=3)=>new Intl.NumberFormat('fr-FR',{maximumSignificantDigits:s}).format(v);
+const fx=(v,d)=>v.toLocaleString('fr-FR',{minimumFractionDigits:d,maximumFractionDigits:d});
+
+/* moteur */
+const NP=1200,TMAX=10,TR=5,SIG=0.075,NW=[6,9.6],K=0.05,HLIN=600,HSAT=800,DD=200;
+const T=new Float64Array(NP),PK=new Float64Array(NP);
+for(let i=0;i<NP;i++){T[i]=TMAX*i/(NP-1);PK[i]=Math.exp(-((T[i]-TR)**2)/(2*SIG*SIG));}
+const idx=t=>Math.round(t/TMAX*(NP-1)),w0=idx(NW[0]),w1=idx(NW[1]),a0=idx(TR-.12),a1=idx(TR+.12);
+const det=x=>x<=HLIN?x:HLIN+DD*(1-Math.exp(-(x-HLIN)/DD));
+const XSUP=(()=>{let a=HLIN,b=3000;for(let j=0;j<60;j++){const m=(a+b)/2;det(m)/m>.95?a=m:b=m;}return a;})(),CSUP=XSUP/K;
+function rng(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const gauss=r=>{let u=0,v=0;while(!u)u=r();while(!v)v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);};
+function noise(seed){const r=rng(seed),raw=[];for(let i=0;i<NP+4;i++)raw.push(gauss(r));const n=new Float64Array(NP),k=[.1,.2,.4,.2,.1];let w=0;
+  for(let i=0;i<NP;i++){let s=0;for(let j=0;j<5;j++)s+=raw[i+j]*k[j];w=.985*w+.06*gauss(r);n[i]=s+.25*w;}
+  let mn=1e9,mx=-1e9,sm=0;for(let i=w0;i<=w1;i++){mn=Math.min(mn,n[i]);mx=Math.max(mx,n[i]);sm+=n[i];}const m=sm/(w1-w0+1);for(let i=0;i<NP;i++)n[i]=(n[i]-m)/(mx-mn);return n;}
+function sim(C,h,nz){const y=new Float64Array(NP);for(let i=0;i<NP;i++)y[i]=det(K*C*PK[i])+h*nz[i];
+  let s=0,mn=1e9,mx=-1e9;for(let i=w0;i<=w1;i++){s+=y[i];mn=Math.min(mn,y[i]);mx=Math.max(mx,y[i]);}const base=s/(w1-w0+1);
+  let ap=a0;for(let i=a0;i<=a1;i++)if(y[i]>y[ap])ap=i;return{y,base,ap,H:y[ap]-base,nmin:mn,nmax:mx,h:mx-mn};}
+const cls=(s,C)=>{if(C>CSUP)return'sat';const r=s.H/s.h;return r<3?'nd':r<10?'det':'q';};
+
+/* dessin */
+function prep(cv){const r=cv.getBoundingClientRect(),d=window.devicePixelRatio||1,W=r.width,H=r.height;
+  if(cv.width!==Math.round(W*d)||cv.height!==Math.round(H*d)){cv.width=Math.round(W*d);cv.height=Math.round(H*d);}
+  const c=cv.getContext('2d');c.setTransform(d,0,0,d,0,0);c.clearRect(0,0,W,H);return{c,W,H};}
+const step=(r,n)=>{const raw=r/n,p=10**Math.floor(Math.log10(raw)),f=raw/p;return(f<1.5?1:f<3.5?2:f<7.5?5:10)*p;};
+function tag(c,t,x,y,col,al='left'){c.save();c.font='600 12px Inter,sans-serif';const w=c.measureText(t).width+10;const X=al==='right'?x-w:al==='center'?x-w/2:x;
+  c.fillStyle='rgba(255,255,255,.93)';c.beginPath();c.roundRect?c.roundRect(X,y-10,w,20,5):c.rect(X,y-10,w,20);c.fill();c.fillStyle=col;c.textBaseline='middle';c.textAlign='left';c.fillText(t,X+5,y+.5);c.restore();}
+function arrow(c,x,ya,yb,col){c.save();c.strokeStyle=c.fillStyle=col;c.lineWidth=1.6;c.beginPath();c.moveTo(x,ya);c.lineTo(x,yb);c.stroke();
+  if(Math.abs(yb-ya)>16)[[ya,1],[yb,-1]].forEach(([y,d])=>{c.beginPath();c.moveTo(x,y);c.lineTo(x-4,y+d*7);c.lineTo(x+4,y+d*7);c.fill();});c.restore();}
+function draw(cv,s,o){
+  const{c,W,H}=prep(cv),sm=W<520,box={l:sm?40:56,r:W-(sm?8:14),t:10,b:H-(sm?30:36)};
+  const y0=o.ymin,y1=o.ymax,sx=t=>box.l+t/TMAX*(box.r-box.l),sy=v=>box.b-(v-y0)/(y1-y0)*(box.b-box.t);
+  c.fillStyle='#fff';c.fillRect(box.l,box.t,box.r-box.l,box.b-box.t);
+  c.font=(sm?'10px':'11px')+' "JetBrains Mono",monospace';c.fillStyle=COL.ink2;c.strokeStyle=COL.grid;c.beginPath();
+  const xs=sm?2:1;c.textAlign='center';c.textBaseline='top';for(let t=0;t<=TMAX;t+=xs){const X=Math.round(sx(t))+.5;c.moveTo(X,box.t);c.lineTo(X,box.b);c.fillText(t,X,box.b+5);}
+  const ys=step(y1-y0,sm?4:5),dd=Math.max(0,-Math.floor(Math.log10(ys)));c.textAlign='right';c.textBaseline='middle';
+  for(let v=Math.ceil(y0/ys)*ys;v<=y1;v+=ys){const Y=Math.round(sy(v))+.5;c.moveTo(box.l,Y);c.lineTo(box.r,Y);c.fillText(fx(Math.abs(v)<1e-9?0:v,dd),box.l-5,Y);}
+  c.stroke();c.strokeStyle=COL.line;c.strokeRect(box.l+.5,box.t+.5,box.r-box.l,box.b-box.t);
+  c.font='600 11px Inter';c.textAlign='right';c.textBaseline='bottom';c.fillText('min',box.r,H-1);
+  c.save();c.translate(10,box.t);c.rotate(-Math.PI/2);c.textAlign='right';c.textBaseline='top';c.fillText('mAU',0,0);c.restore();
+  c.save();c.beginPath();c.rect(box.l,box.t,box.r-box.l,box.b-box.t);c.clip();
+  const done=(o.prog??1)>=1;
+  if(o.ann&&done){c.fillStyle='rgba(29,78,137,.07)';c.fillRect(sx(NW[0]),box.t,sx(NW[1])-sx(NW[0]),box.b-box.t);}
+  if(o.thr)[[3*o.h,COL.det],[10*o.h,COL.q]].forEach(([v,col])=>{const Y=sy(s.base+v);c.strokeStyle=col;c.lineWidth=1.6;c.setLineDash([7,5]);c.beginPath();c.moveTo(box.l,Y);c.lineTo(box.r,Y);c.stroke();c.setLineDash([]);});
+  const n=Math.max(2,Math.floor(NP*(o.prog??1)));c.strokeStyle=COL.ink;c.lineWidth=1.6;c.lineJoin='round';c.beginPath();
+  for(let i=0;i<n;i++){const X=sx(T[i]),Y=sy(s.y[i]);i?c.lineTo(X,Y):c.moveTo(X,Y);}c.stroke();c.restore();
+  if(!done||!o.ann)return;
+  // seuils
+  const yLD=sy(s.base+3*o.h),yLQ=sy(s.base+10*o.h);
+  if(yLQ>box.t+10)tag(c,sm?'LQ (S/N = 10)':'S/N = 10 → seuil LQ',box.l+6,yLQ-12,COL.q);
+  if(yLD>box.t+10&&yLD-yLQ>22)tag(c,sm?'LD (S/N = 3)':'S/N = 3 → seuil LD',box.l+6,yLD-12,COL.det);
+  // h
+  const X1=sx(NW[1]),Ya=sy(s.nmax),Yb=sy(s.nmin);arrow(c,X1+6,Ya,Yb,COL.acc);tag(c,'h = '+fx(s.h,2),(sx(NW[0])+X1)/2,Math.max(box.t+12,Ya-14),COL.acc,'center');
+  // H
+  const xa=sx(TR+.45),Yp=Math.max(box.t,sy(s.y[s.ap])),Y0=sy(s.base);
+  c.save();c.strokeStyle=COL.nd;c.setLineDash([3,3]);c.beginPath();c.moveTo(sx(T[s.ap]),Yp);c.lineTo(xa+4,Yp);c.stroke();c.restore();
+  arrow(c,xa,Yp,Y0,COL.nd);tag(c,'H = '+nf(s.H,3),xa+6,Math.min(Math.max((Yp+Y0)/2,box.t+12),box.b-12),COL.nd);
+  if(s.H>HLIN*.7&&HSAT<y1){const Y=sy(s.base+HSAT);c.strokeStyle=COL.sat;c.setLineDash([2,3]);c.beginPath();c.moveTo(box.l,Y);c.lineTo(box.r,Y);c.stroke();c.setLineDash([]);tag(c,'saturation',box.r-4,Y+13,COL.sat,'right');}
+}
+
+/* simulateur */
+const S={C:500,h:.6,blank:false,prog:1};const NZ=noise(7);
+const LO=0,HI=Math.log10(100000),c2p=C=>(Math.log10(Math.max(1,C))-LO)/(HI-LO)*1000,p2c=p=>10**(LO+p/1000*(HI-LO));
+const fill=el=>el.style.setProperty('--p',(el.value-el.min)/(el.max-el.min)*100+'%');
+function render(){
+  const C=S.blank?0:S.C,h=S.h,s=sim(C,h,NZ),LD=3*h/K,LQ=10*h/K;
+  const top=Math.max(s.H*1.2,10*h*1.5);
+  draw($('#cv'),s,{ymin:-Math.max(h*1.2,top*.06),ymax:top,prog:S.prog,ann:true,thr:true,h});
+  const r=s.H/s.h;$('#sn').textContent=fx(r,r<100?1:0);$('#hh').textContent='H = '+nf(s.H,3)+' · h = '+fx(s.h,2)+' mAU';
+  const k=C===0&&r<3?'nd':cls(s,C);const Cf=s.H/K;
+  const V={nd:['Non détecté','S/N < 3 : le pic se confond avec le bruit.','On rend : « < LD » ('+nf(LD,2)+' µg/L), jamais « 0 ».'],
+    det:['Détecté, non quantifiable','3 ≤ S/N < 10 : l’analyte est présent, mais la mesure est trop imprécise.','On rend : « traces, < LQ » ('+nf(LQ,2)+' µg/L).'],
+    q:['Quantifiable','S/N ≥ 10 et réponse proportionnelle : le dosage est fiable.','On rend : C = '+nf(Cf,3)+' µg/L ± incertitude.'],
+    sat:['Hors intervalle','Le détecteur sature : la concentration est sous-estimée de '+fx((C-Cf)/C*100,0)+' %.','On dilue l’échantillon et on réinjecte.']}[k];
+  $('#verdict').style.setProperty('--vc',COL[k]);$('#vT').textContent=V[0];$('#vP').textContent=V[1];$('#vR').textContent=V[2];
+  $('#lblC').innerHTML=C?nf(C,3):'0<br>blanc';
+  const pct=c=>Math.min(100,Math.max(0,(Math.log10(Math.max(c,1))-LO)/(HI-LO)*100)),a=pct(LD),b=pct(LQ),d=pct(CSUP);
+  $('#z1').style.width=a+'%';$('#z2').style.width=(b-a)+'%';$('#z3').style.width=(d-b)+'%';$('#z4').style.width=(100-d)+'%';
+  $('#gm').style.left=(C?pct(C):0)+'%';
+  $('#glims').innerHTML=[['LD',a,LD,COL.det],['LQ',b,LQ,COL.q],['Lsup',d,CSUP,COL.sat]].map(([n,p,v,c])=>`<div class="glim" style="left:${p}%;color:${c}">${n}<small>${nf(v,2)}</small></div>`).join('');
+}
+function sync(){const r=$('#rgC');r.value=c2p(S.blank?1:S.C);fill(r);$$('#seg button').forEach(b=>b.classList.toggle('on',+b.dataset.h===S.h));}
+$('#rgC').addEventListener('input',e=>{S.C=p2c(+e.target.value);S.blank=false;S.prog=1;fill(e.target);render();});
+$$('#seg button').forEach(b=>b.onclick=()=>{S.h=+b.dataset.h;sync();render();});
+$$('[data-p]').forEach(b=>b.onclick=()=>{const LD=3*S.h/K,LQ=10*S.h/K;S.blank=false;
+  ({blank:()=>S.blank=true,ld:()=>S.C=LD,lq:()=>S.C=LQ*1.02,mid:()=>S.C=Math.sqrt(LQ*CSUP),sat:()=>S.C=CSUP*2.2})[b.dataset.p]();sync();inject();});
+$('#gauge').addEventListener('click',e=>{const r=e.currentTarget.getBoundingClientRect();S.C=p2c((e.clientX-r.left)/r.width*1000);S.blank=false;sync();render();});
+let an;function inject(){cancelAnimationFrame(an);const t0=performance.now();const f=t=>{S.prog=Math.min(1,(t-t0)/1500);render();if(S.prog<1)an=requestAnimationFrame(f);};an=requestAnimationFrame(f);}
+$('#btnInject').onclick=inject;
+
+/* quiz */
+const Q={ok:0,tot:0};
+const NAMES={nd:'Non détecté',det:'Détecté, < LQ',q:'Quantifiable',sat:'Hors intervalle'};
+function newQ(){let k,s,C,h,t=0;
+  do{k=['nd','det','q','sat'][Math.floor(Math.random()*4)];h=[.3,.6,1,1.5][Math.floor(Math.random()*4)];
+    const r={nd:.6+Math.random()*1.2,det:4.5+Math.random()*3.5,q:15+Math.random()*50}[k];C=k==='sat'?(1000+Math.random()*600)/K:r*h/K;s=sim(C,h,noise(Math.floor(Math.random()*1e9)));}
+  while(cls(s,C)!==k&&++t<30);
+  Object.assign(Q,{k:cls(s,C),s,h,ans:false});$$('.qbtn').forEach(b=>b.classList.remove('good','bad'));$('#qfb').textContent='';drawQ();}
+function drawQ(){const s=Q.s,top=Math.max(s.H*1.25,8*Q.h);draw($('#cvQ'),s,{ymin:-Math.max(1.3*Q.h,top*.05),ymax:top,ann:Q.ans,thr:Q.ans,h:Q.h});}
+$$('.qbtn').forEach(b=>b.onclick=()=>{if(Q.ans)return;Q.ans=true;Q.tot++;const ok=b.dataset.a===Q.k;if(ok)Q.ok++;
+  b.classList.add(ok?'good':'bad');$(`.qbtn[data-a=${Q.k}]`).classList.add('good');
+  const r=Q.s.H/Q.s.h;$('#qfb').innerHTML=(ok?'✅ Bravo ! ':'❌ Pas tout à fait. ')+(Q.k==='sat'?'Le sommet est écrêté : le détecteur sature.':`S/N = ${nf(Q.s.H,3)} / ${fx(Q.s.h,2)} ≈ <b>${fx(r,1)}</b> → ${NAMES[Q.k]}.`);
+  $('#score').textContent=Q.ok;$('#tot').textContent=Q.tot;drawQ();});
+$('#qNext').onclick=newQ;
+
+sync();render();newQ();
+let rt;window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{render();drawQ();},80);});
+if(document.fonts)document.fonts.ready.then(()=>{render();drawQ();});
+})();
+</script>
+</body>
+</html>
