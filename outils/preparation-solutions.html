@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="Cours, calculatrice et arbre de décision pour préparer une solution par pesée ou par dilution : masse à peser, volume à prélever, concentration molaire ou massique. Outil du BTSa ANABIOTEC, lycée Le Gros Chêne, Pontivy.">
+<link rel="canonical" href="https://philrob56.github.io/anabiotec-commun/outils/preparation-solutions.html">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Préparation de solutions de concentration déterminée : cours et calculatrice | BTSa ANABIOTEC</title>
+<style>
+:root{
+  --indigo:#4338CA;--indigo-l:#EEF2FF;--indigo-m:#C7D2FE;
+  --teal:#0F766E;--teal-l:#F0FDFA;--teal-m:#99F6E4;
+  --amber:#B45309;--amber-l:#FFFBEB;--amber-m:#FDE68A;
+  --red:#991B1B;--red-l:#FFF5F5;--red-m:#FECACA;
+  --green:#166534;--green-l:#F0FDF4;--green-m:#BBF7D0;
+  --slate:#334155;--slate-m:#94A3B8;--slate-l:#F1F5F9;
+  --border:#E2E8F0;--dark:#0F172A;--bg:#F8FAFC;--card:#fff;
+  --r:10px;--r-sm:6px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--slate);line-height:1.65;}
+/* ── HEADER ── */
+.hdr{background:var(--indigo);color:#fff;padding:1.5rem 1.5rem 0;}
+.hdr-top{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap;}
+.hdr h1{font-size:1.45rem;font-weight:700;letter-spacing:-.02em;}
+.hdr p{font-size:.82rem;opacity:.75;margin-top:3px;}
+.badge-level{background:rgba(255,255,255,.18);border-radius:20px;padding:3px 10px;font-size:.75rem;font-weight:600;white-space:nowrap;}
+.tabs{display:flex;gap:3px;margin-top:1.25rem;overflow-x:auto;scrollbar-width:none;}
+.tabs::-webkit-scrollbar{display:none;}
+.tb{background:transparent;border:none;color:rgba(255,255,255,.6);font-size:.82rem;font-weight:500;padding:.55rem 1rem;border-radius:6px 6px 0 0;cursor:pointer;white-space:nowrap;transition:all .15s;display:flex;align-items:center;gap:5px;}
+.tb:hover{background:rgba(255,255,255,.12);color:#fff;}
+.tb.on{background:var(--card);color:var(--indigo);font-weight:700;}
+/* ── LAYOUT ── */
+.wrap{max-width:920px;margin:0 auto;padding:1.75rem 1.25rem;}
+.pane{display:none;}.pane.on{display:block;}
+/* ── CARDS ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:1.5rem;margin-bottom:1.25rem;}
+.card-sm{padding:1rem;}
+.sec-label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--slate-m);margin-bottom:.8rem;}
+/* ── FRACTIONS CSS ── */
+.frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;margin:0 3px;}
+.frac .num,.frac .den{display:block;text-align:center;padding:2px 6px;white-space:nowrap;}
+.frac .bar{display:block;width:100%;min-width:1.8em;border-top:1.8px solid currentColor;}
+.formula-big{font-size:1.15rem;display:flex;align-items:center;flex-wrap:wrap;gap:4px;padding:.75rem .25rem;color:var(--teal);}
+.formula-big b{color:var(--indigo);}
+.formula-mid{font-size:1rem;display:flex;align-items:center;flex-wrap:wrap;gap:4px;color:var(--slate);}
+.formula-sm{font-size:.88rem;display:flex;align-items:center;flex-wrap:wrap;gap:3px;color:var(--slate);}
+/* ── CALLOUT ── */
+.callout{border-radius:var(--r-sm);padding:.875rem 1rem .875rem 1.1rem;font-size:.875rem;margin-bottom:1.1rem;border-left:3px solid;}
+.co-indigo{background:var(--indigo-l);border-color:var(--indigo);color:#312E81;}
+.co-teal{background:var(--teal-l);border-color:var(--teal);color:#134E4A;}
+.co-amber{background:var(--amber-l);border-color:var(--amber);color:#78350F;}
+.co-red{background:var(--red-l);border-color:var(--red);color:#7F1D1D;}
+.co-green{background:var(--green-l);border-color:var(--green);color:#14532D;}
+.callout strong{font-weight:700;}
+/* ── COURS ── */
+.grandeurs-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.75rem;margin-bottom:1.25rem;}
+.grandeur-card{border:1px solid var(--border);border-radius:var(--r-sm);padding:.875rem 1rem;background:var(--card);}
+.grandeur-card .gname{font-size:.82rem;font-weight:600;color:var(--slate-m);margin-bottom:4px;}
+.grandeur-card .gsymbol{font-size:1.3rem;font-weight:700;color:var(--indigo);margin-bottom:4px;}
+.grandeur-card .gformule{font-size:.85rem;color:var(--dark);display:flex;align-items:center;flex-wrap:wrap;gap:3px;}
+.grandeur-card .gunit{font-size:.78rem;color:var(--slate-m);margin-top:3px;}
+.cas-grid-cours{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.875rem;margin:1rem 0;}
+.cas-cours{border-radius:var(--r);padding:1.1rem;border:1.5px solid;}
+.cas-cours.pur{border-color:var(--teal);background:var(--teal-l);}
+.cas-cours.impur{border-color:var(--amber);background:var(--amber-l);}
+.cas-cours .cc-badge{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-weight:700;font-size:.85rem;margin-bottom:6px;}
+.cas-cours.pur .cc-badge{background:var(--teal-m);color:var(--teal);}
+.cas-cours.impur .cc-badge{background:var(--amber-m);color:var(--amber);}
+.cas-cours .cc-title{font-weight:700;font-size:.9rem;margin-bottom:4px;color:var(--dark);}
+.cas-cours .cc-sub{font-size:.78rem;color:var(--slate-m);margin-bottom:.6rem;}
+.cas-cours.pur .cc-formule{color:var(--teal);}
+.cas-cours.impur .cc-formule{color:var(--amber);}
+.proto-steps{counter-reset:step;}
+.proto-step{display:flex;gap:.875rem;padding:.75rem 0;border-bottom:1px solid var(--border);align-items:flex-start;}
+.proto-step:last-child{border-bottom:none;}
+.proto-step::before{counter-increment:step;content:counter(step);min-width:28px;height:28px;background:var(--indigo);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;flex-shrink:0;margin-top:1px;}
+.proto-step-text{font-size:.9rem;}
+.proto-step-text strong{color:var(--indigo);}
+.erreur-item{display:flex;gap:.75rem;padding:.65rem 0;border-bottom:1px solid rgba(0,0,0,.06);font-size:.875rem;}
+.erreur-item:last-child{border-bottom:none;}
+.erreur-icon{font-size:1.1rem;flex-shrink:0;margin-top:1px;}
+.exemple-box{background:var(--slate-l);border-radius:var(--r-sm);padding:1rem;margin:1rem 0;font-size:.875rem;}
+.exemple-box .ex-title{font-weight:700;color:var(--indigo);margin-bottom:.5rem;}
+.exemple-line{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin:.25rem 0;}
+.exemple-result{font-size:1rem;font-weight:700;color:var(--green);display:flex;align-items:center;gap:6px;margin-top:.5rem;padding-top:.5rem;border-top:1px solid var(--border);}
+/* ── CALCULATRICE ── */
+.choice-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:.75rem;}
+.choice{border:1.5px solid var(--border);border-radius:var(--r);background:var(--card);padding:.875rem 1rem;cursor:pointer;transition:all .15s;text-align:left;}
+.choice:hover{border-color:var(--indigo-m);background:var(--indigo-l);}
+.choice.sel{border-color:var(--indigo);background:var(--indigo-l);}
+.choice .ct{font-size:.9rem;font-weight:700;color:var(--dark);}
+.choice .cd{font-size:.78rem;color:var(--slate-m);margin-top:3px;}
+.choice.sel .ct{color:var(--indigo);}
+.case-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:.75rem;}
+.case-card{border:1.5px solid var(--border);border-radius:var(--r);background:var(--card);padding:.875rem;cursor:pointer;transition:all .15s;}
+.case-card:hover{border-color:var(--indigo-m);}
+.case-card.sel.pur-card{border-color:var(--teal);background:var(--teal-l);}
+.case-card.sel.impur-card{border-color:var(--amber);background:var(--amber-l);}
+.case-badge{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;font-size:.75rem;font-weight:700;margin-bottom:5px;}
+.pur-card .case-badge{background:var(--teal-m);color:var(--teal);}
+.impur-card .case-badge{background:var(--amber-m);color:var(--amber);}
+.case-title{font-size:.875rem;font-weight:700;color:var(--dark);}
+.case-sub{font-size:.75rem;color:var(--slate-m);margin-top:2px;line-height:1.4;}
+.case-fml{margin-top:.5rem;font-size:.82rem;display:flex;align-items:center;flex-wrap:wrap;gap:2px;}
+.pur-card .case-fml{color:var(--teal);}
+.impur-card .case-fml{color:var(--amber);}
+.fields-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:.875rem;}
+.field{display:flex;flex-direction:column;gap:4px;}
+.field label{font-size:.82rem;font-weight:700;color:var(--slate);}
+.field-hint{font-size:.72rem;color:var(--slate-m);}
+.fg{display:flex;gap:5px;}
+.fg input{flex:1;min-width:0;}
+.unit-badge{display:flex;align-items:center;padding:0 9px;background:var(--slate-l);border:1px solid var(--border);border-radius:var(--r-sm);font-size:.78rem;color:var(--slate);white-space:nowrap;}
+input[type=number],input[type=text],select{width:100%;padding:.5rem .7rem;border:1px solid var(--border);border-radius:var(--r-sm);font-size:.875rem;background:var(--card);color:var(--dark);transition:border-color .15s,box-shadow .15s;-moz-appearance:textfield;}
+input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;}
+input:focus,select:focus{outline:none;border-color:var(--indigo);box-shadow:0 0 0 3px rgba(67,56,202,.12);}
+.formula-reminder{border-radius:var(--r-sm);padding:1rem 1.1rem;background:var(--indigo-l);border:1.5px solid var(--indigo-m);margin-bottom:1.1rem;}
+.formula-reminder .fr-label{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--indigo);margin-bottom:.5rem;}
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:.6rem 1.25rem;border-radius:var(--r-sm);border:none;font-size:.875rem;font-weight:700;cursor:pointer;transition:opacity .15s,transform .1s;}
+.btn:active{transform:scale(.98);}
+.btn-primary{background:var(--indigo);color:#fff;}.btn-primary:hover{opacity:.9;}
+.btn-ghost{background:transparent;color:var(--slate);border:1px solid var(--border);}.btn-ghost:hover{background:var(--slate-l);}
+.btn-group{display:flex;gap:.75rem;flex-wrap:wrap;margin-top:1.1rem;}
+/* ── RESULT ── */
+#result-box{display:none;border:1.5px solid var(--green-m);background:var(--green-l);border-radius:var(--r);padding:1.5rem;margin-bottom:1.25rem;}
+.result-lbl{font-size:.78rem;color:var(--slate-m);}
+.result-val{font-size:2rem;font-weight:700;color:var(--green);letter-spacing:-.02em;margin:.3rem 0;}
+.result-sub{font-size:.85rem;color:var(--slate-m);margin-bottom:.875rem;}
+.steps{margin-top:.875rem;}
+.step-item{display:flex;gap:.875rem;padding:.6rem 0;border-bottom:1px solid rgba(0,0,0,.07);align-items:flex-start;}
+.step-item:last-child{border-bottom:none;}
+.step-num{min-width:24px;height:24px;background:var(--green-m);color:var(--green);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;flex-shrink:0;margin-top:2px;}
+.step-title{font-size:.75rem;color:var(--slate-m);}
+.step-val{font-size:.875rem;font-family:'Courier New',monospace;font-weight:600;color:var(--dark);display:flex;align-items:center;flex-wrap:wrap;gap:3px;margin-top:2px;}
+.verrerie-hint{margin-top:.875rem;padding:.7rem 1rem;background:var(--card);border-radius:var(--r-sm);font-size:.84rem;color:var(--slate);border:1px solid var(--border);}
+/* ── ARBRE ── */
+.tree-wrap{overflow-x:auto;}
+svg.tree{min-width:700px;}
+/* ── RECAP TABLE ── */
+.rtable{width:100%;border-collapse:collapse;font-size:.85rem;}
+.rtable th{background:var(--indigo);color:#fff;padding:.7rem .9rem;font-weight:700;text-align:left;white-space:nowrap;}
+.rtable td{padding:.7rem .9rem;border-bottom:1px solid var(--border);vertical-align:middle;}
+.rtable tr:last-child td{border-bottom:none;}
+.rtable tr.pur td:first-child{background:var(--teal-l);color:var(--teal);font-weight:700;}
+.rtable tr.impur td:first-child{background:var(--amber-l);color:var(--amber);font-weight:700;}
+.rtable .fcell{display:flex;align-items:center;flex-wrap:wrap;gap:3px;font-size:.82rem;}
+/* ── QUIZ ── */
+.quiz-prog-wrap{display:flex;align-items:center;gap:.875rem;margin-bottom:1.5rem;}
+.quiz-prog-bar{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden;}
+.quiz-prog-fill{height:100%;background:var(--indigo);border-radius:3px;transition:width .4s;}
+.quiz-prog-text{font-size:.82rem;color:var(--slate-m);white-space:nowrap;font-weight:600;}
+.quiz-question-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:1.5rem;margin-bottom:1rem;}
+.q-num{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--slate-m);margin-bottom:.5rem;}
+.q-text{font-size:1rem;font-weight:600;color:var(--dark);line-height:1.5;margin-bottom:1.25rem;}
+.q-options{display:flex;flex-direction:column;gap:.5rem;}
+.q-opt{border:1.5px solid var(--border);border-radius:var(--r-sm);padding:.75rem 1rem;cursor:pointer;font-size:.9rem;color:var(--slate);transition:all .15s;text-align:left;background:var(--card);}
+.q-opt:hover:not(:disabled){border-color:var(--indigo-m);background:var(--indigo-l);color:var(--indigo);}
+.q-opt.correct{border-color:var(--green);background:var(--green-l);color:var(--green);font-weight:700;}
+.q-opt.wrong{border-color:var(--red);background:var(--red-l);color:var(--red);font-weight:700;}
+.q-opt:disabled{cursor:default;}
+.q-explanation{border-radius:var(--r-sm);padding:.875rem 1rem;font-size:.875rem;margin-top:.875rem;display:none;}
+.q-explanation.show{display:block;}
+.q-explanation.ok{background:var(--green-l);border:1px solid var(--green-m);color:var(--green);}
+.q-explanation.ko{background:var(--red-l);border:1px solid var(--red-m);color:var(--red);}
+.quiz-score-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:2rem;text-align:center;}
+.score-big{font-size:3.5rem;font-weight:700;color:var(--indigo);line-height:1;}
+.score-label{font-size:1rem;color:var(--slate-m);margin-top:.5rem;}
+.score-bar{width:100%;max-width:320px;margin:1.25rem auto;height:12px;background:var(--border);border-radius:6px;overflow:hidden;}
+.score-fill{height:100%;border-radius:6px;transition:width .8s .2s;}
+.score-msg{font-size:1rem;font-weight:600;color:var(--dark);margin-top:1rem;}
+.score-detail{display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;margin-top:1rem;}
+.score-tag{padding:3px 10px;border-radius:20px;font-size:.8rem;font-weight:600;}
+.score-tag.ok{background:var(--green-m);color:var(--green);}
+.score-tag.ko{background:var(--red-m);color:var(--red);}
+
+/* ── EXERCICES ── */
+.corr-box{margin-top:1rem;padding:1rem 1.1rem;background:var(--green-l);border:1.5px solid var(--green-m);border-radius:var(--r-sm);}
+.corr-title{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--green);margin:.75rem 0 .25rem;}
+.corr-title:first-child{margin-top:0;}
+.corr-formula{display:flex;align-items:center;flex-wrap:wrap;gap:4px;font-size:.95rem;padding:.5rem .75rem;background:white;border-radius:4px;margin:.35rem 0;color:var(--teal);}
+.corr-result{font-size:1.1rem;font-weight:700;color:var(--green);margin-top:.5rem;padding-top:.5rem;border-top:1px solid var(--green-m);}
+.tag-amber{background:var(--amber-m);color:var(--amber);}
+/* ── MISC ── */
+h2.section-h{font-size:1.1rem;font-weight:700;color:var(--indigo);margin:1.5rem 0 .75rem;display:flex;align-items:center;gap:.5rem;}
+h2.section-h::before{content:'';width:4px;height:1.2em;background:var(--indigo);border-radius:2px;flex-shrink:0;}
+h3.sub-h{font-size:.95rem;font-weight:700;color:var(--teal);margin:.875rem 0 .5rem;}
+hr.divider{border:none;border-top:1px solid var(--border);margin:1.5rem 0;}
+.tag{display:inline-block;padding:2px 9px;border-radius:20px;font-size:.75rem;font-weight:600;}
+.tag-teal{background:var(--teal-m);color:var(--teal);}
+.tag-amber{background:var(--amber-m);color:var(--amber);}
+.tag-indigo{background:var(--indigo-m);color:var(--indigo);}
+sub{font-size:.72em;}
+@media(max-width:600px){
+  .hdr{padding:1rem 1rem 0;}
+  .wrap{padding:1rem .875rem;}
+  .card{padding:1rem;}
+  .result-val{font-size:1.6rem;}
+  .score-big{font-size:2.5rem;}
+}
+</style>
+<!-- anb-commun --><script src="https://philrob56.github.io/anabiotec-commun/anb-commun.js"></script><!-- /anb-commun -->
+<!-- anb-fix --><style>.hdr{background:linear-gradient(135deg,#0a4f4f 0%,#0e7c7b 60%,#2a9d8f 100%)!important}.tb.on{color:#0e7c7b!important;border-color:#0e7c7b!important}</style><!-- /anb-fix -->
+</head>
+<body>
+<!-- anb-charte --><div class="anb-head"><div class="anb-crumb"><i></i><a href="https://sites.google.com/view/anabioteclegroschene/accueil" target="_top" style="color:inherit;text-decoration:none" title="Tous les outils du BTSa ANABIOTEC"><b>BTSa ANABIOTEC</b></a><span>›</span>Chimie</div><div class="anb-right"><div class="anb-tag">LEGTA Le Gros Chêne · Pontivy</div><button type="button" class="anb-print" onclick="anbPrint()" title="Ouvrir une version imprimable (PDF)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimer / PDF</button></div></div><!-- /anb-charte -->
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-top">
+    <div>
+      <h1>⚗ Préparation de solutions de concentration déterminée</h1>
+      <p>BTS ANABIOTEC · Chimie analytique · LEGTA Le Gros Chêne, Pontivy</p>
+    </div>
+    <span class="badge-level">BTS 1ère année</span>
+  </div>
+  <div class="tabs" role="tablist">
+    <button class="tb on" onclick="tab('cours')" id="tb-cours">📖 Cours</button>
+    <button class="tb" onclick="tab('calc')" id="tb-calc">🔢 Calculatrice</button>
+    <button class="tb" onclick="tab('arbre')" id="tb-arbre">🌿 Arbre de décision</button>
+    <button class="tb" onclick="tab('recap')" id="tb-recap">📊 Récapitulatif</button>
+    <button class="tb" onclick="tab('exo')" id="tb-exo">✏️ Exercices</button>
+    <button class="tb" onclick="tab('quiz')" id="tb-quiz">🎯 Quiz</button>
+  </div>
+</div>
+
+<div class="wrap">
+
+<!-- ════════════════════════════════ COURS ════════════════════════════════ -->
+<div class="pane on" id="pane-cours">
+
+  <div class="callout co-indigo">
+    <strong>Objectif pédagogique —</strong> Être capable de déterminer la <strong>masse de solide à peser</strong> pour préparer une solution de volume <em>V</em> et de concentration en espèce A donnée (molaire ou massique), quel que soit le type de solide disponible au laboratoire.
+  </div>
+
+  <h2 class="section-h">Rappels fondamentaux</h2>
+  <div class="grandeurs-grid">
+    <div class="grandeur-card">
+      <div class="gname">Quantité de matière</div>
+      <div class="gsymbol">n</div>
+      <div class="gformule"><b>n</b> = <span class="frac"><span class="num">m</span><span class="bar"></span><span class="den">M</span></span></div>
+      <div class="gunit">mol</div>
+    </div>
+    <div class="grandeur-card">
+      <div class="gname">Masse molaire</div>
+      <div class="gsymbol">M</div>
+      <div class="gformule">Somme des masses molaires atomiques</div>
+      <div class="gunit">g·mol⁻¹</div>
+    </div>
+    <div class="grandeur-card">
+      <div class="gname">Concentration molaire</div>
+      <div class="gsymbol">C(A)</div>
+      <div class="gformule"><b>C(A)</b> = <span class="frac"><span class="num">n(A)</span><span class="bar"></span><span class="den">V</span></span></div>
+      <div class="gunit">mol·L⁻¹</div>
+    </div>
+    <div class="grandeur-card">
+      <div class="gname">Concentration massique</div>
+      <div class="gsymbol">t(A)</div>
+      <div class="gformule"><b>t(A)</b> = <span class="frac"><span class="num">m(A)</span><span class="bar"></span><span class="den">V</span></span> = C(A) × M(A)</div>
+      <div class="gunit">g·L⁻¹</div>
+    </div>
+    <div class="grandeur-card">
+      <div class="gname">Densité / Masse volumique</div>
+      <div class="gsymbol">d / ρ</div>
+      <div class="gformule"><b>ρ</b> = <span class="frac"><span class="num">m</span><span class="bar"></span><span class="den">V</span></span> &nbsp; ; &nbsp; ρ (g·mL⁻¹) = d</div>
+      <div class="gunit">g·mL⁻¹ (d sans unité)</div>
+    </div>
+    <div class="grandeur-card">
+      <div class="gname">Relation fondamentale</div>
+      <div class="gsymbol">m = n × M</div>
+      <div class="gformule"><b>m</b> = n × M &nbsp; ; &nbsp; <b>n</b> = <span class="frac"><span class="num">m</span><span class="bar"></span><span class="den">M</span></span></div>
+      <div class="gunit">m (g) · M (g·mol⁻¹) · n (mol)</div>
+    </div>
+  </div>
+
+  <h2 class="section-h">Préparation par dissolution d'un solide — Les 4 cas</h2>
+  <p style="font-size:.9rem;margin-bottom:1rem;">Le calcul de la masse à peser dépend du <strong>type de solide</strong> disponible au laboratoire. Deux questions suffisent à identifier le bon cas :</p>
+
+  <div class="cas-grid-cours">
+    <div class="cas-cours pur">
+      <div class="cc-badge">1</div>
+      <div class="cc-title">Pur, non hydraté</div>
+      <div class="cc-sub">Espèce A seule, formule simple (glucose, NaCl…)</div>
+      <div class="cc-formule">
+        <div class="formula-sm">m = <span class="frac" style="color:var(--teal)"><span class="num">t(A) × V</span><span class="bar"></span><span class="den">1</span></span> = t(A) × V</div>
+        <div style="font-size:.78rem;color:var(--slate-m);margin-top:4px;">ou : m = C(A) × V × M(A)</div>
+      </div>
+    </div>
+    <div class="cas-cours pur">
+      <div class="cc-badge">2</div>
+      <div class="cc-title">Pur, hydraté</div>
+      <div class="cc-sub">Sel hydraté A<sub>a</sub>B<sub>b</sub>·nX pur (lactose·H₂O, H₂C₂O₄·2H₂O…)</div>
+      <div class="cc-formule">
+        <div class="formula-sm">m = <span class="frac" style="color:var(--teal)"><span class="num">t(A) × V × M<sub>sol</sub></span><span class="bar"></span><span class="den">a × M(A)</span></span></div>
+        <div style="font-size:.78rem;color:var(--slate-m);margin-top:4px;">ou num. : C(A) × V × M<sub>sol</sub></div>
+      </div>
+    </div>
+
+  </div>
+
+
+  <h3 class="sub-h">Exemples résolus</h3>
+
+  <div class="exemple-box">
+    <div class="ex-title">Cas 1 · Glucose pur (concentration massique)</div>
+    <p style="font-size:.84rem;color:var(--slate-m);margin-bottom:.5rem;">Préparer V = 500,0 mL d'une solution de glucose à t = 1,80 g·L⁻¹ depuis C₆H₁₂O₆ pur [M = 180,16 g·mol⁻¹]. Solide pur non hydraté → CAS 1.</p>
+    <div class="exemple-line">m = t(A) × V = 1,80 × 0,5000</div>
+    <div class="exemple-result">✔ m = 0,9008 g</div>
+  </div>
+
+  <div class="exemple-box">
+    <div class="ex-title">Cas 2 · Lactose monohydraté pur (concentration massique)</div>
+    <p style="font-size:.84rem;color:var(--slate-m);margin-bottom:.5rem;">Préparer V = 200,0 mL d'une solution de lactose à t(L) = 10,0 g·L⁻¹ depuis C₁₂H₂₂O₁₁·H₂O pur [M<sub>sol</sub> = 360,32 ; M(L) = 342,30 g·mol⁻¹]. Solide pur hydraté → CAS 2.</p>
+    <div class="exemple-line">m = <span class="frac"><span class="num">t(L) × V × M<sub>sol</sub></span><span class="bar"></span><span class="den">a × M(L)</span></span> = <span class="frac"><span class="num">10,0 × 0,2000 × 360,32</span><span class="bar"></span><span class="den">1 × 342,30</span></span></div>
+    <div class="exemple-result">✔ m = 2,105 g</div>
+  </div>
+
+  <div class="exemple-box">
+    <div class="ex-title">Cas 3 · NaOH en pastilles impur (concentration molaire)</div>
+    <p style="font-size:.84rem;color:var(--slate-m);margin-bottom:.5rem;">Préparer V = 200,0 mL d'une solution de NaOH à C = 5,00×10⁻² mol·L⁻¹ depuis NaOH en pastilles [M = 40,00 g·mol⁻¹, P = 98,0 %]. Solide impur non hydraté → CAS 3.</p>
+    <div class="exemple-line">m = <span class="frac"><span class="num">C(A) × V × M(A)</span><span class="bar"></span><span class="den">P</span></span> = <span class="frac"><span class="num">0,05000 × 0,2000 × 40,00</span><span class="bar"></span><span class="den">0,980</span></span></div>
+    <div class="exemple-result">✔ m = 0,4082 g = 408,2 mg</div>
+  </div>
+
+  <div class="exemple-box">
+    <div class="ex-title">Cas 4 · Glycyrrhizinate monoammoniacal impur (concentration massique)</div>
+    <p style="font-size:.84rem;color:var(--slate-m);margin-bottom:.5rem;">Préparer V = 100,0 mL à t = 500 mg·L⁻¹ en acide glycyrrhizique depuis C₄₂H₆₃O₁₆·NH₃ [M<sub>sol</sub> = 840,0 ; M(A) = 822,9 g·mol⁻¹, a = 1, P = 90,0 %]. Solide impur hydraté → CAS 4.</p>
+    <div class="exemple-line">m = <span class="frac"><span class="num">t(A) × V × M<sub>sol</sub></span><span class="bar"></span><span class="den">a × P × M(A)</span></span> = <span class="frac"><span class="num">0,500 × 0,1000 × 840,0</span><span class="bar"></span><span class="den">1 × 0,900 × 822,9</span></span></div>
+    <div class="exemple-result">✔ m = 5,682×10⁻² g = 56,82 mg</div>
+  </div>
+
+
+
+
+
+
+
+
+</div><!-- /cours -->
+
+
+<!-- ════════════════════════════════ CALCULATRICE ════════════════════════════════ -->
+<div class="pane" id="pane-calc">
+
+  <!-- ÉTAPE 1 : TYPE DE CONCENTRATION -->
+  <div class="card">
+    <div class="sec-label">Étape 1 · Type de concentration cible</div>
+    <div class="choice-grid">
+      <button class="choice" onclick="selConc('massique')" id="c-mass">
+        <div class="ct">Concentration massique t(A)</div>
+        <div class="cd">En g·L⁻¹ &nbsp;—&nbsp; convertir mg·L⁻¹ en g·L⁻¹ (÷ 1000)</div>
+      </button>
+      <button class="choice" onclick="selConc('molaire')" id="c-mol">
+        <div class="ct">Concentration molaire C(A)</div>
+        <div class="cd">En mol·L⁻¹</div>
+      </button>
+    </div>
+  </div>
+
+  <!-- ÉTAPE 2 : TYPE DE SOLIDE -->
+  <div class="card" id="s-cases" style="display:none">
+    <div class="sec-label">Étape 2 · Type de solide disponible</div>
+    <div class="case-grid">
+      <div class="case-card pur-card" onclick="selCase(1)" id="cc1">
+        <div class="case-badge">1</div>
+        <div class="case-title">Pur, non hydraté</div>
+        <div class="case-sub">Formule simple, P = 100 %<br><em>ex : glucose, NaCl pur…</em></div>
+        <div class="case-fml" id="cf1"></div>
+      </div>
+      <div class="case-card pur-card" onclick="selCase(2)" id="cc2">
+        <div class="case-badge">2</div>
+        <div class="case-title">Pur, hydraté</div>
+        <div class="case-sub">A·nH₂O ou A<sub>a</sub>B<sub>b</sub>·nX, P = 100 %<br><em>ex : lactose·H₂O…</em></div>
+        <div class="case-fml" id="cf2"></div>
+      </div>
+      <div class="case-card impur-card" onclick="selCase(3)" id="cc3">
+        <div class="case-badge">3</div>
+        <div class="case-title">Impur, non hydraté</div>
+        <div class="case-sub">Pureté P% indiquée, formule simple<br><em>ex : NaOH pastilles P=98 %…</em></div>
+        <div class="case-fml" id="cf3"></div>
+      </div>
+      <div class="case-card impur-card" onclick="selCase(4)" id="cc4">
+        <div class="case-badge">4</div>
+        <div class="case-title">Impur, hydraté</div>
+        <div class="case-sub">A<sub>a</sub>B<sub>b</sub>·nX + pureté P% — Cas général<br><em>ex : glycyrrhizinate P=90 %…</em></div>
+        <div class="case-fml" id="cf4"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ÉTAPE 3 : DONNÉES + CALCUL -->
+  <div class="card" id="s-form" style="display:none">
+    <div class="sec-label">Étape 3 · Données numériques</div>
+    <div class="formula-reminder">
+      <div class="fr-label">Formule appliquée</div>
+      <div id="formula-display" class="formula-big"></div>
+    </div>
+    <div class="fields-grid" id="fields-diss"></div>
+    <div class="btn-group">
+      <button class="btn btn-primary" onclick="calcDiss()">⟹ Calculer la masse à peser</button>
+      <button class="btn btn-ghost" onclick="resetCalc()">↺ Réinitialiser</button>
+    </div>
+  </div>
+
+  <!-- RÉSULTAT -->
+  <div id="result-box">
+    <div class="result-lbl" id="r-lbl">Masse à peser</div>
+    <div class="result-val" id="r-val">–</div>
+    <div class="result-sub" id="r-sub"></div>
+    <div class="steps" id="r-steps"></div>
+    <div class="verrerie-hint" id="r-hint" style="display:none"></div>
+  </div>
+
+</div><!-- /calc -->
+
+
+<!-- ════════════════════════════════ ARBRE ════════════════════════════════ -->
+<div class="pane" id="pane-arbre">
+  <div class="card">
+    <div class="sec-label">Arbre de décision — Identifier le cas à appliquer</div>
+    <div class="tree-wrap">
+      <svg class="tree" viewBox="0 0 760 510" xmlns="http://www.w3.org/2000/svg">
+        <defs><marker id="ar" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#94A3B8"/></marker></defs>
+        <!-- Départ -->
+        <rect x="280" y="12" width="200" height="46" rx="23" fill="#4338CA"/>
+        <text x="380" y="40" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13.5" fill="white" font-weight="700">Je dispose d'un solide</text>
+        <line x1="380" y1="58" x2="380" y2="95" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#ar)"/>
+        <!-- Q1 -->
+        <rect x="240" y="95" width="280" height="56" rx="8" fill="#EEF2FF" stroke="#C7D2FE" stroke-width="1.5"/>
+        <text x="380" y="118" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13.5" fill="#312E81" font-weight="700">Le solide est-il pur ?</text>
+        <text x="380" y="138" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11.5" fill="#6366F1">(P = 100 % ou non précisée)</text>
+        <!-- Q1 → OUI gauche -->
+        <line x1="265" y1="123" x2="170" y2="123" stroke="#94A3B8" stroke-width="1.5"/>
+        <line x1="170" y1="123" x2="170" y2="202" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#ar)"/>
+        <rect x="180" y="110" width="38" height="18" rx="9" fill="#0F766E"/>
+        <text x="199" y="122.5" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10.5" fill="white" font-weight="700">OUI</text>
+        <!-- Q1 → NON droite -->
+        <line x1="495" y1="123" x2="595" y2="123" stroke="#94A3B8" stroke-width="1.5"/>
+        <line x1="595" y1="123" x2="595" y2="202" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#ar)"/>
+        <rect x="536" y="110" width="38" height="18" rx="9" fill="#B45309"/>
+        <text x="555" y="122.5" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10.5" fill="white" font-weight="700">NON</text>
+        <!-- Q2 gauche -->
+        <rect x="50" y="202" width="240" height="56" rx="8" fill="#F0FDFA" stroke="#99F6E4" stroke-width="1.5"/>
+        <text x="170" y="225" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" fill="#115E59" font-weight="700">Solide hydraté ?</text>
+        <text x="170" y="244" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#0F766E">(formule A·nX ou A<tspan dy="3" font-size="9">a</tspan><tspan dy="-3">B<tspan dy="3" font-size="9">b</tspan><tspan dy="-3">·nX)</tspan></tspan></text>
+        <!-- Q2g → NON -->
+        <line x1="90" y1="230" x2="58" y2="230" stroke="#94A3B8" stroke-width="1.5"/>
+        <line x1="58" y1="230" x2="58" y2="330" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#ar)"/>
+        <rect x="30" y="218" width="30" height="16" rx="8" fill="#0F766E"/>
+        <text x="45" y="229.5" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9.5" fill="white" font-weight="700">NON</text>
+        <!-- Q2g → OUI -->
+        <line x1="250" y1="230" x2="280" y2="230" stroke="#94A3B8" stroke-width="1.5"/>
+        <line x1="280" y1="230" x2="280" y2="330" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#ar)"/>
+        <rect x="257" y="218" width="30" height="16" rx="8" fill="#0F766E"/>
+        <text x="272" y="229.5" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9.5" fill="white" font-weight="700">OUI</text>
+        <!-- Q2 droite -->
+        <rect x="470" y="202" width="250" height="56" rx="8" fill="#FFFBEB" stroke="#FDE68A" stroke-width="1.5"/>
+        <text x="595" y="225" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" fill="#78350F" font-weight="700">Solide hydraté ?</text>
+        <text x="595" y="244" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#B45309">(même question, P% connue)</text>
+        <!-- Q2d → NON -->
+        <line x1="510" y1="230" x2="478" y2="230" stroke="#94A3B8" stroke-width="1.5"/>
+        <line x1="478" y1="230" x2="478" y2="330" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#ar)"/>
+        <rect x="450" y="218" width="30" height="16" rx="8" fill="#B45309"/>
+        <text x="465" y="229.5" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9.5" fill="white" font-weight="700">NON</text>
+        <!-- Q2d → OUI -->
+        <line x1="680" y1="230" x2="712" y2="230" stroke="#94A3B8" stroke-width="1.5"/>
+        <line x1="712" y1="230" x2="712" y2="330" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#ar)"/>
+        <rect x="690" y="218" width="30" height="16" rx="8" fill="#B45309"/>
+        <text x="705" y="229.5" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9.5" fill="white" font-weight="700">OUI</text>
+        <!-- CAS 1 -->
+        <rect x="10" y="330" width="110" height="100" rx="8" fill="#F0FDFA" stroke="#0F766E" stroke-width="2"/>
+        <text x="65" y="352" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" fill="#0F766E" font-weight="700">CAS 1</text>
+        <text x="65" y="368" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#115E59">Pur, non hydraté</text>
+        <text x="65" y="386" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#115E59">m = t·V</text>
+        <text x="65" y="401" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#115E59">ou C·V·M(A)</text>
+        <text x="65" y="420" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9.5" fill="#0F766E" font-style="italic">glucose, NaCl…</text>
+        <!-- CAS 2 -->
+        <rect x="230" y="330" width="120" height="100" rx="8" fill="#F0FDFA" stroke="#0F766E" stroke-width="2"/>
+        <text x="290" y="352" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" fill="#0F766E" font-weight="700">CAS 2</text>
+        <text x="290" y="368" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#115E59">Pur, hydraté</text>
+        <text x="290" y="384" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9.5" fill="#115E59">m = t·V·M(sol)</text>
+        <text x="290" y="398" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9.5" fill="#115E59">/ [a · M(A)]</text>
+        <text x="290" y="420" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9.5" fill="#0F766E" font-style="italic">lactose·H₂O…</text>
+        <!-- CAS 3 -->
+        <rect x="428" y="330" width="120" height="100" rx="8" fill="#FFFBEB" stroke="#B45309" stroke-width="2"/>
+        <text x="488" y="352" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" fill="#B45309" font-weight="700">CAS 3</text>
+        <text x="488" y="368" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#78350F">Impur, non hydraté</text>
+        <text x="488" y="384" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9.5" fill="#78350F">m = C·V·M(A) / P</text>
+        <text x="488" y="398" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9.5" fill="#78350F">ou t·V / P</text>
+        <text x="488" y="420" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9.5" fill="#B45309" font-style="italic">NaOH pastilles…</text>
+        <!-- CAS 4 -->
+        <rect x="658" y="330" width="102" height="100" rx="8" fill="#FFFBEB" stroke="#B45309" stroke-width="2"/>
+        <text x="709" y="352" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" fill="#B45309" font-weight="700">CAS 4</text>
+        <text x="709" y="368" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#78350F">Impur, hydraté</text>
+        <text x="709" y="384" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9.5" fill="#78350F">m = t·V·M(sol)</text>
+        <text x="709" y="398" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9.5" fill="#78350F">/ [a·P·M(A)]</text>
+        <text x="709" y="420" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9.5" fill="#B45309" font-style="italic">glycyrrhizinate…</text>
+        <!-- Légende -->
+        <rect x="20" y="460" width="12" height="12" rx="3" fill="#F0FDFA" stroke="#0F766E" stroke-width="1.5"/>
+        <text x="38" y="471" font-family="system-ui,sans-serif" font-size="11" fill="#0F766E">Pur (P = 1)</text>
+        <rect x="130" y="460" width="12" height="12" rx="3" fill="#FFFBEB" stroke="#B45309" stroke-width="1.5"/>
+        <text x="148" y="471" font-family="system-ui,sans-serif" font-size="11" fill="#B45309">Impur (P &lt; 1)</text>
+        <text x="380" y="471" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#94A3B8" font-style="italic">V en L  ·  P = fraction décimale  ·  a = coeff. stœchiométrique</text>
+      </svg>
+    </div>
+  </div>
+  <div class="callout co-amber">
+    <strong>Attention :</strong> M<sub>sol</sub> = masse molaire du <em>solide tel qu'il est pesé</em> (avec molécules d'eau). M(A) = masse molaire de l'espèce A <em>cible seule</em>. Ne pas les confondre !
+  </div>
+</div><!-- /arbre -->
+
+
+<!-- ════════════════════════════════ RÉCAP ════════════════════════════════ -->
+<div class="pane" id="pane-recap">
+  <div class="card">
+    <div class="sec-label">Dissolution — Les 4 cas</div>
+    <div style="overflow-x:auto">
+    <table class="rtable">
+      <thead><tr><th>Cas</th><th>Type de solide</th><th>Conc. massique t(A)</th><th>Conc. molaire C(A)</th><th>Exemples BTS</th></tr></thead>
+      <tbody>
+        <tr class="pur"><td>1</td><td>Pur, non hydraté<br><small style="color:var(--slate-m)">a=1, P=1</small></td>
+          <td><div class="fcell">m = t·V</div></td>
+          <td><div class="fcell">m = C·V·M(A)</div></td>
+          <td style="font-size:.8rem">Glucose, Caféine,<br>NaCl pur, acide salicylique</td></tr>
+        <tr class="pur"><td>2</td><td>Pur, hydraté<br><small style="color:var(--slate-m)">P=1</small></td>
+          <td><div class="fcell">m = <span class="frac"><span class="num">t·V·M<sub>sol</sub></span><span class="bar"></span><span class="den">a·M(A)</span></span></div></td>
+          <td><div class="fcell">m = <span class="frac"><span class="num">C·V·M<sub>sol</sub></span><span class="bar"></span><span class="den">a</span></span></div></td>
+          <td style="font-size:.8rem">Lactose·H₂O,<br>H₂C₂O₄·2H₂O,<br>(NH₄)₂SO₄ pur</td></tr>
+        <tr class="impur"><td>3</td><td>Impur, non hydraté<br><small style="color:var(--slate-m)">P&lt;1</small></td>
+          <td><div class="fcell">m = <span class="frac"><span class="num">t·V</span><span class="bar"></span><span class="den">P</span></span></div></td>
+          <td><div class="fcell">m = <span class="frac"><span class="num">C·V·M(A)</span><span class="bar"></span><span class="den">P</span></span></div></td>
+          <td style="font-size:.8rem">NaOH pastilles,<br>KNO₃ impur, CuSO₄</td></tr>
+        <tr class="impur"><td>4</td><td>Impur, hydraté<br><small style="color:var(--slate-m)">P&lt;1, général</small></td>
+          <td><div class="fcell">m = <span class="frac"><span class="num">t·V·M<sub>sol</sub></span><span class="bar"></span><span class="den">a·P·M(A)</span></span></div></td>
+          <td><div class="fcell">m = <span class="frac"><span class="num">C·V·M<sub>sol</sub></span><span class="bar"></span><span class="den">a·P</span></span></div></td>
+          <td style="font-size:.8rem">Glycyrrhizinate (P=90%),<br>(NH₄)₂SO₄ impur</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+  <div class="card">
+    <div class="sec-label">Dilution et solution commerciale</div>
+    <div style="overflow-x:auto">
+    <table class="rtable">
+      <thead><tr><th>Situation</th><th>Formule</th><th>Remarque</th></tr></thead>
+      <tbody>
+        <tr><td>Dilution — volume à prélever</td>
+          <td><div class="fcell"><b>V<sub>m</sub></b> = <span class="frac"><span class="num">C<sub>f</sub> × V<sub>f</sub></span><span class="bar"></span><span class="den">C<sub>m</sub></span></span></div></td>
+          <td>C<sub>m</sub> et C<sub>f</sub> dans les mêmes unités</td></tr>
+        <tr><td>Facteur de dilution</td>
+          <td><div class="fcell"><b>F</b> = <span class="frac"><span class="num">C<sub>m</sub></span><span class="bar"></span><span class="den">C<sub>f</sub></span></span> = <span class="frac"><span class="num">V<sub>f</sub></span><span class="bar"></span><span class="den">V<sub>m</sub></span></span></div></td>
+          <td>Sans unité, toujours &gt; 1</td></tr>
+        <tr><td>Concentration t<sub>m</sub> commerciale</td>
+          <td><div class="fcell"><b>t<sub>m</sub></b> = 10 × P(%) × d &nbsp; g·L⁻¹</div></td>
+          <td>d = densité de la solution</td></tr>
+        <tr><td>Concentration C<sub>m</sub> commerciale</td>
+          <td><div class="fcell"><b>C<sub>m</sub></b> = <span class="frac"><span class="num">10 × P(%) × d</span><span class="bar"></span><span class="den">M</span></span></div></td>
+          <td>mol·L⁻¹</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+  <div class="card card-sm">
+    <div class="sec-label">Légende des symboles</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:.6rem;font-size:.875rem;">
+      <div><b>V</b> — Volume de la fiole (<strong>en litres !</strong>)</div>
+      <div><b>t(A)</b> — Concentration massique (g·L⁻¹)</div>
+      <div><b>C(A)</b> — Concentration molaire (mol·L⁻¹)</div>
+      <div><b>M<sub>sol</sub></b> — Masse molaire du solide pesé (g·mol⁻¹)</div>
+      <div><b>M(A)</b> — Masse molaire de l'espèce cible (g·mol⁻¹)</div>
+      <div><b>a</b> — Coefficient stœchiométrique de A dans le solide</div>
+      <div><b>P</b> — Pureté en <em>fraction décimale</em> (98 % → 0,98)</div>
+      <div><b>m</b> — Masse à peser du solide (en grammes)</div>
+    </div>
+  </div>
+</div><!-- /recap -->
+
+
+<!-- ════════════════════════════════ QUIZ ════════════════════════════════ -->
+
+<!-- ════════════════════════════════ EXERCICES ════════════════════════════════ -->
+<div class="pane" id="pane-exo">
+
+  <div class="callout co-indigo" style="margin-bottom:1.25rem;">
+    <strong>Mode d'emploi —</strong> Résolvez chaque exercice avant de révéler la correction. Les 8 exercices couvrent les 4 cas (2 par cas), en concentration massique et molaire alternativement.
+  </div>
+
+  <!-- ── CAS 1 ── -->
+  <h2 class="section-h">CAS 1 · Solide pur, non hydraté</h2>
+
+  <div class="card" id="exo1">
+    <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.875rem;">
+      <span class="tag tag-teal">Exercice 1</span>
+      <span class="tag tag-indigo">Concentration massique</span>
+    </div>
+    <p style="font-size:.925rem;font-weight:600;color:var(--dark);margin-bottom:.5rem;">
+      On souhaite préparer une solution étalon de caféine (C₈H₁₀N₄O₂, M = 194,19 g·mol⁻¹) dans une fiole jaugée de <strong>100,0 mL</strong>.<br>
+      La concentration massique cible est <strong>t = 1 000 mg·L⁻¹</strong>.<br>
+      La caféine disponible est pure (P = 100 %). Quelle masse faut-il peser ?
+    </p>
+    <button class="btn btn-ghost" style="margin-top:.5rem" onclick="toggleCorr('c1')">🔍 Voir la correction</button>
+    <div id="c1" class="corr-box" style="display:none">
+      <div class="corr-title">Identification du cas</div>
+      <p>Caféine pure, formule simple (non hydratée) → <strong>CAS 1</strong>. Concentration massique.</p>
+      <div class="corr-title">Conversion des unités</div>
+      <p>t = 1 000 mg·L⁻¹ = <strong>1,000 g·L⁻¹</strong> &nbsp;|&nbsp; V = 100,0 mL = <strong>0,1000 L</strong></p>
+      <div class="corr-title">Application de la formule</div>
+      <div class="corr-formula">m = t(A) × V = 1,000 × 0,1000</div>
+      <div class="corr-result">m = 0,1000 g = 100,0 mg</div>
+      <div class="corr-title">Vérification</div>
+      <p>Ordre de grandeur cohérent pour une solution étalon à 1 g·L⁻¹ dans 100 mL. Peser sur balance analytique.</p>
+    </div>
+  </div>
+
+  <div class="card" id="exo2">
+    <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.875rem;">
+      <span class="tag tag-teal">Exercice 2</span>
+      <span class="tag tag-indigo">Concentration molaire</span>
+    </div>
+    <p style="font-size:.925rem;font-weight:600;color:var(--dark);margin-bottom:.5rem;">
+      On prépare une solution de chlorure de sodium NaCl (M = 58,44 g·mol⁻¹) dans une fiole jaugée de <strong>250,0 mL</strong>.<br>
+      La concentration molaire cible est <strong>C = 0,1000 mol·L⁻¹</strong>.<br>
+      Le NaCl disponible est pur. Quelle masse faut-il peser ?
+    </p>
+    <button class="btn btn-ghost" style="margin-top:.5rem" onclick="toggleCorr('c2')">🔍 Voir la correction</button>
+    <div id="c2" class="corr-box" style="display:none">
+      <div class="corr-title">Identification du cas</div>
+      <p>NaCl pur, formule simple (non hydraté) → <strong>CAS 1</strong>. Concentration molaire.</p>
+      <div class="corr-title">Conversion des unités</div>
+      <p>V = 250,0 mL = <strong>0,2500 L</strong></p>
+      <div class="corr-title">Application de la formule</div>
+      <div class="corr-formula">m = C(A) × V × M(A) = 0,1000 × 0,2500 × 58,44</div>
+      <div class="corr-result">m = 1,461 g</div>
+      <div class="corr-title">Vérification</div>
+      <p>Résultat cohérent. Dissoudre dans un peu d'eau distillée, transférer dans la fiole, compléter au trait à 250,0 mL.</p>
+    </div>
+  </div>
+
+  <!-- ── CAS 2 ── -->
+  <h2 class="section-h">CAS 2 · Solide pur, hydraté</h2>
+
+  <div class="card" id="exo3">
+    <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.875rem;">
+      <span class="tag tag-teal">Exercice 3</span>
+      <span class="tag tag-indigo">Concentration massique</span>
+    </div>
+    <p style="font-size:.925rem;font-weight:600;color:var(--dark);margin-bottom:.5rem;">
+      On prépare une solution de lactose dans une fiole de <strong>200,0 mL</strong>.<br>
+      Le réactif disponible est du lactose monohydraté C₁₂H₂₂O₁₁·H₂O pur [M<sub>sol</sub> = 360,32 g·mol⁻¹ ; M(lactose) = 342,30 g·mol⁻¹].<br>
+      La concentration cible est <strong>t(lactose) = 5,00 g·L⁻¹</strong>. Quelle masse peser ?
+    </p>
+    <button class="btn btn-ghost" style="margin-top:.5rem" onclick="toggleCorr('c3')">🔍 Voir la correction</button>
+    <div id="c3" class="corr-box" style="display:none">
+      <div class="corr-title">Identification du cas</div>
+      <p>Lactose monohydraté pur, formule A·H₂O → <strong>CAS 2</strong>. a = 1, P = 1. Concentration massique.</p>
+      <div class="corr-title">Conversion des unités</div>
+      <p>V = 200,0 mL = <strong>0,2000 L</strong></p>
+      <div class="corr-title">Application de la formule</div>
+      <div class="corr-formula">m = <span class="frac"><span class="num">t(L) × V × M<sub>sol</sub></span><span class="bar"></span><span class="den">a × M(L)</span></span> = <span class="frac"><span class="num">5,00 × 0,2000 × 360,32</span><span class="bar"></span><span class="den">1 × 342,30</span></span></div>
+      <div class="corr-result">m = 1,053 g</div>
+      <div class="corr-title">Interprétation</div>
+      <p>On pèse 1,053 g de lactose monohydraté (et non 1,000 g), car la masse molaire du solide (360,32) est supérieure à celle du lactose seul (342,30).</p>
+    </div>
+  </div>
+
+  <div class="card" id="exo4">
+    <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.875rem;">
+      <span class="tag tag-teal">Exercice 4</span>
+      <span class="tag tag-indigo">Concentration molaire</span>
+    </div>
+    <p style="font-size:.925rem;font-weight:600;color:var(--dark);margin-bottom:.5rem;">
+      On prépare une solution d'acide oxalique dans une fiole de <strong>100,0 mL</strong>.<br>
+      Le réactif disponible est de l'acide oxalique dihydraté H₂C₂O₄·2H₂O pur [M<sub>sol</sub> = 126,07 g·mol⁻¹].<br>
+      La concentration molaire cible est <strong>C = 0,0500 mol·L⁻¹</strong>. Quelle masse peser ?
+    </p>
+    <button class="btn btn-ghost" style="margin-top:.5rem" onclick="toggleCorr('c4')">🔍 Voir la correction</button>
+    <div id="c4" class="corr-box" style="display:none">
+      <div class="corr-title">Identification du cas</div>
+      <p>Acide oxalique dihydraté pur → <strong>CAS 2</strong>. a = 1 (1 molécule d'acide oxalique par formule), P = 1.</p>
+      <div class="corr-title">Conversion des unités</div>
+      <p>V = 100,0 mL = <strong>0,1000 L</strong></p>
+      <div class="corr-title">Application de la formule</div>
+      <div class="corr-formula">m = <span class="frac"><span class="num">C(A) × V × M<sub>sol</sub></span><span class="bar"></span><span class="den">a</span></span> = <span class="frac"><span class="num">0,0500 × 0,1000 × 126,07</span><span class="bar"></span><span class="den">1</span></span></div>
+      <div class="corr-result">m = 0,6304 g = 630,4 mg</div>
+      <div class="corr-title">Vérification</div>
+      <p>On pèse le sel hydraté (M = 126,07) mais la solution contiendra 0,0500 mol·L⁻¹ en acide oxalique H₂C₂O₄.</p>
+    </div>
+  </div>
+
+  <!-- ── CAS 3 ── -->
+  <h2 class="section-h">CAS 3 · Solide impur, non hydraté</h2>
+
+  <div class="card" id="exo5">
+    <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.875rem;">
+      <span class="tag tag-amber">Exercice 5</span>
+      <span class="tag tag-indigo">Concentration massique</span>
+    </div>
+    <p style="font-size:.925rem;font-weight:600;color:var(--dark);margin-bottom:.5rem;">
+      On prépare une solution de sulfate de cuivre CuSO₄ dans une fiole de <strong>500,0 mL</strong>.<br>
+      Le réactif disponible est CuSO₄ non hydraté avec une pureté P = 99,0 % [M = 159,61 g·mol⁻¹].<br>
+      La concentration cible est <strong>t(CuSO₄) = 2,00 g·L⁻¹</strong>. Quelle masse peser ?
+    </p>
+    <button class="btn btn-ghost" style="margin-top:.5rem" onclick="toggleCorr('c5')">🔍 Voir la correction</button>
+    <div id="c5" class="corr-box" style="display:none">
+      <div class="corr-title">Identification du cas</div>
+      <p>CuSO₄ impur (P = 99 %), formule simple (non hydraté) → <strong>CAS 3</strong>. a = 1. Concentration massique.</p>
+      <div class="corr-title">Conversion des unités</div>
+      <p>V = 500,0 mL = <strong>0,5000 L</strong> &nbsp;|&nbsp; P = 99,0 % = <strong>0,990</strong></p>
+      <div class="corr-title">Application de la formule</div>
+      <div class="corr-formula">m = <span class="frac"><span class="num">t(A) × V</span><span class="bar"></span><span class="den">P</span></span> = <span class="frac"><span class="num">2,00 × 0,5000</span><span class="bar"></span><span class="den">0,990</span></span></div>
+      <div class="corr-result">m = 1,010 g</div>
+      <div class="corr-title">Interprétation</div>
+      <p>Sans tenir compte de la pureté, on aurait pesé 1,000 g, soit une erreur de 1 %. Ici on corrige en divisant par P.</p>
+    </div>
+  </div>
+
+  <div class="card" id="exo6">
+    <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.875rem;">
+      <span class="tag tag-amber">Exercice 6</span>
+      <span class="tag tag-indigo">Concentration molaire</span>
+    </div>
+    <p style="font-size:.925rem;font-weight:600;color:var(--dark);margin-bottom:.5rem;">
+      On prépare une solution de soude NaOH dans une fiole de <strong>500,0 mL</strong>.<br>
+      Le réactif disponible est NaOH en pastilles, pureté P = 96,0 % [M = 40,00 g·mol⁻¹].<br>
+      La concentration molaire cible est <strong>C = 0,500 mol·L⁻¹</strong>. Quelle masse peser ?
+    </p>
+    <button class="btn btn-ghost" style="margin-top:.5rem" onclick="toggleCorr('c6')">🔍 Voir la correction</button>
+    <div id="c6" class="corr-box" style="display:none">
+      <div class="corr-title">Identification du cas</div>
+      <p>NaOH impur (P = 96 %), formule simple (non hydraté) → <strong>CAS 3</strong>. a = 1. Concentration molaire.</p>
+      <div class="corr-title">Conversion des unités</div>
+      <p>V = 500,0 mL = <strong>0,5000 L</strong> &nbsp;|&nbsp; P = 96,0 % = <strong>0,960</strong></p>
+      <div class="corr-title">Application de la formule</div>
+      <div class="corr-formula">m = <span class="frac"><span class="num">C(A) × V × M(A)</span><span class="bar"></span><span class="den">P</span></span> = <span class="frac"><span class="num">0,500 × 0,5000 × 40,00</span><span class="bar"></span><span class="den">0,960</span></span></div>
+      <div class="corr-result">m = 10,42 g</div>
+      <div class="corr-title">Attention</div>
+      <p>NaOH est hygroscopique : sa pureté réelle diminue au contact de l'air. Toujours vérifier la pureté indiquée sur l'étiquette.</p>
+    </div>
+  </div>
+
+  <!-- ── CAS 4 ── -->
+  <h2 class="section-h">CAS 4 · Solide impur, hydraté</h2>
+
+  <div class="card" id="exo7">
+    <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.875rem;">
+      <span class="tag tag-amber">Exercice 7</span>
+      <span class="tag tag-indigo">Concentration massique</span>
+    </div>
+    <p style="font-size:.925rem;font-weight:600;color:var(--dark);margin-bottom:.5rem;">
+      En analyse Kjeldahl, on prépare une solution de sulfate d'ammonium (NH₄)₂SO₄ dans une fiole de <strong>1 000 mL</strong>.<br>
+      Le réactif disponible a une pureté P = 98,0 % [M((NH₄)₂SO₄) = 132,14 g·mol⁻¹, M(NH₄⁺) = 18,04 g·mol⁻¹].<br>
+      On souhaite <strong>t(NH₄⁺) = 1,00 g·L⁻¹</strong>. Quelle masse de (NH₄)₂SO₄ peser ?<br>
+      <span style="font-size:.82rem;color:var(--amber);font-style:italic">⚠ Attention au coefficient stœchiométrique !</span>
+    </p>
+    <button class="btn btn-ghost" style="margin-top:.5rem" onclick="toggleCorr('c7')">🔍 Voir la correction</button>
+    <div id="c7" class="corr-box" style="display:none">
+      <div class="corr-title">Identification du cas</div>
+      <p>(NH₄)₂SO₄ impur (P = 98 %), formule non hydratée <em>au sens strict</em> mais traitée comme CAS 3 si a ≠ 1. Ici on applique la formule générale <strong>CAS 4</strong> avec a = 2 (deux ions NH₄⁺ par formule), M<sub>sol</sub> = M(A) = 132,14 car non hydraté.</p>
+      <div class="corr-title">Conversion des unités</div>
+      <p>V = 1 000 mL = <strong>1,000 L</strong> &nbsp;|&nbsp; P = 98,0 % = <strong>0,980</strong> &nbsp;|&nbsp; a = <strong>2</strong></p>
+      <div class="corr-title">Application de la formule</div>
+      <div class="corr-formula">m = <span class="frac"><span class="num">t(NH₄⁺) × V × M<sub>sol</sub></span><span class="bar"></span><span class="den">a × P × M(NH₄⁺)</span></span> = <span class="frac"><span class="num">1,00 × 1,000 × 132,14</span><span class="bar"></span><span class="den">2 × 0,980 × 18,04</span></span></div>
+      <div class="corr-result">m = 3,734 g</div>
+      <div class="corr-title">Erreur fréquente</div>
+      <p>Si on oublie a = 2, on obtient 7,468 g, soit le double — erreur de concentration de 100 % !</p>
+    </div>
+  </div>
+
+  <div class="card" id="exo8">
+    <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.875rem;">
+      <span class="tag tag-amber">Exercice 8</span>
+      <span class="tag tag-indigo">Concentration molaire</span>
+    </div>
+    <p style="font-size:.925rem;font-weight:600;color:var(--dark);margin-bottom:.5rem;">
+      On prépare une solution étalon d'acide glycyrrhizique dans une fiole de <strong>100,0 mL</strong>.<br>
+      Le réactif disponible est du glycyrrhizinate monoammoniacal C₄₂H₆₃O₁₆·NH₃, pureté P = 90,0 %<br>
+      [M<sub>sol</sub> = 840,0 g·mol⁻¹ ; M(acide glycyrrhizique) = 822,9 g·mol⁻¹ ; a = 1].<br>
+      La concentration cible est <strong>C = 1,00×10⁻³ mol·L⁻¹</strong>. Quelle masse peser ?
+    </p>
+    <button class="btn btn-ghost" style="margin-top:.5rem" onclick="toggleCorr('c8')">🔍 Voir la correction</button>
+    <div id="c8" class="corr-box" style="display:none">
+      <div class="corr-title">Identification du cas</div>
+      <p>Glycyrrhizinate monoammoniacal : solvate (·NH₃) + impur (P = 90 %) → <strong>CAS 4</strong>. a = 1. Concentration molaire.</p>
+      <div class="corr-title">Conversion des unités</div>
+      <p>V = 100,0 mL = <strong>0,1000 L</strong> &nbsp;|&nbsp; P = 90,0 % = <strong>0,900</strong></p>
+      <div class="corr-title">Application de la formule</div>
+      <div class="corr-formula">m = <span class="frac"><span class="num">C(A) × V × M<sub>sol</sub></span><span class="bar"></span><span class="den">a × P</span></span> = <span class="frac"><span class="num">1,00×10⁻³ × 0,1000 × 840,0</span><span class="bar"></span><span class="den">1 × 0,900</span></span></div>
+      <div class="corr-result">m = 9,333×10⁻² g = 93,33 mg</div>
+      <div class="corr-title">Vérification</div>
+      <p>La masse molaire utilisée (840,0) est celle du solide pesé (avec NH₃). La concentration obtenue sera bien 1,00×10⁻³ mol·L⁻¹ en acide glycyrrhizique libre en solution.</p>
+    </div>
+  </div>
+
+</div><!-- /exo -->
+
+<div class="pane" id="pane-quiz">
+  <div class="quiz-prog-wrap">
+    <div class="quiz-prog-bar"><div class="quiz-prog-fill" id="qprog" style="width:0%"></div></div>
+    <div class="quiz-prog-text" id="qprog-text">0 / 12</div>
+  </div>
+  <div id="quiz-area"></div>
+  <div id="quiz-score" style="display:none">
+    <div class="quiz-score-card">
+      <div class="score-big" id="sc-val">0 / 12</div>
+      <div class="score-label">Score final</div>
+      <div class="score-bar"><div class="score-fill" id="sc-fill" style="width:0%"></div></div>
+      <div class="score-msg" id="sc-msg"></div>
+      <div class="score-detail" id="sc-detail"></div>
+      <div class="btn-group" style="justify-content:center;margin-top:1.5rem;">
+        <button class="btn btn-primary" onclick="startQuiz()">↺ Recommencer</button>
+        <button class="btn btn-ghost" onclick="tab('cours')">📖 Revoir le cours</button>
+      </div>
+    </div>
+  </div>
+</div><!-- /quiz -->
+
+</div><!-- /wrap -->
+
+<script>
+
+function toggleCorr(id){
+  var el=document.getElementById(id);
+  var btn=el.previousElementSibling;
+  if(el.style.display==='none'){
+    el.style.display='block';
+    btn.textContent='🔼 Masquer la correction';
+  } else {
+    el.style.display='none';
+    btn.textContent='🔍 Voir la correction';
+  }
+}
+
+// ── STATE ──
+var S = { prep:null, conc:null, cas:null, dilType:null };
+
+// ── TABS ──
+function tab(n) {
+  ['cours','calc','arbre','recap','exo','quiz'].forEach(function(t){
+    document.getElementById('pane-'+t).classList.toggle('on', t===n);
+    document.getElementById('tb-'+t).classList.toggle('on', t===n);
+  });
+  if(n==='quiz' && !quizStarted) startQuiz();
+}
+
+// ── FRACTIONS ──
+function frac(num,den,col){
+  col = col||'inherit';
+  return '<span class="frac" style="color:'+col+'"><span class="num">'+num+'</span><span class="bar"></span><span class="den">'+den+'</span></span>';
+}
+function fracFormula(cas, isM){
+  if(isM){
+    var f=['','m = t(A) × V',
+      'm = '+frac('t(A) × V × M<sub>sol</sub>','a × M(A)'),
+      'm = '+frac('t(A) × V','P'),
+      'm = '+frac('t(A) × V × M<sub>sol</sub>','a × P × M(A)')];
+    return f[cas];
+  } else {
+    var f=['','m = C(A) × V × M(A)',
+      'm = '+frac('C(A) × V × M<sub>sol</sub>','a'),
+      'm = '+frac('C(A) × V × M(A)','P'),
+      'm = '+frac('C(A) × V × M<sub>sol</sub>','a × P')];
+    return f[cas];
+  }
+}
+function casFormulaMini(cas, isM){
+  if(isM){
+    var f=['','m = t·V',
+      'm = '+frac('t·V·M<sub>sol</sub>','a·M(A)'),
+      'm = '+frac('t·V','P'),
+      'm = '+frac('t·V·M<sub>sol</sub>','a·P·M(A)')];
+    return f[cas];
+  } else {
+    var f=['','m = C·V·M(A)',
+      'm = '+frac('C·V·M<sub>sol</sub>','a'),
+      'm = '+frac('C·V·M(A)','P'),
+      'm = '+frac('C·V·M<sub>sol</sub>','a·P')];
+    return f[cas];
+  }
+}
+
+// ── SELECTION ──
+function sel(id, cls){ document.getElementById(id).classList.add(cls); }
+function unsel(ids, cls){ ids.forEach(function(id){var e=document.getElementById(id);if(e)e.classList.remove(cls);}); }
+function show(id){document.getElementById(id).style.display='block';}
+function hide(id){document.getElementById(id).style.display='none';}
+
+function selConc(t){
+  S.conc=t; S.cas=null;
+  document.getElementById('c-mass').classList.toggle('sel',t==='massique');
+  document.getElementById('c-mol').classList.toggle('sel',t==='molaire');
+  var isM=t==='massique';
+  [1,2,3,4].forEach(function(i){
+    document.getElementById('cf'+i).innerHTML=casFormulaMini(i,isM);
+    document.getElementById('cc'+i).classList.remove('sel');
+  });
+  show('s-cases'); hide('s-form'); hideResult();
+}
+
+function selCase(n){
+  S.cas=n;
+  [1,2,3,4].forEach(function(i){document.getElementById('cc'+i).classList.remove('sel');});
+  document.getElementById('cc'+n).classList.add('sel');
+  renderFields();
+  document.getElementById('formula-display').innerHTML=fracFormula(n,S.conc==='massique');
+  show('s-form'); hideResult();
+}
+
+function renderFields(){
+  var n=S.cas, isM=S.conc==='massique';
+  var c=document.getElementById('fields-diss');
+  var html='';
+  var concLbl=isM?'Concentration massique t(A) cible (g·L⁻¹)':'Concentration molaire C(A) cible (mol·L⁻¹)';
+  var concHint=isM?'Convertir mg·L⁻¹ en g·L⁻¹ (÷1000) avant de saisir':'';
+  html+=fld('d-conc',concLbl,'',concHint);
+  html+=fld('d-vol','Volume de la fiole V (mL)','ex : 200','Sera converti en L automatiquement');
+  if(n===1&&!isM) html+=fld('d-mA','Masse molaire M(A) (g·mol⁻¹)','ex : 180.16','');
+  if(n===2){ html+=fld('d-mSol','M<sub>sol</sub> — masse molaire du solide pesé (g·mol⁻¹)','ex : 360.32','Inclut les molécules d\'eau de cristallisation');
+    html+=fld('d-mA','M(A) — masse molaire de l\'espèce cible (g·mol⁻¹)','ex : 342.30','Espèce A seule, sans eau');
+    html+=fld('d-a','Coefficient stœchiométrique a','1','Nb de fois que A apparaît dans la formule du solide'); }
+  if(n===3){ html+=fld('d-mA','Masse molaire M(A) = M<sub>sol</sub> (g·mol⁻¹)','ex : 40.00','');
+    html+=fld('d-P','Pureté P (%)','ex : 98.0','En pourcentage — sera converti en fraction décimale');
+    html+=fld('d-a','Coefficient stœchiométrique a','1',''); }
+  if(n===4){ html+=fld('d-mSol','M<sub>sol</sub> — masse molaire du solide (g·mol⁻¹)','ex : 840.0','');
+    html+=fld('d-mA','M(A) — masse molaire de l\'espèce cible (g·mol⁻¹)','ex : 822.9','');
+    html+=fld('d-a','Coefficient stœchiométrique a','1','');
+    html+=fld('d-P','Pureté P (%)','ex : 90.0',''); }
+  c.innerHTML=html;
+}
+
+function fld(id,lbl,ph,hint){
+  return '<div class="field"><label for="'+id+'">'+lbl+'</label>'+(hint?'<span class="field-hint">'+hint+'</span>':'')
+    +'<input type="number" id="'+id+'" placeholder="'+ph+'" step="any" min="0"></div>';
+}
+
+function gv(id){ var e=document.getElementById(id); if(!e)return null; var v=parseFloat(e.value); return isNaN(v)?null:v; }
+
+function calcDiss(){
+  var n=S.cas, isM=S.conc==='massique';
+  var conc=gv('d-conc'), vol=gv('d-vol');
+  if(!conc||!vol||conc<=0||vol<=0){alert('Veuillez saisir une concentration et un volume valides.');return;}
+  if(!n){alert('Veuillez sélectionner un cas (étape 2).');return;}
+  var V=vol/1000;
+  var steps=[];
+  steps.push({t:'Conversion du volume',v:'V = '+vol+' mL → '+V+' L'});
+  var m;
+  if(isM){
+    steps.push({t:'Concentration massique',v:'t(A) = '+conc+' g·L⁻¹'});
+    if(n===1){
+      steps.push({t:'m = t(A) × V',v:conc+' × '+V});
+      m=conc*V;
+    } else if(n===2){
+      var mS=gv('d-mSol'),mA=gv('d-mA'),a=gv('d-a')||1;
+      if(!mS||!mA){alert('Saisir M(sol) et M(A).');return;}
+      steps.push({t:'Données',v:'M(sol) = '+mS+' · M(A) = '+mA+' · a = '+a});
+      steps.push({t:'m = t × V × M(sol) / [a × M(A)]',v:conc+' × '+V+' × '+mS+' / ('+a+' × '+mA+')'});
+      m=(conc*V*mS)/(a*mA);
+    } else if(n===3){
+      var mA=gv('d-mA'),P=gv('d-P'),a=gv('d-a')||1;
+      if(!mA||!P||P<=0){alert('Saisir M(A) et la pureté P.');return;}
+      var Pf=P/100;
+      steps.push({t:'Pureté convertie',v:P+' % → P = '+Pf});
+      steps.push({t:'m = t × V / P',v:conc+' × '+V+' / '+Pf});
+      m=(conc*V)/Pf;
+    } else {
+      var mS=gv('d-mSol'),mA=gv('d-mA'),a=gv('d-a')||1,P=gv('d-P');
+      if(!mS||!mA||!P||P<=0){alert('Saisir M(sol), M(A) et la pureté P.');return;}
+      var Pf=P/100;
+      steps.push({t:'Données',v:'M(sol) = '+mS+' · M(A) = '+mA+' · a = '+a+' · P = '+Pf});
+      steps.push({t:'m = t × V × M(sol) / [a × P × M(A)]',v:conc+' × '+V+' × '+mS+' / ('+a+' × '+Pf+' × '+mA+')'});
+      m=(conc*V*mS)/(a*Pf*mA);
+    }
+  } else {
+    steps.push({t:'Concentration molaire',v:'C(A) = '+conc+' mol·L⁻¹'});
+    if(n===1){
+      var mA=gv('d-mA');if(!mA){alert('Saisir M(A).');return;}
+      steps.push({t:'m = C × V × M(A)',v:conc+' × '+V+' × '+mA});
+      m=conc*V*mA;
+    } else if(n===2){
+      var mS=gv('d-mSol'),a=gv('d-a')||1;if(!mS){alert('Saisir M(sol).');return;}
+      steps.push({t:'Données',v:'M(sol) = '+mS+' g/mol · a = '+a});
+      steps.push({t:'m = C × V × M(sol) / a',v:conc+' × '+V+' × '+mS+' / '+a});
+      m=(conc*V*mS)/a;
+    } else if(n===3){
+      var mA=gv('d-mA'),P=gv('d-P'),a=gv('d-a')||1;
+      if(!mA||!P||P<=0){alert('Saisir M(A) et la pureté P.');return;}
+      var Pf=P/100;
+      steps.push({t:'Pureté convertie',v:P+' % → P = '+Pf});
+      steps.push({t:'m = C × V × M(A) / P',v:conc+' × '+V+' × '+mA+' / '+Pf});
+      m=(conc*V*mA)/Pf;
+    } else {
+      var mS=gv('d-mSol'),a=gv('d-a')||1,P=gv('d-P');
+      if(!mS||!P||P<=0){alert('Saisir M(sol) et la pureté P.');return;}
+      var Pf=P/100;
+      steps.push({t:'Données',v:'M(sol) = '+mS+' · a = '+a+' · P = '+Pf});
+      steps.push({t:'m = C × V × M(sol) / [a × P]',v:conc+' × '+V+' × '+mS+' / ('+a+' × '+Pf+')'});
+      m=(conc*V*mS)/(a*Pf);
+    }
+  }
+  var mG=m, mMg=m*1000, disp, sub;
+  if(mG>=1){disp=mG.toFixed(4)+' g';sub='soit '+mMg.toFixed(1)+' mg';}
+  else if(mG>=0.0001){disp=mMg.toFixed(2)+' mg';sub='soit '+mG.toFixed(6)+' g';}
+  else{disp=(mG*1e6).toFixed(2)+' µg';sub='⚠ Masse très faible — envisager une prédilution';}
+  steps.push({t:'Résultat final',v:'m = '+mG.toFixed(6)+' g = '+mMg.toFixed(3)+' mg'});
+  showResult('Masse à peser',disp,sub,steps);
+  var hint='';
+  if(mG<0.001)hint='⚠ Masse < 1 mg : utiliser une microbalance (résolution 0,001 mg).';
+  else if(mG<0.01)hint='→ Balance analytique de précision (résolution 0,1 mg). Peser par différence conseillé.';
+  else hint='→ Balance analytique (résolution 0,1 mg). Fiole jaugée de '+vol+' mL.';
+  showHint(hint);
+}
+
+function showResult(lbl,val,sub,steps){
+  document.getElementById('r-lbl').textContent=lbl;
+  document.getElementById('r-val').textContent=val;
+  document.getElementById('r-sub').textContent=sub;
+  var h='';
+  steps.forEach(function(s,i){
+    h+='<div class="step-item"><div class="step-num">'+(i+1)+'</div><div><div class="step-title">'+s.t+'</div><div class="step-val">'+s.v+'</div></div></div>';
+  });
+  document.getElementById('r-steps').innerHTML=h;
+  var box=document.getElementById('result-box');
+  box.style.display='block';
+  box.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function showHint(h){var e=document.getElementById('r-hint');e.textContent=h;e.style.display=h?'block':'none';}
+function hideResult(){var b=document.getElementById('result-box');if(b)b.style.display='none';}
+function resetCalc(){
+  S={conc:null,cas:null};
+  ['c-mass','c-mol'].forEach(function(id){var e=document.getElementById(id);if(e)e.classList.remove('sel');});
+  [1,2,3,4].forEach(function(i){var e=document.getElementById('cc'+i);if(e)e.classList.remove('sel');});
+  ['s-cases','s-form'].forEach(function(id){hide(id);});
+  document.getElementById('fields-diss').innerHTML='';
+  hideResult();
+}
+
+// ════════════════════════════════ QUIZ ════════════════════════════════
+var QS = [];  // questions mélangées
+var qIdx=0, qAnswered=[], quizStarted=false;
+
+var QUESTIONS=[
+  {q:'Quel cas s\'applique pour le <strong>lactose monohydraté C₁₂H₂₂O₁₁·H₂O pur</strong> ?',
+   opts:['CAS 1 – Pur, non hydraté','CAS 2 – Pur, hydraté','CAS 3 – Impur, non hydraté','CAS 4 – Impur, hydraté'],
+   ans:1, exp:'Le lactose monohydraté est pur (P = 100 %) et sa formule comporte une molécule d\'eau de cristallisation (·H₂O) → CAS 2.'},
+  {q:'La <strong>soude NaOH en pastilles</strong> affiche une pureté P = 98 %. Quel cas appliquer ?',
+   opts:['CAS 1 – Pur, non hydraté','CAS 2 – Pur, hydraté','CAS 3 – Impur, non hydraté','CAS 4 – Impur, hydraté'],
+   ans:2, exp:'NaOH n\'est pas hydraté (formule simple) mais sa pureté est < 100 % (98 %) → CAS 3 : impur, non hydraté.'},
+  {q:'Le <strong>glycyrrhizinate monoammoniacal C₄₂H₆₃O₁₆·NH₃</strong> a une pureté de 90 %. Quel cas ?',
+   opts:['CAS 1','CAS 2','CAS 3','CAS 4 – Impur, hydraté (cas général)'],
+   ans:3, exp:'La formule inclut NH₃ (solvate → hydraté au sens large) ET la pureté est < 100 % → CAS 4 : impur, hydraté.'},
+  {q:'Pour le sulfate d\'ammonium <strong>(NH₄)₂SO₄</strong> utilisé comme source d\'<strong>azote ammoniacal NH₄⁺</strong>, le coefficient stœchiométrique a vaut :',
+   opts:['a = 1','a = 2','a = 4','a = 0,5'],
+   ans:1, exp:'Dans (NH₄)₂SO₄, il y a <strong>2 ions NH₄⁺</strong> par formule → a = 2. C\'est le piège classique du coefficient stœchiométrique !'},
+  {q:'Une pureté de <strong>P = 99,5 %</strong> correspond à la fraction décimale :',
+   opts:['P = 99,5','P = 0,995','P = 0,0995','P = 9,95'],
+   ans:1, exp:'Le pourcentage doit être divisé par 100 pour obtenir la fraction décimale : 99,5 ÷ 100 = 0,995.'},
+  {q:'On prépare V = 500 mL à t = 100 mg·L⁻¹ depuis un <strong>solide pur non hydraté</strong>. La masse à peser est :',
+   opts:['m = 100 × 0,5 = 50 g','m = 100 × 500 = 50 000 mg = 50 g','m = 100 mg·L⁻¹ × 0,5 L = 50 mg','m = 100 / 500 = 0,2 mg'],
+   ans:2, exp:'t = 100 mg·L⁻¹, V = 0,5 L → m = t × V = 100 × 0,5 = 50 mg. Attention à l\'unité : le résultat est en milligrammes (mg), pas en grammes !'},
+  {q:'La formule de dilution relie C<sub>m</sub>, V<sub>m</sub>, C<sub>f</sub> et V<sub>f</sub>. Laquelle est correcte ?',
+   opts:['C<sub>m</sub> + V<sub>m</sub> = C<sub>f</sub> + V<sub>f</sub>','C<sub>m</sub> × V<sub>f</sub> = C<sub>f</sub> × V<sub>m</sub>','C<sub>m</sub> × V<sub>m</sub> = C<sub>f</sub> × V<sub>f</sub>','C<sub>m</sub> / V<sub>m</sub> = C<sub>f</sub> / V<sub>f</sub>'],
+   ans:2, exp:'La quantité de matière est conservée lors de la dilution : n<sub>i</sub> = n<sub>f</sub>, donc <strong>C<sub>m</sub> × V<sub>m</sub> = C<sub>f</sub> × V<sub>f</sub></strong>.'},
+  {q:'Pour une solution commerciale d\'HCl (d = 1,19 ; P = 37 %), la concentration massique t<sub>m</sub> vaut :',
+   opts:['t<sub>m</sub> = 1,19 × 37 = 44,0 g·L⁻¹','t<sub>m</sub> = 10 × 37 × 1,19 = 440,3 g·L⁻¹','t<sub>m</sub> = 37 / 1,19 = 31,1 g·L⁻¹','t<sub>m</sub> = 1000 × 1,19 × 0,37 = 440,3 g·L⁻¹'],
+   ans:1, exp:'La formule est <strong>t<sub>m</sub> = 10 × P(%) × d</strong>. Ici : 10 × 37 × 1,19 = 440,3 g·L⁻¹. La réponse D est numériquement correcte mais la formulation est différente.'},
+  {q:'Quel est l\'ordre correct des opérations lors d\'une dissolution ?',
+   opts:['Verser dans la fiole → Peser → Dissoudre → Compléter','Peser → Dissoudre dans bécher → Transvaser → Compléter au trait → Homogénéiser','Compléter au trait → Dissoudre → Peser → Homogénéiser','Peser → Compléter directement dans la fiole → Agiter'],
+   ans:1, exp:'L\'ordre correct est : <strong>peser → dissoudre dans un bécher → transvaser quantitativement dans la fiole → compléter au trait → homogénéiser</strong>. On ne dissout jamais directement dans la fiole jaugée (risque de surchauffe, impossible d\'agiter efficacement).'},
+  {q:'Pour H₂C₂O₄·2H₂O (M<sub>sol</sub> = 126,07 g·mol⁻¹, M(acide) = 90,04 g·mol⁻¹), on prépare <strong>100 mL à C = 0,100 mol·L⁻¹</strong>. La masse à peser est :',
+   opts:['m = 0,100 × 0,100 × 90,04 = 0,900 g','m = 0,100 × 0,100 × 126,07 = 1,261 g','m = 0,100 × 0,100 × 63,04 = 0,630 g','m = 0,100 × 100 × 126,07 = 1261 g'],
+   ans:1, exp:'CAS 2 (pur, hydraté) avec a = 1 et P = 1 : m = C × V × M<sub>sol</sub> / a = 0,100 × 0,100 × 126,07 / 1 = <strong>1,261 g</strong>. Attention : V = 100 mL = 0,100 L !'},
+  {q:'Quel matériel est <strong>indispensable</strong> pour ajuster le volume final lors d\'une dissolution ?',
+   opts:['Un bécher gradué','Une éprouvette graduée','Une fiole jaugée','Un erlenmeyer'],
+   ans:2, exp:'La <strong>fiole jaugée</strong> est le seul matériel calibré pour contenir exactement le volume indiqué (± 0,1 mL pour une fiole de 100 mL). Une éprouvette n\'a pas la précision requise pour une solution de concentration déterminée.'},
+  {q:'Le facteur de dilution F est défini par :',
+   opts:['F = V<sub>f</sub> × C<sub>m</sub>','F = C<sub>m</sub> × C<sub>f</sub>','F = C<sub>m</sub> / C<sub>f</sub> = V<sub>f</sub> / V<sub>m</sub>','F = V<sub>m</sub> / V<sub>f</sub>'],
+   ans:2, exp:'F = C<sub>m</sub> / C<sub>f</sub> = V<sub>f</sub> / V<sub>m</sub>. Le facteur de dilution est <strong>toujours supérieur à 1</strong> (on dilue, donc C<sub>m</sub> > C<sub>f</sub>) et est sans unité.'},
+];
+
+function shuffle(arr){var a=arr.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+
+function startQuiz(){
+  quizStarted=true;
+  QS=shuffle(QUESTIONS.map(function(q,i){return Object.assign({},q,{orig:i});}));
+  qIdx=0; qAnswered=[];
+  hide('quiz-score');
+  show('quiz-area');
+  renderQuestion();
+}
+
+function renderQuestion(){
+  var total=QS.length;
+  var prog=Math.round((qIdx/total)*100);
+  document.getElementById('qprog').style.width=prog+'%';
+  document.getElementById('qprog-text').textContent=qIdx+' / '+total;
+  if(qIdx>=total){showScore();return;}
+  var q=QS[qIdx];
+  var opts=q.opts.map(function(o,i){
+    return '<button class="q-opt" onclick="answerQ('+i+')" id="qo'+i+'">'+o+'</button>';
+  }).join('');
+  document.getElementById('quiz-area').innerHTML=
+    '<div class="quiz-question-card">'
+    +'<div class="q-num">Question '+(qIdx+1)+' / '+total+'</div>'
+    +'<div class="q-text">'+q.q+'</div>'
+    +'<div class="q-options">'+opts+'</div>'
+    +'<div class="q-explanation" id="q-exp"></div>'
+    +'</div>'
+    +(qIdx<total-1?'<button class="btn btn-primary" id="btn-next" style="display:none;margin-top:.5rem" onclick="nextQ()">Question suivante →</button>'
+      :'<button class="btn btn-primary" id="btn-next" style="display:none;margin-top:.5rem" onclick="nextQ()">Voir les résultats →</button>');
+}
+
+function answerQ(i){
+  var q=QS[qIdx];
+  var correct=i===q.ans;
+  qAnswered.push({q:qIdx,chosen:i,correct:correct});
+  var opts=document.querySelectorAll('.q-opt');
+  opts.forEach(function(o,j){
+    o.disabled=true;
+    if(j===q.ans)o.classList.add('correct');
+    else if(j===i&&!correct)o.classList.add('wrong');
+  });
+  var exp=document.getElementById('q-exp');
+  exp.innerHTML=(correct?'✅ ':'❌ ')+'<strong>'+(correct?'Bonne réponse !':'Mauvaise réponse.')+'</strong> '+q.exp;
+  exp.className='q-explanation show '+(correct?'ok':'ko');
+  document.getElementById('btn-next').style.display='inline-flex';
+}
+
+function nextQ(){qIdx++;renderQuestion();}
+
+function showScore(){
+  hide('quiz-area');
+  show('quiz-score');
+  var total=QS.length;
+  var ok=qAnswered.filter(function(a){return a.correct;}).length;
+  var pct=Math.round((ok/total)*100);
+  document.getElementById('sc-val').textContent=ok+' / '+total;
+  var fill=document.getElementById('sc-fill');
+  fill.style.width='0%';
+  fill.style.background=pct>=80?'var(--green)':pct>=50?'var(--amber)':'var(--red)';
+  setTimeout(function(){fill.style.width=pct+'%';},100);
+  var msgs=['Continuez vos révisions — relisez le cours !','Pas mal, mais quelques notions à revoir.','Bon travail ! Quelques points à consolider.','Très bien ! Maîtrise solide du cours.','Excellent ! Parfaite maîtrise de la préparation de solutions. 🎉'];
+  var lvl=pct<40?0:pct<55?1:pct<70?2:pct<90?3:4;
+  document.getElementById('sc-msg').textContent=msgs[lvl];
+  var det='';
+  qAnswered.forEach(function(a){
+    det+='<span class="score-tag '+(a.correct?'ok':'ko')+'">Q'+(a.q+1)+'</span>';
+  });
+  document.getElementById('sc-detail').innerHTML=det;
+  document.getElementById('qprog').style.width='100%';
+  document.getElementById('qprog-text').textContent=total+' / '+total;
+}
+</script>
+
+</body>
+</html>
