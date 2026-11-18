@@ -1,0 +1,609 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="description" content="Pourquoi R² = 0,999 ne prouve pas la linéarité : simulateur interactif pour repérer une courbure cachée grâce au tracé des résidus d’une droite d’étalonnage. Outil du BTSa ANABIOTEC, lycée Le Gros Chêne, Pontivy.">
+<link rel="canonical" href="https://philrob56.github.io/anabiotec-commun/outils/verification-linearite.html">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vérifier la linéarité d’un étalonnage : R² et résidus | BTSa ANABIOTEC</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: paillasse à deux colonnes — réglages à gauche, deux graphes empilés partageant l'axe x à droite, puis guide de lecture */
+:root{
+  --paper:#F2F5F6; --panel:#FFFFFF; --ink:#13212A; --muted:#5A6A74; --line:#D6DEE2; --soft:#E8EEF1;
+  --accent:#2148C9; --pos:#C4621B; --neg:#167E8F;
+  --ok:#2C7A4B; --warn:#A86F12; --bad:#B42A21;
+  --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0D1417; --panel:#141D22; --ink:#E3EBEE; --muted:#94A4AD; --line:#26343C; --soft:#1B262C;
+    --accent:#7F9DFF; --pos:#F0A060; --neg:#5CC6D6;
+    --ok:#62C98C; --warn:#E6B657; --bad:#F27B72; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0D1417; --panel:#141D22; --ink:#E3EBEE; --muted:#94A4AD; --line:#26343C; --soft:#1B262C;
+  --accent:#7F9DFF; --pos:#F0A060; --neg:#5CC6D6;
+  --ok:#62C98C; --warn:#E6B657; --bad:#F27B72; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{color-scheme:light}
+[hidden]{display:none!important}
+body{ margin:0;
+  background:var(--paper); color:var(--ink); font-family:var(--f-body); font-size:15px; line-height:1.55;
+  padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px));
+  padding-block:0 56px;
+}
+.wrap{max-width:1240px; margin:0 auto}
+header.top{padding-block:36px 26px; display:grid; gap:12px; max-width:62rem}
+.eyebrow{font-family:var(--f-mono); font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--accent)}
+h1{font-family:var(--f-display); font-weight:750; font-size:clamp(28px, 4.4vw, 48px); line-height:1.05; letter-spacing:-.02em; margin:0; text-wrap:balance}
+h1 .r2{font-family:var(--f-mono); font-weight:500; font-size:.82em; letter-spacing:-.04em; color:var(--accent)}
+.lede{margin:0; max-width:62ch; color:var(--muted); font-size:16.5px}
+.lede strong{color:var(--ink)}
+h2{font-family:var(--f-display); font-weight:700; font-size:20px; letter-spacing:-.01em; margin:0; text-wrap:balance}
+h3{font-family:var(--f-mono); font-weight:500; font-size:11.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin:0}
+
+.bench{display:grid; grid-template-columns:minmax(0, 330px) minmax(0, 1fr); gap:20px; align-items:start}
+@media (max-width:880px){ .bench{grid-template-columns:minmax(0,1fr)} }
+
+.panel{background:var(--panel); border:1px solid var(--line); border-radius:10px}
+.controls{display:grid; gap:0}
+.controls section{padding:18px; display:grid; gap:12px; border-top:1px solid var(--line)}
+.controls section:first-child{border-top:0}
+
+.presets{display:flex; flex-wrap:wrap; gap:8px}
+.chip{
+  font:inherit; font-size:13.5px; padding:6px 11px; border-radius:999px; border:1px solid var(--line);
+  background:var(--paper); color:var(--ink); cursor:pointer; transition:border-color .15s, background .15s;
+}
+.chip:hover{border-color:var(--accent)}
+.chip[aria-pressed="true"]{background:var(--accent); border-color:var(--accent); color:var(--panel)}
+.chip:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+.seg{display:grid; grid-template-columns:1fr 1fr; border:1px solid var(--line); border-radius:8px; overflow:hidden; background:var(--paper)}
+.seg input{position:absolute; opacity:0; pointer-events:none}
+.seg label{padding:8px 6px; text-align:center; cursor:pointer; font-size:13.5px; line-height:1.25}
+.seg label .eq{display:block; font-family:var(--f-mono); font-size:12px; color:var(--muted)}
+.seg input:checked + label{background:var(--panel); box-shadow:inset 0 -2px 0 var(--accent)}
+.seg input:checked + label .eq{color:var(--accent)}
+.seg input:focus-visible + label{outline:2px solid var(--accent); outline-offset:-2px}
+
+.slider{display:grid; gap:4px}
+.slider .row{display:flex; justify-content:space-between; gap:8px; font-size:13.5px}
+.slider output{font-family:var(--f-mono); font-size:12.5px; color:var(--accent); font-variant-numeric:tabular-nums}
+input[type=range]{width:100%; accent-color:var(--accent)}
+.hint{font-size:12.5px; color:var(--muted); margin:0}
+
+.btn{font:inherit; font-size:13.5px; padding:7px 12px; border-radius:7px; border:1px solid var(--line); background:var(--paper); color:var(--ink); cursor:pointer; justify-self:start}
+.btn:hover{border-color:var(--accent)}
+
+.adv{border:1px solid var(--line); border-radius:8px; background:var(--paper)}
+.adv summary{cursor:pointer; padding:8px 12px; font-size:13.5px; color:var(--muted); list-style-position:inside}
+.adv summary:hover{color:var(--ink)}
+.adv summary:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:8px}
+.adv[open] summary{border-bottom:1px solid var(--line); color:var(--ink)}
+.adv-body{padding:12px; display:grid; gap:10px}
+.names{display:grid; grid-template-columns:1fr 1fr; gap:8px}
+.names label{display:grid; gap:3px; font-size:12px; color:var(--muted)}
+.names input{font:inherit; font-size:13.5px; padding:6px 8px; border:1px solid var(--line); border-radius:6px; background:var(--paper); color:var(--ink); min-width:0}
+textarea{
+  width:100%; min-height:210px; resize:vertical; font-family:var(--f-mono); font-size:13px; line-height:1.55;
+  padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:var(--paper); color:var(--ink);
+  font-variant-numeric:tabular-nums; tab-size:12;
+}
+.parse{font-family:var(--f-mono); font-size:12px; color:var(--muted)}
+.parse.err{color:var(--bad)}
+
+.right{display:grid; gap:20px; min-width:0}
+
+.readout{display:grid; grid-template-columns:auto 1fr auto; gap:18px; align-items:center; padding:16px 18px}
+@media (max-width:620px){ .readout{grid-template-columns:1fr} }
+.r2box .lab{font-family:var(--f-mono); font-size:11.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted)}
+.r2box .val{font-family:var(--f-mono); font-weight:500; font-size:34px; letter-spacing:-.03em; line-height:1.1; font-variant-numeric:tabular-nums}
+.eqbox{min-width:0}
+.eqbox .eqn{font-family:var(--f-mono); font-size:14.5px; overflow-wrap:anywhere}
+.eqbox .sub{font-size:12.5px; color:var(--muted); font-family:var(--f-mono); font-variant-numeric:tabular-nums}
+.verdict{display:grid; gap:2px; padding:10px 14px; border-radius:8px; border:1px solid currentColor; max-width:290px}
+.verdict b{font-family:var(--f-display); font-size:16px; font-weight:700; line-height:1.2}
+.verdict span{font-size:12.5px; color:var(--ink); opacity:.85}
+.verdict.ok{color:var(--ok)} .verdict.warn{color:var(--warn)} .verdict.bad{color:var(--bad)}
+
+.plots{position:relative; padding:14px 14px 10px}
+.plots .head{display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px; padding:0 4px 6px}
+.legend{display:flex; flex-wrap:wrap; gap:14px; font-size:12.5px; color:var(--muted)}
+.legend i{display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:5px; vertical-align:-1px}
+.legend i.l{width:16px; height:0; border-top:2px solid var(--accent); border-radius:0; vertical-align:3px}
+.legend i.d{width:16px; height:0; border-top:2px dashed var(--muted); border-radius:0; vertical-align:3px}
+canvas{display:block; width:100%; touch-action:pan-y}
+#cvData{height:290px}
+#cvRes{height:220px}
+.divider{display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; padding:10px 4px 4px; border-top:1px dashed var(--line); margin-top:6px}
+.mini-seg{display:inline-grid; grid-auto-flow:column; border:1px solid var(--line); border-radius:7px; overflow:hidden}
+.mini-seg input{position:absolute; opacity:0; pointer-events:none}
+.mini-seg label{padding:4px 10px; font-size:12.5px; cursor:pointer; background:var(--paper)}
+.mini-seg input:checked + label{background:var(--accent); color:var(--panel)}
+.mini-seg input:focus-visible + label{outline:2px solid var(--accent); outline-offset:-2px}
+.check{font-size:12.5px; color:var(--muted); display:inline-flex; gap:6px; align-items:center; cursor:pointer}
+.check input{accent-color:var(--accent)}
+.reading{margin:8px 4px 2px; font-size:14px; max-width:75ch}
+.reading strong{font-weight:700}
+
+.tip{
+  position:absolute; pointer-events:none; z-index:5; background:var(--ink); color:var(--paper);
+  font-family:var(--f-mono); font-size:12px; line-height:1.5; padding:7px 10px; border-radius:6px; white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+}
+
+.tests{padding:6px 0}
+.tests .t{display:grid; grid-template-columns:14px minmax(0,1fr) auto; gap:4px 12px; padding:12px 18px; border-top:1px solid var(--line); align-items:baseline}
+.tests .t:first-of-type{border-top:0}
+.tests .dot{width:10px; height:10px; border-radius:50%; background:var(--muted); align-self:center}
+.tests .dot.ok{background:var(--ok)} .tests .dot.warn{background:var(--warn)} .tests .dot.bad{background:var(--bad)}
+.tests .dot.info{background:transparent; border:2px solid var(--muted)}
+.tests .tt{font-weight:700; font-size:14.5px}
+.tests .tv{font-family:var(--f-mono); font-size:12.5px; color:var(--muted); text-align:right; font-variant-numeric:tabular-nums}
+.tests .tx{grid-column:2 / 4; font-size:13.5px; color:var(--muted); max-width:72ch}
+@media (max-width:520px){ .tests .tv{grid-column:2 / 4; text-align:left} }
+.tests .cap{padding:14px 18px 4px}
+
+.guide{margin-top:34px; display:grid; gap:16px}
+.guide .intro{max-width:70ch; margin:0; color:var(--muted)}
+.cards{display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:14px}
+@media (max-width:980px){ .cards{grid-template-columns:repeat(2, minmax(0,1fr))} }
+@media (max-width:480px){ .cards{grid-template-columns:minmax(0,1fr)} }
+.card{padding:14px; display:grid; gap:8px; align-content:start}
+.card svg{width:100%; height:auto; display:block; background:var(--paper); border-radius:6px}
+.card b{font-family:var(--f-display); font-size:15.5px}
+.card p{margin:0; font-size:13.5px; color:var(--muted)}
+.why{margin-top:26px; padding:18px 20px; display:grid; gap:8px; max-width:none}
+.why p{margin:0; max-width:78ch}
+.mono{font-family:var(--f-mono); font-size:.92em}
+@media (prefers-reduced-motion: reduce){ *{transition:none!important} }
+</style>
+<!-- anb-commun --><script src="https://philrob56.github.io/anabiotec-commun/anb-commun.js"></script><!-- /anb-commun -->
+</head>
+<body>
+<!-- anb-charte --><div class="anb-head"><div class="anb-crumb"><i></i><a href="https://sites.google.com/view/anabioteclegroschene/accueil" target="_top" style="color:inherit;text-decoration:none" title="Tous les outils du BTSa ANABIOTEC"><b>BTSa ANABIOTEC</b></a><span>›</span>Incertitude</div><div class="anb-right"><div class="anb-tag">LEGTA Le Gros Chêne · Pontivy</div><button type="button" class="anb-print" onclick="anbPrint()" title="Ouvrir une version imprimable (PDF)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimer / PDF</button></div></div><!-- /anb-charte -->
+
+<div class="wrap">
+  <header class="top">
+    <div class="eyebrow">Chimie analytique · droite d'étalonnage</div>
+    <h1><span class="r2">R² = 0,999</span> ne prouve pas la linéarité</h1>
+    <p class="lede">Une courbure légère peut se cacher derrière un excellent coefficient de détermination. Le bon réflexe : <strong>tracer les résidus</strong>, les écarts entre chaque point et la droite. S'ils sont répartis au hasard autour de zéro, le modèle tient. S'ils dessinent une forme, il ne tient pas.</p>
+  </header>
+
+  <div class="bench">
+    <aside class="panel controls">
+      <section>
+        <h3>Jeux d'exemple</h3>
+        <div class="presets" id="presets">
+          <button class="chip" data-p="correct">Étalonnage correct</button>
+          <button class="chip" data-p="cachee" aria-pressed="true">Courbure cachée</button>
+          <button class="chip" data-p="saturation">Saturation</button>
+          <button class="chip" data-p="aberrant">Point aberrant</button>
+          <button class="chip" data-p="dispersion">Dispersion croissante</button>
+          <button class="chip" data-p="blanc">Blanc non nul</button>
+        </div>
+        <p class="hint">Données simulées d'un dosage spectrophotométrique (absorbance en fonction de la concentration).</p>
+      </section>
+
+      <section>
+        <h3>Modèle testé</h3>
+        <div class="seg" role="radiogroup" aria-label="Modèle">
+          <input type="radio" name="model" id="mAff" value="aff" checked><label for="mAff">Affine<span class="eq">y = ax + b</span></label>
+          <input type="radio" name="model" id="mLin" value="lin"><label for="mLin">Linéaire<span class="eq">y = ax</span></label>
+        </div>
+      </section>
+
+      <section>
+        <h3>Simuler un étalonnage</h3>
+        <div class="slider">
+          <div class="row"><label for="sCurv">Courbure en haut de gamme</label><output id="oCurv">5 %</output></div>
+          <input type="range" id="sCurv" min="-10" max="10" step="0.5" value="5">
+        </div>
+        <div class="slider">
+          <div class="row"><label for="sN">Nombre d'étalons</label><output id="oN">11</output></div>
+          <input type="range" id="sN" min="5" max="25" step="1" value="11">
+        </div>
+        <p class="hint">Bougez la courbure : R² bouge à peine, le graphe des résidus change de forme.</p>
+        <details class="adv" id="adv">
+          <summary>Réglages avancés</summary>
+          <div class="adv-body">
+            <div class="slider">
+              <div class="row"><label for="sNoise">Dispersion des mesures (répétabilité)</label><output id="oNoise">0,25 %</output></div>
+              <input type="range" id="sNoise" min="0" max="3" step="0.05" value="0.25">
+            </div>
+            <p class="hint">Écart-type des mesures, en % du signal maximal. Essayez : courbure 5 %, puis montez la dispersion à 2 %. La courbure existe toujours, mais elle se noie dans la dispersion et les tests ne la détectent plus. Un test ne prouve donc jamais la linéarité : il dit seulement si l'écart est visible avec la précision de vos mesures.</p>
+            <button class="btn" id="reroll" type="button">Nouveau tirage des mesures</button>
+          </div>
+        </details>
+      </section>
+
+      <section>
+        <h3>Vos données</h3>
+        <div class="names">
+          <label for="nx">Axe x<input id="nx" value="C (mg/L)"></label>
+          <label for="ny">Axe y<input id="ny" value="Absorbance"></label>
+        </div>
+        <textarea id="data" spellcheck="false" aria-label="Données x et y"></textarea>
+        <div class="parse" id="parse"></div>
+        <p class="hint">Collez deux colonnes depuis un tableur (x puis y). Virgule ou point décimal, séparateur tabulation, point-virgule ou espace. L'analyse se met à jour pendant la saisie.</p>
+      </section>
+    </aside>
+
+    <div class="right">
+      <div class="panel readout">
+        <div class="r2box"><div class="lab">R²</div><div class="val" id="vR2">—</div></div>
+        <div class="eqbox"><div class="eqn" id="vEq">—</div><div class="sub" id="vSub"></div></div>
+        <div class="verdict" id="verdict"><b>—</b><span></span></div>
+      </div>
+
+      <div class="panel plots" id="plots">
+        <div class="head">
+          <h2>Données et droite</h2>
+          <div class="legend"><span><i style="background:var(--ink)"></i>mesures</span><span><i class="l"></i>modèle ajusté</span></div>
+        </div>
+        <canvas id="cvData" aria-label="Graphe des données et de la droite ajustée"></canvas>
+        <div class="divider">
+          <h2>Résidus</h2>
+          <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center">
+            <label class="check"><input type="checkbox" id="showTrend" checked>tendance</label>
+            <div class="mini-seg" role="radiogroup" aria-label="Unité des résidus">
+              <input type="radio" name="rmode" id="rRaw" value="raw" checked><label for="rRaw">bruts</label>
+              <input type="radio" name="rmode" id="rStd" value="std"><label for="rStd">standardisés e/s</label>
+            </div>
+          </div>
+        </div>
+        <canvas id="cvRes" aria-label="Graphe des résidus"></canvas>
+        <div class="legend" style="padding:4px 4px 0"><span><i style="background:var(--pos)"></i>résidu positif</span><span><i style="background:var(--neg)"></i>résidu négatif</span><span><i style="background:var(--accent);opacity:.25;border-radius:2px"></i>bande ±2s</span><span><i class="d"></i>tendance (ajustement en x²)</span></div>
+        <p class="reading" id="reading"></p>
+        <div class="tip" id="tip" hidden></div>
+      </div>
+
+      <div class="panel tests" id="tests"></div>
+    </div>
+  </div>
+
+  <section class="guide">
+    <h2>Lire un graphe de résidus</h2>
+    <p class="intro">Quatre formes à reconnaître. Seule la première valide le modèle.</p>
+    <div class="cards" id="cards"></div>
+  </section>
+
+  <div class="panel why">
+    <h2>Pourquoi R² se laisse tromper</h2>
+    <p>R² compare la somme des carrés des résidus à la variance totale du signal : <span class="mono">R² = 1 − Σe² / Σ(y − ȳ)²</span>. Sur une gamme d'étalonnage large, la variance totale est énorme. Une courbure qui décale les points de 1 % du signal ne retire presque rien au coefficient, qui reste au-delà de 0,999.</p>
+    <p>Le graphe des résidus retire la tendance principale et agrandit ce qui reste. L'écart systématique, invisible sur la droite, devient la forme dominante. Deux tests chiffrent ce que l'œil voit : le test du terme en x² (un modèle quadratique fait-il significativement mieux ?) et le test des séquences (les signes des résidus alternent-ils au hasard ?).</p>
+  </div>
+</div>
+
+<script>
+// CORE START
+function mean(a){return a.reduce((s,v)=>s+v,0)/a.length}
+const TT=[12.706,4.303,3.182,2.776,2.571,2.447,2.365,2.306,2.262,2.228,2.201,2.179,2.160,2.145,2.131,2.120,2.110,2.101,2.093,2.086,2.080,2.074,2.069,2.064,2.060,2.056,2.052,2.048,2.045,2.042];
+function tcrit(df){ if(df<1) return NaN; return df<=30?TT[df-1]:1.96+2.4/df; }
+function inv3(m){
+  const [a,b,c]=m[0],[d,e,f]=m[1],[g,h,i]=m[2];
+  const A=e*i-f*h, B=-(d*i-f*g), C=d*h-e*g, D=-(b*i-c*h), E=a*i-c*g, F=-(a*h-b*g), G=b*f-c*e, H=-(a*f-c*d), I=a*e-b*d;
+  const det=a*A+b*B+c*C; if(!isFinite(det)||Math.abs(det)<1e-300) return null;
+  return [[A/det,D/det,G/det],[B/det,E/det,H/det],[C/det,F/det,I/det]];
+}
+function parseData(text){
+  const pts=[];
+  for(const raw of text.split(/\r?\n/)){
+    const line=raw.trim(); if(!line) continue;
+    let tok=line.split(/[\t;]+|\s+/).filter(Boolean);
+    if(tok.length===1){ const c=(line.match(/,/g)||[]).length; if(c===1) tok=line.split(','); }
+    if(tok.length<2) continue;
+    const x=parseFloat(tok[0].replace(',','.')), y=parseFloat(tok[1].replace(',','.'));
+    if(isFinite(x)&&isFinite(y)&&/^[-+]?[\d.,eE+-]+$/.test(tok[0])&&/^[-+]?[\d.,eE+-]+$/.test(tok[1])) pts.push({x,y});
+  }
+  return pts.sort((p,q)=>p.x-q.x);
+}
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function gauss(r){let u=0;while(u===0)u=r();const v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)}
+function generate(o){
+  const {n=11,xmax=20,slope=0.05,intercept=0.002,curv=0,noise=0.003,seed=1,shape='quad',outlier=null,hetero=false}=o;
+  const r=mulberry32(seed*7919+13), ymax=slope*xmax, out=[];
+  for(let i=0;i<n;i++){
+    const x=xmax*i/(n-1); let y=intercept+slope*x;
+    if(shape==='quad') y-=curv*ymax*(x/xmax)**2;
+    if(shape==='sat'){ const x0=0.5*xmax; if(x>x0) y-=curv*ymax*((x-x0)/(xmax-x0))**2; }
+    const sd=noise*ymax*(hetero?(0.15+1.7*x/xmax):1);
+    y+=sd*gauss(r);
+    if(outlier&&outlier.i===i) y+=outlier.d*ymax;
+    out.push({x:Math.round(x*100)/100, y:Math.round(y*1e4)/1e4});
+  }
+  return out;
+}
+function analyse(pts, model){
+  const n=pts.length; if(n<3) return null;
+  const x=pts.map(p=>p.x), y=pts.map(p=>p.y), mx=mean(x), my=mean(y);
+  let Sxx=0,Sxy=0,Syy=0,Sx0=0,Sxy0=0;
+  for(let i=0;i<n;i++){const dx=x[i]-mx, dy=y[i]-my; Sxx+=dx*dx; Sxy+=dx*dy; Syy+=dy*dy; Sx0+=x[i]*x[i]; Sxy0+=x[i]*y[i];}
+  if(!(Sxx>0)) return null;
+  const aA=Sxy/Sxx, bA=my-aA*mx;
+  let SSA=0; for(let i=0;i<n;i++) SSA+=(y[i]-(aA*x[i]+bA))**2;
+  const sA=Math.sqrt(SSA/(n-2)), sbA=sA*Math.sqrt(1/n+mx*mx/Sxx), saA=sA/Math.sqrt(Sxx);
+  const tB=sbA>0?bA/sbA:0, tcB=tcrit(n-2);
+  let a,b,dof;
+  if(model==='lin'){a=Sxy0/Sx0;b=0;dof=n-1;} else {a=aA;b=bA;dof=n-2;}
+  const res=y.map((v,i)=>v-(a*x[i]+b)), SS=res.reduce((s,e)=>s+e*e,0);
+  const s=Math.sqrt(SS/dof), sa=model==='lin'?s/Math.sqrt(Sx0):saA, sb=model==='lin'?0:sbA;
+  const R2=Syy>0?1-SS/Syy:NaN;
+  const std=res.map(e=>s>0?e/s:0);
+  let quad=null;
+  if(n>=5){
+    const u=x.map(v=>v-mx), S=[0,0,0,0,0], T=[0,0,0];
+    for(let i=0;i<n;i++){const p=u[i]; S[0]+=1;S[1]+=p;S[2]+=p*p;S[3]+=p*p*p;S[4]+=p*p*p*p; T[0]+=y[i];T[1]+=p*y[i];T[2]+=p*p*y[i];}
+    const iv=inv3([[S[0],S[1],S[2]],[S[1],S[2],S[3]],[S[2],S[3],S[4]]]);
+    if(iv){
+      const c=[0,1,2].map(r=>iv[r][0]*T[0]+iv[r][1]*T[1]+iv[r][2]*T[2]);
+      let SSQ=0; for(let i=0;i<n;i++){const p=u[i]; SSQ+=(y[i]-(c[0]+c[1]*p+c[2]*p*p))**2;}
+      const dfQ=n-3, se=Math.sqrt(SSQ/dfQ*iv[2][2]), t=se>0?c[2]/se:0;
+      quad={c2:c[2], t, tc:tcrit(dfQ), f:xx=>{const p=xx-mx; return c[0]+c[1]*p+c[2]*p*p;}};
+    }
+  }
+  const tol=1e-12*(Math.abs(my)+1);
+  const signs=res.map(e=>Math.abs(e)<tol?0:Math.sign(e)).filter(v=>v!==0);
+  let runs=signs.length?1:0; for(let k=1;k<signs.length;k++) if(signs[k]!==signs[k-1]) runs++;
+  const n1=signs.filter(v=>v>0).length, n2=signs.length-n1, N=n1+n2;
+  let runsMu=NaN, runsZ=NaN;
+  if(n1>0&&n2>0){ runsMu=2*n1*n2/N+1; const v=2*n1*n2*(2*n1*n2-N)/(N*N*(N-1)); runsZ=v>0?(runs-runsMu+(runs<runsMu?0.5:-0.5))/Math.sqrt(v):NaN; }
+  else if(N>0){ runsMu=1; runsZ=-Infinity; }
+  let maxIdx=0; std.forEach((v,i)=>{if(Math.abs(v)>Math.abs(std[maxIdx]))maxIdx=i;});
+  let disp=NaN, dispUp=true;
+  if(n>=8){ const h=Math.floor(n/2), rms=arr=>Math.sqrt(arr.reduce((q,e)=>q+e*e,0)/arr.length);
+    const keep=res.map((e,i)=>(i===maxIdx&&Math.abs(std[i])>2.5)?null:e);
+    const r1=rms(keep.slice(0,h).filter(v=>v!==null)), r2=rms(keep.slice(n-h).filter(v=>v!==null)); if(r1>0&&r2>0){disp=Math.max(r2/r1,r1/r2); dispUp=r2>r1;} }
+  return {n,x,y,a,b,sa,sb,s,dof,R2,res,std,quad,runs,runsMu,runsZ,n1,n2,maxIdx,maxStd:std[maxIdx],disp,dispUp,aA,bA,sbA,tB,tcB,model,fit:xx=>a*xx+b};
+}
+// CORE END
+
+const $=s=>document.querySelector(s);
+const fmt=(v,d=3)=>Number.isFinite(v)?v.toLocaleString('fr-FR',{minimumFractionDigits:d,maximumFractionDigits:d}):'—';
+function fmtSig(v,sig=3){ if(!Number.isFinite(v)) return '—'; if(v===0) return '0'; const d=Math.max(0,sig-1-Math.floor(Math.log10(Math.abs(v)))); return fmt(v,Math.min(d,8)); }
+function fmtR2(v){ if(!Number.isFinite(v)) return '—'; return fmt(v, v>0.99?5:4); }
+
+const PRESETS={
+  correct:   {curv:0,    noise:0.004, seed:7},
+  cachee:    {curv:0.05, noise:0.0025, seed:3},
+  saturation:{curv:0.07, noise:0.002, seed:11, shape:'sat'},
+  aberrant:  {curv:0,    noise:0.003, seed:5, outlier:{i:6,d:0.04}},
+  dispersion:{curv:0,    noise:0.008, seed:21, hetero:true},
+  blanc:     {curv:0,    noise:0.003, seed:9, intercept:0.045, model:'lin'}
+};
+let state={model:'aff', rmode:'raw', trend:true, hover:-1, pts:[], A:null, seed:3};
+
+function writeData(pts){
+  const lines=[ $('#nx').value+'\t'+$('#ny').value ];
+  for(const p of pts) lines.push(String(p.x).replace('.',',')+'\t'+p.y.toFixed(4).replace('.',','));
+  $('#data').value=lines.join('\n');
+}
+function setModel(m){ state.model=m; $(m==='lin'?'#mLin':'#mAff').checked=true; }
+function setPresetUI(key){ document.querySelectorAll('#presets .chip').forEach(b=>b.setAttribute('aria-pressed', b.dataset.p===key?'true':'false')); }
+function loadPreset(key){
+  const p=PRESETS[key];
+  setModel(p.model||'aff');
+  $('#sCurv').value=(p.shape==='sat'?0:p.curv*100); $('#sNoise').value=p.noise*100; $('#sN').value=11; syncOutputs();
+  writeData(generate({...p, n:11}));
+  setPresetUI(key); update();
+}
+function syncOutputs(){
+  $('#oCurv').textContent=fmt(+$('#sCurv').value,1).replace(',0','')+' %';
+  $('#oNoise').textContent=fmt(+$('#sNoise').value,2)+' %';
+  $('#oN').textContent=$('#sN').value;
+}
+function fromSliders(){
+  syncOutputs(); setPresetUI(null);
+  writeData(generate({curv:+$('#sCurv').value/100, noise:+$('#sNoise').value/100, n:+$('#sN').value, seed:state.seed}));
+  update();
+}
+
+function diagnose(A){
+  const items=[]; const lin=A.model==='lin';
+  items.push({level:'info', title:'Coefficient de détermination', value:'R² = '+fmtR2(A.R2),
+    text:"Part de la variance de y expliquée par la droite. Il ne dit rien sur la forme des écarts : ne l'utilisez pas seul pour conclure."});
+  if(A.quad){
+    const sig=Math.abs(A.quad.t)>A.quad.tc;
+    items.push({level:sig?'bad':'ok', key:'curv', title:'Test de courbure (terme en x²)', value:`|t| = ${fmt(Math.abs(A.quad.t),2)} · seuil ${fmt(A.quad.tc,2)}`,
+      text: sig ? (A.quad.c2<0 ? "Un modèle y = a + bx + cx² fait significativement mieux, avec c < 0 : la réponse s'infléchit vers le bas en haut de gamme (saturation, écart à la loi de Beer-Lambert…)." : "Un modèle y = a + bx + cx² fait significativement mieux, avec c > 0 : la réponse s'incurve vers le haut.")
+                : "Ajouter un terme en x² n'améliore pas significativement l'ajustement (test de Student, α = 5 %)."});
+  } else items.push({level:'info', title:'Test de courbure (terme en x²)', value:'—', text:'Il faut au moins 5 points.'});
+  if(Number.isFinite(A.runsMu)){
+    const bad=A.runsZ<-1.645;
+    items.push({level:bad?'bad':'ok', key:'runs', title:'Test des séquences (signes des résidus)', value:`${A.runs} séquence${A.runs>1?'s':''} · attendu ≈ ${fmt(A.runsMu,1)}`,
+      text: bad ? "Les résidus de même signe se suivent en blocs : leur répartition n'est pas aléatoire. C'est la signature d'un modèle mal adapté."
+                : "Les signes des résidus alternent de façon compatible avec le hasard (test de Wald-Wolfowitz, α = 5 %, unilatéral)."});
+  }
+  if(lin){
+    const sig=Math.abs(A.tB)>A.tcB;
+    items.push({level:sig?'bad':'ok', key:'b0', title:"Passage par l'origine", value:`b = ${fmtSig(A.bA,3)} · |t| = ${fmt(Math.abs(A.tB),2)} · seuil ${fmt(A.tcB,2)}`,
+      text: sig ? "L'ordonnée à l'origine du modèle affine est significativement non nulle : forcer la droite par 0 n'est pas justifié (blanc mal corrigé ?). Passez au modèle affine."
+                : "L'ordonnée à l'origine n'est pas significativement différente de 0 : le modèle y = ax est acceptable."});
+  } else {
+    const zero=Math.abs(A.tB)<=A.tcB;
+    items.push({level:'info', title:"Ordonnée à l'origine", value:`b = ${fmtSig(A.b,3)} ± ${fmtSig(A.tcB*A.sb,2)}`,
+      text: zero ? "Intervalle de confiance à 95 % contenant 0 : un modèle linéaire y = ax serait aussi acceptable." : "Intervalle de confiance à 95 % excluant 0 : le blanc contribue au signal, gardez le modèle affine."});
+  }
+  const m=Math.abs(A.maxStd), lv=m>3?'bad':m>2.5?'warn':'ok';
+  items.push({level:lv, key:'out', title:'Résidu extrême', value:`|e/s| max = ${fmt(m,2)} (x = ${fmtSig(A.x[A.maxIdx],3)})`,
+    text: lv==='ok' ? "Aucun point ne s'écarte de plus de 2,5 écarts-types de la droite." : `Le point à x = ${fmtSig(A.x[A.maxIdx],3)} s'écarte nettement. Vérifiez la préparation de cet étalon avant de l'écarter, et ne le retirez jamais sans justification expérimentale.`});
+  if(Number.isFinite(A.disp)){
+    const w=A.disp>3;
+    items.push({level:w?'warn':'ok', key:'disp', title:'Homogénéité de la dispersion (indicatif)', value:`rapport ${fmt(A.disp,1)}`,
+      text: w ? `Les résidus sont environ ${fmt(A.disp,1)} fois plus dispersés ${A.dispUp?'en haut':'en bas'} de gamme. Les moindres carrés ordinaires supposent une variance constante : envisagez une régression pondérée ou une gamme plus étroite.` : "La dispersion des résidus est comparable en bas et en haut de gamme."});
+  }
+  const levels=items.map(i=>i.level);
+  const overall=levels.includes('bad')?'bad':levels.includes('warn')?'warn':'ok';
+  return {items, overall};
+}
+
+function readingText(A, D){
+  const bad=k=>D.items.find(i=>i.key===k&&i.level==='bad');
+  const warn=k=>D.items.find(i=>i.key===k&&i.level!=='ok');
+  if(bad('b0')) return "<strong>Les résidus dérivent d'un côté à l'autre.</strong> La droite forcée par l'origine pivote pour compenser un blanc non nul : résidus d'un signe en bas de gamme, de l'autre en haut.";
+  if(bad('curv')||bad('runs')){
+    if(A.quad&&A.quad.c2<0) return "<strong>Les résidus dessinent une arche (∩).</strong> Positifs au milieu, négatifs aux deux extrémités : la réponse réelle est concave. La droite, elle, paraissait parfaite.";
+    if(A.quad&&A.quad.c2>0) return "<strong>Les résidus dessinent un U.</strong> Négatifs au milieu, positifs aux extrémités : la réponse réelle s'incurve vers le haut.";
+    return "<strong>Les résidus se regroupent par signe.</strong> Leur succession n'est pas aléatoire : un écart systématique au modèle existe.";
+  }
+  if(warn('out')) return "<strong>Un point sort du lot.</strong> Les autres résidus sont répartis au hasard, mais un étalon s'écarte nettement de la droite.";
+  if(warn('disp')) return "<strong>Les résidus forment un entonnoir.</strong> Leur dispersion "+(A.dispUp?'augmente':'diminue')+" le long de la gamme : la variance n'est pas constante.";
+  return "<strong>Les résidus forment une bande sans structure</strong> autour de zéro, sans arche, sans entonnoir, sans dérive. C'est ce qu'on attend d'un modèle adapté.";
+}
+
+function update(){
+  const pts=parseData($('#data').value); state.pts=pts;
+  const pe=$('#parse');
+  if(pts.length<3){ pe.textContent=pts.length+' point(s) lu(s) : il en faut au moins 3.'; pe.classList.add('err'); state.A=null; render(); return; }
+  pe.classList.remove('err');
+  const A=analyse(pts,state.model); state.A=A;
+  if(!A){ pe.textContent='Les valeurs de x doivent être différentes.'; pe.classList.add('err'); render(); return; }
+  pe.textContent=`${pts.length} points lus · s = ${fmtSig(A.s,3)} (${A.dof} ddl)`;
+  render();
+}
+
+function render(){
+  const A=state.A;
+  if(!A){ $('#vR2').textContent='—'; $('#vEq').textContent='—'; $('#vSub').textContent=''; $('#verdict').className='verdict'; $('#verdict').innerHTML='<b>En attente de données</b><span></span>'; $('#tests').innerHTML=''; $('#reading').textContent=''; draw(); return; }
+  const D=diagnose(A);
+  $('#vR2').textContent=fmtR2(A.R2);
+  const sign=A.b<0?'−':'+';
+  $('#vEq').textContent = A.model==='lin' ? `y = ${fmtSig(A.a,4)} x` : `y = ${fmtSig(A.a,4)} x ${sign} ${fmtSig(Math.abs(A.b),3)}`;
+  const tc=tcrit(A.dof);
+  $('#vSub').textContent = `a = ${fmtSig(A.a,4)} ± ${fmtSig(tc*A.sa,2)}` + (A.model==='lin'?'':` · b = ${fmtSig(A.b,3)} ± ${fmtSig(tc*A.sb,2)}`) + ' (IC 95 %)';
+  const V={ok:['Aucun écart au modèle détecté',"Résidus aléatoires. Un test ne prouve pas la linéarité : il ne détecte pas d'écart avec ces données."],
+           warn:['À examiner',"Le modèle tient globalement, mais un point ou la dispersion demandent une vérification."],
+           bad:[A.model==='lin'?'Modèle linéaire rejeté':'Modèle affine rejeté',"Les résidus ont une structure. R² élevé ou non, la droite ne décrit pas correctement les données."]}[D.overall];
+  const vd=$('#verdict'); vd.className='verdict '+D.overall; vd.innerHTML=`<b>${V[0]}</b><span>${V[1]}</span>`;
+  $('#tests').innerHTML='<div class="cap"><h2>Diagnostic</h2></div>'+D.items.map(i=>`<div class="t"><span class="dot ${i.level}"></span><span class="tt">${i.title}</span><span class="tv">${i.value}</span><span class="tx">${i.text}</span></div>`).join('');
+  $('#reading').innerHTML=readingText(A,D);
+  draw();
+}
+
+/* ---------- dessin ---------- */
+const cvD=$('#cvData'), cvR=$('#cvRes');
+const tok=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function prep(cv){ const dpr=window.devicePixelRatio||1, w=cv.clientWidth, h=cv.clientHeight;
+  if(cv.width!==Math.round(w*dpr)||cv.height!==Math.round(h*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);}
+  const ctx=cv.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,w,h); return {ctx,w,h}; }
+function nice(min,max,count){ const span=max-min||1, raw=span/count, mag=10**Math.floor(Math.log10(raw)), e=raw/mag;
+  const step=(e>=7.5?10:e>=3.5?5:e>=1.5?2:1)*mag, out=[]; for(let v=Math.ceil(min/step)*step; v<=max+step*1e-9; v+=step) out.push(+v.toPrecision(12));
+  return {ticks:out, dec:Math.max(0,-Math.floor(Math.log10(step)+1e-9))}; }
+const M={l:62,r:14,t:12,b:34};
+let geom={};
+function xDomain(){ const xs=state.pts.map(p=>p.x); const lo=Math.min(...xs), hi=Math.max(...xs), pad=(hi-lo)*0.05||1; return [lo-pad, hi+pad]; }
+
+function axes(ctx,w,h,xd,yd,yt,showX,col,xTitle,yTitle){
+  const X=v=>M.l+(v-xd[0])/(xd[1]-xd[0])*(w-M.l-M.r), Y=v=>h-M.b-(v-yd[0])/(yd[1]-yd[0])*(h-M.t-M.b);
+  ctx.font='11px "JetBrains Mono", ui-monospace, monospace'; ctx.lineWidth=1;
+  const xt=nice(xd[0],xd[1],w<460?4:7);
+  ctx.strokeStyle=col.soft; ctx.fillStyle=col.muted;
+  for(const v of yt.ticks){ const y=Math.round(Y(v))+.5; ctx.beginPath(); ctx.moveTo(M.l,y); ctx.lineTo(w-M.r,y); ctx.stroke();
+    ctx.textAlign='right'; ctx.textBaseline='middle'; ctx.fillText(fmt(v,yt.dec),M.l-8,y); }
+  for(const v of xt.ticks){ const x=Math.round(X(v))+.5; ctx.beginPath(); ctx.moveTo(x,M.t); ctx.lineTo(x,h-M.b); ctx.stroke();
+    if(showX){ ctx.textAlign='center'; ctx.textBaseline='top'; ctx.fillText(fmt(v,xt.dec),x,h-M.b+7); } }
+  ctx.strokeStyle=col.line; ctx.beginPath(); ctx.moveTo(M.l+.5,M.t); ctx.lineTo(M.l+.5,h-M.b+.5); ctx.lineTo(w-M.r,h-M.b+.5); ctx.stroke();
+  ctx.font='12px "Atkinson Hyperlegible", system-ui, sans-serif'; ctx.fillStyle=col.muted;
+  if(xTitle){ ctx.textAlign='right'; ctx.textBaseline='bottom'; ctx.fillText(xTitle,w-M.r,h-2); }
+  if(yTitle){ ctx.save(); ctx.translate(13,M.t+(h-M.t-M.b)/2); ctx.rotate(-Math.PI/2); ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(yTitle,0,0); ctx.restore(); }
+  return {X,Y};
+}
+
+function draw(){
+  const col={ink:tok('--ink'),muted:tok('--muted'),line:tok('--line'),soft:tok('--soft'),accent:tok('--accent'),pos:tok('--pos'),neg:tok('--neg'),panel:tok('--panel')};
+  const d=prep(cvD), r=prep(cvR), A=state.A;
+  if(!A){ geom={}; return; }
+  const xd=xDomain();
+  // données
+  {
+    const {ctx,w,h}=d; const ys=A.y.concat([A.fit(xd[0]),A.fit(xd[1])]); let lo=Math.min(...ys), hi=Math.max(...ys); const pad=(hi-lo)*0.06||1; lo-=pad; hi+=pad;
+    const yt=nice(lo,hi,5); const {X,Y}=axes(ctx,w,h,[xd[0],xd[1]],[lo,hi],yt,true,col,$('#nx').value,$('#ny').value);
+    ctx.save(); ctx.beginPath(); ctx.rect(M.l,M.t,w-M.l-M.r,h-M.t-M.b); ctx.clip();
+    ctx.strokeStyle=col.accent; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(X(xd[0]),Y(A.fit(xd[0]))); ctx.lineTo(X(xd[1]),Y(A.fit(xd[1]))); ctx.stroke(); ctx.restore();
+    A.x.forEach((xv,i)=>{ const hv=i===state.hover; ctx.beginPath(); ctx.arc(X(xv),Y(A.y[i]),hv?6.5:4.5,0,7); ctx.fillStyle=col.ink; ctx.fill(); ctx.lineWidth=hv?2.5:1.5; ctx.strokeStyle=hv?col.accent:col.panel; ctx.stroke(); });
+    geom.d={X,Y};
+  }
+  // résidus
+  {
+    const {ctx,w,h}=r; const std=state.rmode==='std'; const e=std?A.std:A.res; const k=std?1:A.s;
+    const m=Math.max(...e.map(Math.abs), 2.2*k)*1.15; const yt=nice(-m,m,4);
+    const {X,Y}=axes(ctx,w,h,xd,[-m,m],yt,true,col,$('#nx').value,std?'e / s':'résidu');
+    ctx.save(); ctx.beginPath(); ctx.rect(M.l,M.t,w-M.l-M.r,h-M.t-M.b); ctx.clip();
+    ctx.fillStyle=col.accent; ctx.globalAlpha=.1; ctx.fillRect(M.l,Y(2*k),w-M.l-M.r,Y(-2*k)-Y(2*k)); ctx.globalAlpha=1;
+    ctx.strokeStyle=col.accent; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(M.l,Y(0)); ctx.lineTo(w-M.r,Y(0)); ctx.stroke();
+    if(state.trend&&A.quad){ ctx.setLineDash([5,4]); ctx.strokeStyle=col.muted; ctx.lineWidth=1.6; ctx.beginPath();
+      const steps=80; for(let j=0;j<=steps;j++){ const xv=xd[0]+(xd[1]-xd[0])*j/steps; const v=(A.quad.f(xv)-A.fit(xv))/(std?A.s:1); j?ctx.lineTo(X(xv),Y(v)):ctx.moveTo(X(xv),Y(v)); } ctx.stroke(); ctx.setLineDash([]); }
+    ctx.strokeStyle=col.muted; ctx.globalAlpha=.45; ctx.lineWidth=1; ctx.beginPath(); A.x.forEach((xv,i)=>{ i?ctx.lineTo(X(xv),Y(e[i])):ctx.moveTo(X(xv),Y(e[i])); }); ctx.stroke(); ctx.globalAlpha=1;
+    ctx.restore();
+    A.x.forEach((xv,i)=>{ const hv=i===state.hover; const c=e[i]>=0?col.pos:col.neg;
+      ctx.strokeStyle=c; ctx.globalAlpha=.5; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(X(xv),Y(0)); ctx.lineTo(X(xv),Y(e[i])); ctx.stroke(); ctx.globalAlpha=1;
+      ctx.beginPath(); ctx.arc(X(xv),Y(e[i]),hv?6.5:4.5,0,7); ctx.fillStyle=c; ctx.fill(); ctx.lineWidth=hv?2.5:1.5; ctx.strokeStyle=hv?col.ink:col.panel; ctx.stroke(); });
+    geom.r={X,Y};
+  }
+}
+
+/* ---------- survol ---------- */
+const tip=$('#tip'), plots=$('#plots');
+function onMove(ev,which){
+  const A=state.A, g=geom[which]; if(!A||!g) return;
+  const rect=ev.currentTarget.getBoundingClientRect(), px=ev.clientX-rect.left;
+  let best=-1, bd=1e9; A.x.forEach((xv,i)=>{ const dd=Math.abs(g.X(xv)-px); if(dd<bd){bd=dd;best=i;} });
+  if(bd>26) best=-1;
+  if(best!==state.hover){ state.hover=best; draw(); }
+  if(best<0){ tip.hidden=true; return; }
+  const i=best;
+  tip.innerHTML=`x = ${fmtSig(A.x[i],4)}<br>y mesuré = ${fmtSig(A.y[i],4)}<br>y modèle = ${fmtSig(A.fit(A.x[i]),4)}<br>résidu = ${A.res[i]>=0?'+':''}${fmtSig(A.res[i],3)} (${fmt(A.std[i],2)} s)`;
+  tip.hidden=false;
+  const pr=plots.getBoundingClientRect(); let left=ev.clientX-pr.left+14, top=ev.clientY-pr.top+14;
+  const tw=tip.offsetWidth, th=tip.offsetHeight; if(left+tw>pr.width-6) left=ev.clientX-pr.left-tw-14; if(left<6) left=6; if(top+th>pr.height-6) top=ev.clientY-pr.top-th-14;
+  tip.style.left=left+'px'; tip.style.top=top+'px';
+}
+function onLeave(){ tip.hidden=true; if(state.hover!==-1){state.hover=-1; draw();} }
+cvD.addEventListener('pointermove',e=>onMove(e,'d')); cvR.addEventListener('pointermove',e=>onMove(e,'r'));
+cvD.addEventListener('pointerleave',onLeave); cvR.addEventListener('pointerleave',onLeave);
+
+/* ---------- vignettes du guide ---------- */
+function thumbs(){
+  const r=mulberry32(42), W=200, H=96, mid=H/2, n=14;
+  const pats=[
+    {t:'Bande aléatoire', d:'Points dispersés au hasard autour de zéro, dans une bande d\'épaisseur constante. Le modèle est adapté.', f:(u)=>gauss(r)*12},
+    {t:'Arche ou U', d:'Les signes se regroupent : négatifs aux bords, positifs au centre (ou l\'inverse). Courbure : passez à un modèle quadratique ou réduisez la gamme.', f:(u)=>30-110*(u-.5)**2+gauss(r)*4},
+    {t:'Entonnoir', d:'La dispersion s\'élargit avec x. La variance n\'est pas constante : une régression pondérée est plus juste.', f:(u)=>gauss(r)*(2+30*u)},
+    {t:'Point isolé', d:'Un résidu sort franchement de la bande. Vérifiez cet étalon (dilution, cuve, saisie) avant toute décision.', f:(u,i)=>i===8?-36:gauss(r)*7}
+  ];
+  $('#cards').innerHTML=pats.map(p=>{
+    let pts=''; for(let i=0;i<n;i++){ const u=i/(n-1), x=12+u*(W-24), v=Math.max(-40,Math.min(40,p.f(u,i))); const c=v>=0?'var(--pos)':'var(--neg)';
+      pts+=`<line x1="${x}" y1="${mid}" x2="${x}" y2="${mid-v}" stroke="${c}" stroke-opacity=".45"/><circle cx="${x}" cy="${mid-v}" r="3.6" fill="${c}"/>`; }
+    return `<div class="panel card"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${p.t}"><line x1="6" x2="${W-6}" y1="${mid}" y2="${mid}" stroke="var(--accent)" stroke-width="1.2"/>${pts}</svg><b>${p.t}</b><p>${p.d}</p></div>`;
+  }).join('');
+}
+
+/* ---------- événements ---------- */
+document.querySelectorAll('#presets .chip').forEach(b=>b.addEventListener('click',()=>loadPreset(b.dataset.p)));
+document.querySelectorAll('input[name=model]').forEach(r=>r.addEventListener('change',()=>{state.model=r.value; update();}));
+document.querySelectorAll('input[name=rmode]').forEach(r=>r.addEventListener('change',()=>{state.rmode=r.value; draw();}));
+$('#showTrend').addEventListener('change',e=>{state.trend=e.target.checked; draw();});
+['#sCurv','#sNoise','#sN'].forEach(s=>$(s).addEventListener('input',fromSliders));
+$('#reroll').addEventListener('click',()=>{ state.seed=Math.floor(Math.random()*1e6); fromSliders(); });
+let tmr; $('#data').addEventListener('input',()=>{ setPresetUI(null); clearTimeout(tmr); tmr=setTimeout(update,180); });
+['#nx','#ny'].forEach(s=>$(s).addEventListener('input',draw));
+new ResizeObserver(()=>draw()).observe(plots);
+try{ matchMedia('(prefers-color-scheme: dark)').addEventListener('change',draw); }catch(e){}
+new MutationObserver(draw).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+if(document.fonts&&document.fonts.ready) document.fonts.ready.then(draw);
+
+thumbs();
+loadPreset('cachee');
+</script>
+
+</body>
+</html>
