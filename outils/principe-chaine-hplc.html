@@ -1,0 +1,529 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="description" content="Schéma interactif d’une chaîne HPLC en phase inverse : phase mobile, pompe, injecteur, colonne C18 et détecteur. Comprendre pas à pas le rôle de chaque module. Outil du BTSa ANABIOTEC, lycée Le Gros Chêne, Pontivy.">
+<link rel="canonical" href="https://philrob56.github.io/anabiotec-commun/outils/principe-chaine-hplc.html">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HPLC en phase inverse pas à pas : principe d’une chaîne HPLC | BTSa ANABIOTEC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,500..800&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: console d'instrument — schéma du circuit en bandeau, vue de la colonne, puis chromatogramme + baie de réglages, notions clés en bas */
+:root{
+  --bg:#edf1f3; --panel:#ffffff; --screen:#f7f9fa; --ink:#13202a; --muted:#56687a; --line:#d3dce3; --grid:#e3e9ed;
+  --accent:#0a7d84; --accent-soft:#d6eef0; --warn:#b5580c; --ok:#2f7d32; --bad:#b3261e;
+  --c1:#2a62c4; --c2:#c47a0b; --c3:#b42e6c; --steel:#9aa8b3; --silica:#cfd8de;
+  --f-display:"Archivo", "Helvetica Neue", Arial, sans-serif;
+  --f-body:"Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0d1317; --panel:#151d23; --screen:#10171c; --ink:#e3eaee; --muted:#93a3b0; --line:#28343d; --grid:#1f2a32;
+  --accent:#3cc0c6; --accent-soft:#163236; --warn:#e8994a; --ok:#6cc070; --bad:#ef7a70;
+  --c1:#6c9dff; --c2:#f0aa3c; --c3:#ec6fa8; --steel:#5f6f7b; --silica:#2a363f; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0d1317; --panel:#151d23; --screen:#10171c; --ink:#e3eaee; --muted:#93a3b0; --line:#28343d; --grid:#1f2a32;
+  --accent:#3cc0c6; --accent-soft:#163236; --warn:#e8994a; --ok:#6cc070; --bad:#ef7a70;
+  --c1:#6c9dff; --c2:#f0aa3c; --c3:#ec6fa8; --steel:#5f6f7b; --silica:#2a363f; color-scheme:dark }
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:20px;padding-block:28px 56px;display:grid;gap:20px}
+header{display:grid;gap:6px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font-family:var(--f-display);font-stretch:112%;font-weight:800;font-size:clamp(28px,4.4vw,46px);line-height:1.05;margin:0;text-wrap:balance}
+.lead{color:var(--muted);max-width:68ch;margin:0}
+h2{font-family:var(--f-display);font-stretch:100%;font-weight:700;font-size:18px;margin:0;letter-spacing:.01em}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px;display:grid;gap:12px;min-width:0}
+.ph{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.tag{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.scroll{overflow-x:auto}
+svg.schema{display:block;width:100%;min-width:680px;height:auto}
+.mod{cursor:pointer;outline:none}
+.mod .box{fill:var(--screen);stroke:var(--steel);stroke-width:1.5;transition:stroke .2s,fill .2s}
+.mod:hover .box,.mod:focus-visible .box{stroke:var(--accent)}
+.mod.sel .box{stroke:var(--accent);stroke-width:2.5;fill:var(--accent-soft)}
+.mod text{fill:var(--ink);font-family:var(--f-display);font-size:14px;font-weight:600}
+.mod text.sub{fill:var(--muted);font-family:var(--f-mono);font-size:11px;font-weight:400}
+.tube{fill:none;stroke:var(--steel);stroke-width:4;stroke-linecap:round}
+.flow{fill:none;stroke:var(--accent);stroke-width:2;stroke-dasharray:4 10;animation:flow 1s linear infinite;stroke-linecap:round}
+@keyframes flow{to{stroke-dashoffset:-14}}
+.inj-flash{animation:flash .9s ease-out}
+@keyframes flash{0%{fill:var(--accent)}100%{fill:var(--accent-soft)}}
+.info{display:grid;grid-template-columns:auto 1fr;gap:4px 16px;background:var(--screen);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+.info b{font-family:var(--f-display);font-weight:700;grid-column:1/-1}
+.info p{margin:0;grid-column:1/-1;max-width:80ch}
+.info .kv{font-family:var(--f-mono);font-size:13px;color:var(--accent);grid-column:1/-1}
+canvas{display:block;width:100%}
+#col{height:150px}
+#chrom{height:320px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:14px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:20px}
+@media (max-width:860px){.main{grid-template-columns:1fr}}
+.rack{display:grid;gap:16px;align-content:start}
+.ctl{display:grid;gap:6px}
+.ctl label{display:flex;justify-content:space-between;font-weight:600;font-size:15px}
+.ctl output{font-family:var(--f-mono);font-weight:600;color:var(--accent);font-variant-numeric:tabular-nums}
+.ctl small{color:var(--muted);font-size:13px}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:var(--screen);color:var(--ink);font:600 14px var(--f-mono);padding:8px 0;cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed=true]{background:var(--accent);color:var(--panel)}
+.btns{display:grid;grid-template-columns:1fr auto;gap:8px}
+.btn{font:700 15px var(--f-display);font-stretch:108%;border-radius:8px;padding:12px 14px;cursor:pointer;border:1px solid var(--accent)}
+.btn.primary{background:var(--accent);color:var(--panel)}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn:focus-visible,.seg button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.check{display:flex;gap:8px;align-items:center;font-size:14px;color:var(--muted)}
+.readouts{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.readouts div{background:var(--screen);padding:8px 10px;display:grid}
+.readouts span{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.readouts strong{font-family:var(--f-mono);font-size:16px;font-variant-numeric:tabular-nums}
+.readouts strong.hot{color:var(--warn)}
+.note{font-size:13px;color:var(--warn);min-height:1.2em;margin:0}
+.status{font-family:var(--f-mono);font-size:13px;color:var(--muted)}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:15px}
+th,td{padding:9px 10px;text-align:left;border-bottom:1px solid var(--line)}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+td.n{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.pill{display:inline-block;font-size:12px;font-weight:600;padding:2px 9px;border-radius:99px;border:1px solid currentColor}
+.pill.ok{color:var(--ok)}.pill.mid{color:var(--warn)}.pill.bad{color:var(--bad)}
+.notions{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px}
+.notion{display:grid;gap:6px;align-content:start}
+.notion h3{font-family:var(--f-display);font-size:16px;margin:0}
+.notion p{margin:0;color:var(--muted);font-size:15px}
+.formula{font-family:var(--f-mono);font-size:14px;background:var(--screen);border:1px solid var(--line);border-radius:6px;padding:6px 10px;color:var(--ink)}
+@media (prefers-reduced-motion:reduce){.flow,.inj-flash{animation:none}}
+</style>
+<!-- anb-commun --><script src="https://philrob56.github.io/anabiotec-commun/anb-commun.js"></script><!-- /anb-commun -->
+</head>
+<body>
+<!-- anb-charte --><div class="anb-head"><div class="anb-crumb"><i></i><a href="https://sites.google.com/view/anabioteclegroschene/accueil" target="_top" style="color:inherit;text-decoration:none" title="Tous les outils du BTSa ANABIOTEC"><b>BTSa ANABIOTEC</b></a><span>›</span>Chromatographie</div><div class="anb-right"><div class="anb-tag">LEGTA Le Gros Chêne · Pontivy</div><button type="button" class="anb-print" onclick="anbPrint()" title="Ouvrir une version imprimable (PDF)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimer / PDF</button></div></div><!-- /anb-charte -->
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Chromatographie liquide haute performance</div>
+    <h1>HPLC en phase inverse, pas à pas</h1>
+    <p class="lead">Un mélange de paracétamol, caféine et aspirine est injecté sur une colonne C18. Modifiez la composition de la phase mobile, le débit ou la longueur de colonne, puis injectez pour voir comment la séparation et le chromatogramme évoluent.</p>
+  </header>
+
+  <section class="panel" aria-labelledby="h-circuit">
+    <div class="ph"><h2 id="h-circuit">Le circuit de l'appareil</h2><span class="tag">Cliquez sur un module</span></div>
+    <div class="scroll">
+      <svg class="schema" viewBox="0 0 1040 230" role="img" aria-label="Schéma d'une chaîne HPLC : réservoirs, pompe, injecteur, colonne, détecteur, acquisition">
+        <!-- tubes -->
+        <path class="tube" d="M70 92 V60 Q70 44 86 44 H150 Q166 44 166 60 V110 H180"/>
+        <path class="tube" d="M110 92 V70 Q110 60 120 60 H150"/>
+        <path class="tube" d="M290 110 H330"/>
+        <path class="tube" d="M400 110 H470"/>
+        <path class="tube" d="M730 110 H780"/>
+        <path class="tube" d="M880 110 H930"/>
+        <path class="tube" d="M830 145 V190 H870"/>
+        <path class="flow" d="M70 92 V60 Q70 44 86 44 H150 Q166 44 166 60 V110 H180"/>
+        <path class="flow" d="M290 110 H330"/>
+        <path class="flow" d="M400 110 H470"/>
+        <path class="flow" d="M730 110 H780"/>
+        <path class="flow" d="M830 145 V190 H870"/>
+        <text x="878" y="194" style="fill:var(--muted);font:11px var(--f-mono)">déchets</text>
+
+        <g class="mod" data-k="res" tabindex="0" role="button" aria-label="Réservoirs de phase mobile">
+          <rect class="box" x="16" y="88" width="124" height="80" rx="8"/>
+          <path d="M44 100 h20 v8 l6 8 v40 h-32 v-40 l6 -8z" style="fill:var(--c1);fill-opacity:.18;stroke:var(--steel);stroke-width:1.2"/>
+          <path d="M92 100 h20 v8 l6 8 v40 h-32 v-40 l6 -8z" style="fill:var(--accent);fill-opacity:.18;stroke:var(--steel);stroke-width:1.2"/>
+          <text x="54" y="146" text-anchor="middle" class="sub">A</text>
+          <text x="102" y="146" text-anchor="middle" class="sub">B</text>
+          <text x="78" y="190">Réservoirs</text>
+          <text x="78" y="206" text-anchor="middle" class="sub" id="lbl-res">eau / MeOH</text>
+        </g>
+        <g class="mod" data-k="pump" tabindex="0" role="button" aria-label="Pompe haute pression">
+          <rect class="box" x="180" y="78" width="110" height="64" rx="8"/>
+          <circle cx="215" cy="110" r="16" style="fill:none;stroke:var(--steel);stroke-width:2"/>
+          <rect x="240" y="102" width="34" height="16" rx="3" style="fill:var(--steel)"/>
+          <text x="235" y="164" text-anchor="middle">Pompe</text>
+          <text x="235" y="180" text-anchor="middle" class="sub" id="lbl-pump">110 bar</text>
+        </g>
+        <g class="mod" data-k="inj" tabindex="0" role="button" aria-label="Injecteur">
+          <circle id="inj-c" class="box" cx="365" cy="110" r="35"/>
+          <circle cx="365" cy="110" r="14" style="fill:none;stroke:var(--steel);stroke-width:2;stroke-dasharray:3 3"/>
+          <path d="M365 42 V75" style="stroke:var(--steel);stroke-width:3"/>
+          <rect x="355" y="18" width="20" height="26" rx="3" style="fill:var(--screen);stroke:var(--steel);stroke-width:1.5"/>
+          <text x="365" y="164" text-anchor="middle">Injecteur</text>
+          <text x="365" y="180" text-anchor="middle" class="sub">boucle 20 µL</text>
+        </g>
+        <g class="mod" data-k="col" tabindex="0" role="button" aria-label="Colonne et four">
+          <rect class="box" x="460" y="66" width="270" height="88" rx="8"/>
+          <rect x="478" y="98" width="234" height="24" rx="5" style="fill:var(--silica);stroke:var(--steel);stroke-width:1.5"/>
+          <text x="595" y="88" text-anchor="middle" class="sub">four 30 °C</text>
+          <text x="595" y="176" text-anchor="middle">Colonne C18</text>
+          <text x="595" y="192" text-anchor="middle" class="sub" id="lbl-col">150 × 4,6 mm · 5 µm</text>
+        </g>
+        <g class="mod" data-k="det" tabindex="0" role="button" aria-label="Détecteur UV">
+          <rect class="box" x="780" y="78" width="100" height="64" rx="8"/>
+          <circle id="lamp" cx="808" cy="110" r="11" style="fill:var(--accent);fill-opacity:.15;stroke:var(--steel);stroke-width:1.5"/>
+          <path d="M822 110 h22" style="stroke:var(--accent);stroke-width:2;stroke-dasharray:3 3"/>
+          <rect x="848" y="100" width="18" height="20" rx="2" style="fill:var(--steel)"/>
+          <text x="830" y="164" text-anchor="middle">Détecteur</text>
+          <text x="830" y="180" text-anchor="middle" class="sub">UV 254 nm</text>
+        </g>
+        <g class="mod" data-k="acq" tabindex="0" role="button" aria-label="Acquisition des données">
+          <rect class="box" x="930" y="70" width="96" height="80" rx="8"/>
+          <polyline points="942,134 958,134 964,96 970,134 984,134 990,112 996,134 1014,134" style="fill:none;stroke:var(--accent);stroke-width:2"/>
+          <text x="978" y="172" text-anchor="middle">Acquisition</text>
+          <text x="978" y="188" text-anchor="middle" class="sub">chromatogramme</text>
+        </g>
+      </svg>
+    </div>
+    <div class="info" id="info" aria-live="polite"></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-col">
+    <div class="ph"><h2 id="h-col">Dans la colonne</h2><span class="status" id="st-col">t = 0,00 min</span></div>
+    <canvas id="col" aria-label="Animation des bandes de soluté migrant dans la colonne"></canvas>
+    <div class="legend">
+      <span><i class="dot" style="background:var(--steel)"></i>Phase mobile (non retenue, sort à t₀)</span>
+      <span><i class="dot" style="background:var(--c1)"></i>Paracétamol</span>
+      <span><i class="dot" style="background:var(--c2)"></i>Caféine</span>
+      <span><i class="dot" style="background:var(--c3)"></i>Aspirine</span>
+      <span>Largeur des bandes exagérée ×4 pour la lisibilité</span>
+    </div>
+  </section>
+
+  <div class="main">
+    <section class="panel" aria-labelledby="h-chrom">
+      <div class="ph"><h2 id="h-chrom">Chromatogramme</h2><span class="status" id="st-run">—</span></div>
+      <canvas id="chrom" aria-label="Chromatogramme : absorbance en fonction du temps"></canvas>
+    </section>
+
+    <aside class="panel rack" aria-labelledby="h-set">
+      <h2 id="h-set">Réglages</h2>
+      <div class="ctl">
+        <label for="phi">Méthanol dans la phase mobile <output id="o-phi">40 %</output></label>
+        <input type="range" id="phi" min="20" max="70" step="1" value="40">
+        <small>Le reste : eau acidifiée (pH 3). Plus de méthanol = phase mobile plus éluante.</small>
+      </div>
+      <div class="ctl">
+        <label for="flow">Débit <output id="o-flow">1,0 mL/min</output></label>
+        <input type="range" id="flow" min="0.3" max="2.5" step="0.1" value="1.0">
+      </div>
+      <div class="ctl">
+        <label>Longueur de colonne</label>
+        <div class="seg" id="len" role="group" aria-label="Longueur de colonne">
+          <button type="button" data-l="100" aria-pressed="false">100 mm</button>
+          <button type="button" data-l="150" aria-pressed="true">150 mm</button>
+          <button type="button" data-l="250" aria-pressed="false">250 mm</button>
+        </div>
+      </div>
+      <div class="readouts">
+        <div><span>Pression</span><strong id="r-p">—</strong></div>
+        <div><span>t₀</span><strong id="r-t0">—</strong></div>
+        <div><span>Plateaux N</span><strong id="r-n">—</strong></div>
+        <div><span>Durée</span><strong id="r-d">—</strong></div>
+      </div>
+      <p class="note" id="note"></p>
+      <div class="btns">
+        <button class="btn primary" id="btn-inj" type="button">Injecter</button>
+        <button class="btn ghost" id="btn-clr" type="button">Effacer</button>
+      </div>
+      <label class="check"><input type="checkbox" id="keep" checked> Garder la trace précédente en fond</label>
+    </aside>
+  </div>
+
+  <section class="panel" aria-labelledby="h-res">
+    <div class="ph"><h2 id="h-res">Résultats prévus</h2><span class="tag">avec les réglages actuels</span></div>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Composé</th><th>t<sub>R</sub> (min)</th><th>k</th><th>Largeur ω (min)</th><th>R<sub>s</sub> / pic précédent</th><th>Séparation</th></tr></thead>
+        <tbody id="tb"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-not">
+    <h2 id="h-not">Notions clés</h2>
+    <div class="notions">
+      <div class="notion"><h3>Phase stationnaire apolaire</h3><p>La silice est greffée de chaînes octadécyle (C18). Les composés les moins polaires s'y attardent : ils sortent en dernier.</p></div>
+      <div class="notion"><h3>Facteur de rétention</h3><div class="formula">k = (t<sub>R</sub> − t₀) / t₀</div><p>t₀ est le temps mort, celui d'une molécule non retenue. k ne dépend pas du débit.</p></div>
+      <div class="notion"><h3>Efficacité</h3><div class="formula">N = 5,54 · (t<sub>R</sub> / δ)²</div><p>δ est la largeur à mi-hauteur. Plus N est grand, plus les pics sont fins. N augmente avec la longueur de colonne.</p></div>
+      <div class="notion"><h3>Résolution</h3><div class="formula">R<sub>s</sub> = 2 (t<sub>R2</sub> − t<sub>R1</sub>) / (ω₁ + ω₂)</div><p>ω est la largeur à la base. Deux pics sont séparés à la ligne de base quand R<sub>s</sub> ≥ 1,5.</p></div>
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+const CMP = [
+  {name:'Paracétamol', lkw:1.0, S:3.0, R:30, v:'--c1'},
+  {name:'Caféine',     lkw:1.6, S:3.5, R:42, v:'--c2'},
+  {name:'Aspirine',    lkw:2.4, S:4.0, R:26, v:'--c3'}
+];
+const INFO = {
+  res:{t:'Réservoirs de phase mobile', p:"Voie A : eau acidifiée à pH 3, pour que l'aspirine reste sous forme moléculaire. Voie B : méthanol. Les solvants sont filtrés et dégazés. Ici le mode est isocratique : la composition reste constante pendant toute l'analyse.", kv:()=>`Composition : ${100-S.phi} % eau / ${S.phi} % méthanol`},
+  pump:{t:'Pompe haute pression', p:"Pompe à pistons qui impose un débit constant et sans pulsation, malgré la forte perte de charge de la colonne remplie de fines particules.", kv:()=>`Débit ${fmt(S.F,1)} mL/min · pression ${Math.round(calc().P)} bar`},
+  inj:{t:'Injecteur à boucle', p:"Vanne 6 voies : la boucle de 20 µL est remplie à pression atmosphérique, puis basculée dans le flux de phase mobile. L'échantillon entre dans la colonne sous forme d'une bande étroite. C'est l'instant t = 0.", kv:()=>'Volume injecté : 20 µL'},
+  col:{t:'Colonne C18 thermostatée', p:"Tube d'acier rempli de silice greffée C18 (particules de 5 µm). Chaque molécule alterne entre phase mobile et phase stationnaire : plus elle passe de temps fixée, plus elle avance lentement.", kv:()=>`${S.L} × 4,6 mm · N ≈ ${fmtInt(calc().N)} plateaux`},
+  det:{t:'Détecteur UV', p:"La cellule est traversée par un faisceau à 254 nm. Quand un composé passe, l'absorbance augmente selon la loi de Beer-Lambert : l'aire du pic est proportionnelle à la quantité injectée.", kv:()=>'A = ε · ℓ · c'},
+  acq:{t:'Acquisition', p:"Le logiciel enregistre l'absorbance en fonction du temps : c'est le chromatogramme. Le temps de rétention sert à identifier un composé, l'aire du pic à le doser.", kv:()=>'Signal en mAU, temps en minutes'}
+};
+
+const S = {phi:40, F:1.0, L:150};
+const fmt = (n,d) => n.toFixed(d).replace('.',',');
+const fmtInt = n => Math.round(n).toLocaleString('fr-FR');
+const $ = id => document.getElementById(id);
+
+function calc(p = S){
+  const phi = p.phi/100;
+  const t0 = 0.01*p.L/p.F;                       // V0 ≈ 1 % de L (mL), 1,5 mL pour 150 mm
+  const H = 5 + 2.2/p.F + 3.5*p.F;               // van Deemter simplifiée, µm
+  const N = p.L*1000/H;
+  const eta = 0.89 - 0.34*phi + 2.6*phi*(1-phi);  // viscosité relative eau/MeOH
+  const P = 80*p.F*(p.L/150)*eta;
+  const pk = CMP.map(c => {
+    const k = Math.pow(10, c.lkw - c.S*phi);
+    const tR = t0*(1+k), sig = tR/Math.sqrt(N);
+    return {...c, k, tR, sig, w:4*sig, h:c.R/(sig*Math.sqrt(2*Math.PI))};
+  });
+  pk.forEach((x,i) => { x.Rs = i ? 2*(x.tR-pk[i-1].tR)/(x.w+pk[i-1].w) : null; });
+  const last = pk[pk.length-1];
+  const tEnd = Math.max(last.tR*1.08 + 4*last.sig, 3);
+  const yMax = Math.max(...pk.map(x=>x.h))*1.15;
+  return {t0,H,N,P,pk,tEnd,yMax,p:{...p}};
+}
+
+function noise(t){ return 0.5*Math.sin(t*91.7)+0.35*Math.sin(t*233.1+1.3)+0.25*Math.sin(t*517.3+2.1); }
+function signal(r,t){
+  let s = noise(t) - 6*Math.exp(-Math.pow((t-r.t0)/0.02,2)) + 4*Math.exp(-Math.pow((t-r.t0-0.04)/0.02,2));
+  for (const x of r.pk) s += x.h*Math.exp(-0.5*Math.pow((t-x.tR)/x.sig,2));
+  return s;
+}
+
+// ---------- état des injections ----------
+let run = null, ghost = null;
+const REAL_S = 14;          // durée réelle d'une analyse à l'écran (s)
+function inject(){
+  if (run && $('keep').checked) ghost = run; else if(!$('keep').checked) ghost = null;
+  run = calc(); run.tSim = 0; run.done = false;
+  makeDots(run);
+  const c = $('inj-c'); c.classList.remove('inj-flash'); void c.getBBox(); c.classList.add('inj-flash');
+  updateNote();
+}
+
+// particules pour la vue colonne
+function gauss(){ let u=0,v=0; while(!u)u=Math.random(); while(!v)v=Math.random(); return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); }
+let dots = [], mp = [];
+function makeDots(r){
+  dots = r.pk.map(() => Array.from({length:170}, () => ({g:gauss(), y:Math.random()})));
+}
+for (let i=0;i<46;i++) mp.push({x:Math.random(), y:Math.random()});
+
+// ---------- interface ----------
+function updateUI(){
+  const r = calc();
+  $('o-phi').textContent = S.phi+' %';
+  $('o-flow').textContent = fmt(S.F,1)+' mL/min';
+  $('r-p').textContent = Math.round(r.P)+' bar';
+  $('r-p').classList.toggle('hot', r.P>400);
+  $('r-t0').textContent = fmt(r.t0,2)+' min';
+  $('r-n').textContent = fmtInt(r.N);
+  $('r-d').textContent = fmt(r.tEnd,1)+' min';
+  $('lbl-pump').textContent = Math.round(r.P)+' bar';
+  $('lbl-res').textContent = `${100-S.phi} / ${S.phi} eau / MeOH`;
+  $('lbl-col').textContent = `${S.L} × 4,6 mm · 5 µm`;
+  const tb = $('tb'); tb.innerHTML = '';
+  r.pk.forEach(x => {
+    let pill = '<span class="tag">premier pic</span>';
+    if (x.Rs !== null){
+      const cls = x.Rs>=1.5?'ok':x.Rs>=1?'mid':'bad';
+      const txt = x.Rs>=1.5?'Ligne de base':x.Rs>=1?'Partielle':'Co-élution';
+      pill = `<span class="pill ${cls}">${txt}</span>`;
+    }
+    tb.insertAdjacentHTML('beforeend', `<tr><td><span class="legend"><span><i class="dot" style="background:var(${x.v})"></i><span style="color:var(--ink)">${x.name}</span></span></span></td><td class="n">${fmt(x.tR,2)}</td><td class="n">${fmt(x.k,2)}</td><td class="n">${fmt(x.w,3)}</td><td class="n">${x.Rs===null?'—':fmt(x.Rs,2)}</td><td>${pill}</td></tr>`);
+  });
+  if (sel) showInfo(sel);
+  updateNote();
+}
+function updateNote(){
+  const r = calc(); const msgs = [];
+  if (r.P>400) msgs.push('Pression au-delà de 400 bar : limite d\'une HPLC classique (domaine de l\'UHPLC).');
+  if (r.pk[2].tR>25) msgs.push('Analyse très longue : augmentez la part de méthanol.');
+  if (run && (run.p.phi!==S.phi || run.p.F!==S.F || run.p.L!==S.L)) msgs.push('Nouveaux réglages : injectez pour les appliquer.');
+  $('note').textContent = msgs.join(' ');
+}
+let sel = 'col';
+function showInfo(k){
+  sel = k; const d = INFO[k];
+  document.querySelectorAll('.mod').forEach(m => m.classList.toggle('sel', m.dataset.k===k));
+  $('info').innerHTML = `<b>${d.t}</b><p>${d.p}</p><span class="kv">${d.kv()}</span>`;
+}
+document.querySelectorAll('.mod').forEach(m => {
+  m.addEventListener('click', () => showInfo(m.dataset.k));
+  m.addEventListener('keydown', e => { if(e.key==='Enter'||e.key===' '){ e.preventDefault(); showInfo(m.dataset.k);} });
+});
+$('phi').addEventListener('input', e => { S.phi = +e.target.value; updateUI(); });
+$('flow').addEventListener('input', e => { S.F = Math.round(+e.target.value*10)/10; updateUI(); });
+document.querySelectorAll('#len button').forEach(b => b.addEventListener('click', () => {
+  S.L = +b.dataset.l;
+  document.querySelectorAll('#len button').forEach(x => x.setAttribute('aria-pressed', x===b));
+  updateUI();
+}));
+$('btn-inj').addEventListener('click', inject);
+$('btn-clr').addEventListener('click', () => { ghost = null; run = null; dots = []; updateNote(); });
+
+// ---------- couleurs du thème ----------
+let C = {};
+function readColors(){
+  const cs = getComputedStyle(document.documentElement);
+  ['--ink','--muted','--line','--grid','--accent','--steel','--silica','--screen','--panel','--c1','--c2','--c3'].forEach(v => C[v] = cs.getPropertyValue(v).trim());
+}
+readColors();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readColors);
+new MutationObserver(readColors).observe(document.documentElement, {attributes:true, attributeFilter:['data-theme']});
+
+// ---------- canvas ----------
+function fit(cv){
+  const r = cv.getBoundingClientRect(), d = window.devicePixelRatio||1;
+  const w = Math.round(r.width*d), h = Math.round(r.height*d);
+  if (cv.width!==w || cv.height!==h){ cv.width=w; cv.height=h; }
+  const ctx = cv.getContext('2d'); ctx.setTransform(d,0,0,d,0,0);
+  return {ctx, w:r.width, h:r.height};
+}
+function niceStep(range, n){ const raw = range/n, p = Math.pow(10, Math.floor(Math.log10(raw))), f = raw/p; return (f<1.5?1:f<3.5?2:f<7.5?5:10)*p; }
+
+function drawColumn(dtMin){
+  const {ctx,w,h} = fit($('col'));
+  ctx.clearRect(0,0,w,h);
+  const x0 = 46, x1 = w-46, yc = h/2, ch = 64, y0 = yc-ch/2;
+  // tubulures
+  ctx.strokeStyle = C['--steel']; ctx.lineWidth = 5; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(6,yc); ctx.lineTo(x0,yc); ctx.moveTo(x1,yc); ctx.lineTo(w-6,yc); ctx.stroke();
+  // corps de colonne
+  ctx.fillStyle = C['--screen']; ctx.strokeStyle = C['--steel']; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.roundRect(x0,y0,x1-x0,ch,8); ctx.fill(); ctx.stroke();
+  // particules de silice
+  ctx.save(); ctx.beginPath(); ctx.roundRect(x0+2,y0+2,x1-x0-4,ch-4,6); ctx.clip();
+  ctx.fillStyle = C['--silica'];
+  for (let yy=y0+6; yy<y0+ch; yy+=11) for (let xx=x0+6+((yy/11)%2)*5; xx<x1; xx+=11){ ctx.beginPath(); ctx.arc(xx,yy,4,0,7); ctx.fill(); }
+  // phase mobile
+  const u0 = run ? 1/run.t0 : 1/1.5;
+  ctx.fillStyle = C['--steel'];
+  mp.forEach(m => { m.x += u0*dtMin; if (m.x>1){ m.x-=1; m.y=Math.random(); }
+    ctx.globalAlpha=.55; ctx.fillRect(x0+m.x*(x1-x0), y0+4+m.y*(ch-8), 7, 1.6); });
+  ctx.globalAlpha = 1;
+  // bandes de solutés
+  if (run && dots.length){
+    const t = run.tSim, Lmm = run.p.L, Hmm = run.H/1000;
+    run.pk.forEach((x,i) => {
+      const zc = t/(run.t0*(1+x.k));
+      if (zc > 1.25) return;
+      const sd = Math.sqrt(Math.max(zc,0)*Lmm*Hmm)/Lmm*4, s = Math.sqrt(0.008*0.008+sd*sd);
+      ctx.fillStyle = C[x.v];
+      dots[i].forEach(d => {
+        const z = zc + d.g*s; if (z<0 || z>1) return;
+        ctx.beginPath(); ctx.arc(x0+z*(x1-x0), y0+5+d.y*(ch-10), 2.1, 0, 7); ctx.fill();
+      });
+    });
+  }
+  ctx.restore();
+  // frittés + légendes
+  ctx.fillStyle = C['--steel']; ctx.fillRect(x0-3,y0+4,5,ch-8); ctx.fillRect(x1-2,y0+4,5,ch-8);
+  ctx.fillStyle = C['--muted']; ctx.font = '12px "JetBrains Mono", monospace';
+  ctx.textAlign='left'; ctx.fillText('entrée', x0, y0-10);
+  ctx.textAlign='right'; ctx.fillText('sortie → détecteur', x1, y0-10);
+  ctx.textAlign='center'; ctx.fillText(`${run?run.p.L:S.L} mm`, (x0+x1)/2, y0+ch+22);
+}
+
+function drawChrom(){
+  const {ctx,w,h} = fit($('chrom'));
+  ctx.clearRect(0,0,w,h);
+  const pl = 56, pr = 16, pt = 16, pb = 40, W = w-pl-pr, H = h-pt-pb;
+  const ref = run || ghost;
+  const tAx = ref ? ref.tEnd : 12, yMax = ref ? ref.yMax : 500, yMin = -0.04*yMax;
+  const X = t => pl + t/tAx*W, Y = v => pt + H - (v-yMin)/(yMax-yMin)*H;
+  // grille
+  ctx.font = '12px "JetBrains Mono", monospace'; ctx.lineWidth = 1;
+  const sx = niceStep(tAx, Math.max(3, Math.floor(W/80))), sy = niceStep(yMax, 5);
+  ctx.strokeStyle = C['--grid']; ctx.fillStyle = C['--muted'];
+  ctx.textAlign='center';
+  for (let t=0; t<=tAx+1e-9; t+=sx){ ctx.beginPath(); ctx.moveTo(X(t),pt); ctx.lineTo(X(t),pt+H); ctx.stroke(); ctx.fillText(fmt(t, sx<1?1:0), X(t), pt+H+18); }
+  ctx.textAlign='right';
+  for (let v=0; v<=yMax; v+=sy){ ctx.beginPath(); ctx.moveTo(pl,Y(v)); ctx.lineTo(pl+W,Y(v)); ctx.stroke(); ctx.fillText(Math.round(v), pl-8, Y(v)+4); }
+  ctx.strokeStyle = C['--line']; ctx.beginPath(); ctx.moveTo(pl,pt); ctx.lineTo(pl,pt+H); ctx.lineTo(pl+W,pt+H); ctx.stroke();
+  ctx.fillStyle = C['--muted']; ctx.textAlign='center'; ctx.fillText('temps (min)', pl+W/2, h-4);
+  ctx.save(); ctx.translate(14, pt+H/2); ctx.rotate(-Math.PI/2); ctx.fillText('absorbance (mAU)', 0, 0); ctx.restore();
+
+  if (!ref){
+    ctx.fillStyle = C['--muted']; ctx.font = '15px "Source Sans 3", sans-serif';
+    ctx.fillText('Cliquez sur « Injecter » pour lancer une analyse', pl+W/2, pt+H/2);
+    $('st-run').textContent = 'En attente d\'injection';
+    return;
+  }
+  const n = Math.max(800, Math.round(W*2.5));
+  ctx.save(); ctx.beginPath(); ctx.rect(pl,pt-4,W,H+4); ctx.clip();
+  // trace précédente
+  if (ghost && ghost!==run){
+    ctx.strokeStyle = C['--steel']; ctx.globalAlpha=.6; ctx.lineWidth=1.3; ctx.setLineDash([4,3]);
+    ctx.beginPath();
+    for (let i=0;i<=n;i++){ const t=i/n*tAx; if (t>ghost.tEnd) break; const y=Y(signal(ghost,t)); i?ctx.lineTo(X(t),y):ctx.moveTo(X(t),y); }
+    ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha=1;
+  }
+  if (run){
+    const tS = Math.min(run.tSim, run.tEnd);
+    // remplissage sous chaque pic déjà élué
+    run.pk.forEach(x => {
+      if (tS < x.tR - 3*x.sig) return;
+      const a = x.tR-3.5*x.sig, b = Math.min(x.tR+3.5*x.sig, tS);
+      ctx.fillStyle = C[x.v]; ctx.globalAlpha = .16; ctx.beginPath(); ctx.moveTo(X(a),Y(0));
+      for (let i=0;i<=60;i++){ const t=a+(b-a)*i/60; ctx.lineTo(X(t), Y(x.h*Math.exp(-0.5*((t-x.tR)/x.sig)**2))); }
+      ctx.lineTo(X(b),Y(0)); ctx.fill(); ctx.globalAlpha=1;
+    });
+    ctx.strokeStyle = C['--ink']; ctx.lineWidth = 1.6; ctx.lineJoin='round';
+    ctx.beginPath();
+    for (let i=0;i<=n;i++){ const t=i/n*tAx; if (t>tS) break; const y=Y(signal(run,t)); i?ctx.lineTo(X(t),y):ctx.moveTo(X(t),y); }
+    ctx.stroke();
+    // marqueur temps courant
+    if (!run.done){ ctx.strokeStyle=C['--accent']; ctx.setLineDash([3,3]); ctx.beginPath(); ctx.moveTo(X(tS),pt); ctx.lineTo(X(tS),pt+H); ctx.stroke(); ctx.setLineDash([]); }
+    ctx.restore();
+    // étiquettes
+    ctx.font = '600 12px "JetBrains Mono", monospace'; ctx.textAlign='center';
+    if (tS > run.t0+0.05){ ctx.fillStyle=C['--muted']; ctx.fillText('t₀', X(run.t0), Y(0)-14); }
+    let lastX = -1e9;
+    run.pk.forEach(x => {
+      if (tS < x.tR + 2*x.sig) return;
+      const px = X(x.tR), py = Math.max(Y(x.h)-8, pt+26);
+      const dy = (px-lastX < 70) ? -16 : 0; lastX = px;
+      ctx.fillStyle = C[x.v]; ctx.fillText(x.name, px, py-14+dy);
+      ctx.fillStyle = C['--ink']; ctx.fillText(fmt(x.tR,2), px, py+dy);
+    });
+    $('st-run').textContent = run.done ? `Analyse terminée · ${fmt(run.tEnd,1)} min` : `Analyse en cours · t = ${fmt(tS,2)} min`;
+    // lampe du détecteur
+    const sNow = run.done ? 0 : Math.max(0, signal(run,tS))/run.yMax;
+    $('lamp').style.fillOpacity = (0.15 + 0.85*Math.min(1, sNow*2.2)).toFixed(2);
+  } else { ctx.restore(); $('st-run').textContent='Trace précédente'; }
+}
+
+let last = performance.now();
+function frame(now){
+  const dt = Math.min(0.05, (now-last)/1000); last = now;
+  const speed = run ? run.tEnd/REAL_S : 12/REAL_S;   // minutes simulées par seconde
+  const dtMin = dt*speed;
+  if (run && !run.done){ run.tSim += dtMin; if (run.tSim >= run.tEnd){ run.tSim = run.tEnd; run.done = true; } }
+  drawColumn(dtMin);
+  drawChrom();
+  $('st-col').textContent = run ? `t = ${fmt(Math.min(run.tSim,run.tEnd),2)} min` : 't = —';
+  requestAnimationFrame(frame);
+}
+
+// état initial : une analyse déjà en cours pour montrer le principe dès l'ouverture
+updateUI(); showInfo('col');
+inject(); run.tSim = run.tEnd*0.38;
+requestAnimationFrame(frame);
+})();
+</script>
+
+</body>
+</html>
