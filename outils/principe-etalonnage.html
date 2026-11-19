@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+<meta name="description" content="Simulateur de l’étalonnage externe en chromatographie : gamme d’étalons, droite d’étalonnage affine ou linéaire, calcul de la concentration d’un échantillon inconnu. Outil du BTSa ANABIOTEC, lycée Le Gros Chêne, Pontivy.">
+<link rel="canonical" href="https://philrob56.github.io/anabiotec-commun/outils/principe-etalonnage.html">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Principe de l’étalonnage en chromatographie : simulateur | BTSa ANABIOTEC</title>
+    
+    <!-- CSS intégré -->
+    <style>
+        :root {
+            --bg-light: #f4f4f9; --text-light: #333; --border-light: #ddd; --controls-bg-light: #fff;
+            --bg-dark: #121212; --text-dark: #e0e0e0; --border-dark: #444; --controls-bg-dark: #1e1e1e;
+            --primary-color: #0e7c7b; --primary-color-hover: #0a5c5b;
+            --secondary-color: #6c757d; --secondary-color-hover: #5a6268;
+            --sample-color: #28a745; /* Vert pour le point de l'échantillon */
+            --result-bg-dark: #2a2a2a; --result-bg-light: #e9ecef;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0; padding: 1.5em;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        body { background-color: var(--bg-light); color: var(--text-light); }
+        .controls { background-color: var(--controls-bg-light); border-color: var(--border-light); }
+        body.dark-theme { background-color: var(--bg-dark); color: var(--text-dark); }
+        body.dark-theme .controls { background-color: var(--controls-bg-dark); border-color: var(--border-dark); }
+        
+        .app-container { display: flex; flex-wrap: wrap; gap: 1.5em; }
+        .controls { width: 340px; padding: 1.5em; border: 1px solid; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .main-content { flex: 1; display: flex; flex-direction: column; gap: 1.5em; min-width: 400px; }
+        .chart-container { position: relative; width: 100%; height: 45vh; }
+        
+        h1, h2 { border-bottom: 1px solid var(--border-light); padding-bottom: 0.5em; margin-top: 0; margin-bottom: 1em;}
+        body.dark-theme h1, body.dark-theme h2 { border-bottom-color: var(--border-dark); }
+        .checkbox-group { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.8em; }
+        .checkbox-group label { margin-left: 0.5em; cursor: pointer; flex-grow: 1; }
+        .concentration-input { width: 60px; padding: 4px; border: 1px solid var(--border-light); border-radius: 4px; }
+        body.dark-theme .concentration-input { background-color: #333; color: white; border-color: var(--border-dark);}
+        
+        .model-selection { display: flex; gap: 1em; margin-bottom: 1em; }
+        .model-selection label { display: flex; align-items: center; gap: 0.3em; }
+
+        .button-group { display: flex; gap: 0.5em; margin-top: 1em; }
+        button { flex: 1; padding: 12px; border: none; border-radius: 5px; cursor: pointer; color: white; font-size: 1em; transition: background-color 0.2s; }
+        #calculate-btn { background-color: var(--primary-color); }
+        #calculate-btn:hover { background-color: var(--primary-color-hover); }
+        #clear-btn { background-color: var(--secondary-color); }
+        #clear-btn:hover { background-color: var(--secondary-color-hover); }
+
+        .results-container { margin-top: 1.5em; padding: 1em; border-radius: 5px; }
+        body.dark-theme .results-container { background-color: var(--result-bg-dark); }
+        body .results-container { background-color: var(--result-bg-light); }
+        .results-container p { margin: 0.5em 0; font-size: 0.9em; }
+        .results-container strong { color: var(--primary-color); }
+        .results-container .sample-result strong { color: var(--sample-color); }
+    </style>
+<style id="responsive-patch">
+@media (max-width: 700px) {
+*,*::before,*::after{box-sizing:border-box}
+img,svg,video{max-width:100%}
+body{padding:0.75em}
+.main-content{min-width:0 !important;width:100% !important;max-width:100%;flex-wrap:wrap}
+.main-content>*{min-width:0;max-width:100%}
+}
+</style>
+<!-- anb-commun --><script src="https://philrob56.github.io/anabiotec-commun/anb-commun.js"></script><!-- /anb-commun -->
+</head>
+<body>
+<!-- anb-charte --><div class="anb-head"><div class="anb-crumb"><i></i><a href="https://sites.google.com/view/anabioteclegroschene/accueil" target="_top" style="color:inherit;text-decoration:none" title="Tous les outils du BTSa ANABIOTEC"><b>BTSa ANABIOTEC</b></a><span>›</span>Chromatographie</div><div class="anb-right"><div class="anb-tag">LEGTA Le Gros Chêne · Pontivy</div><button type="button" class="anb-print" onclick="anbPrint()" title="Ouvrir une version imprimable (PDF)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimer / PDF</button></div></div><!-- /anb-charte -->
+    
+    <div class="app-container">
+        <div class="controls">
+            <h1>Contrôles</h1>
+            <div class="chromatogram-selection">
+                <h2>Gamme d'étalonnage (Tr = 4.5 min)</h2>
+                <div class="checkbox-group"><input type="checkbox" id="standard1" checked><label for="standard1">Étalon 1</label><input class="concentration-input" type="number" value="10" id="conc1"></div>
+                <div class="checkbox-group"><input type="checkbox" id="standard2" checked><label for="standard2">Étalon 2</label><input class="concentration-input" type="number" value="20" id="conc2"></div>
+                <div class="checkbox-group"><input type="checkbox" id="standard3" checked><label for="standard3">Étalon 3</label><input class="concentration-input" type="number" value="30" id="conc3"></div>
+                <div class="checkbox-group"><input type="checkbox" id="standard4"><label for="standard4">Étalon 4</label><input class="concentration-input" type="number" value="40" id="conc4"></div>
+                <div class="checkbox-group"><input type="checkbox" id="standard5"><label for="standard5">Étalon 5</label><input class="concentration-input" type="number" value="50" id="conc5"></div>
+                <h2>Échantillon Inconnu</h2>
+                <div class="checkbox-group"><input type="checkbox" id="sample" checked><label for="sample">Échantillon</label></div>
+            </div>
+
+            <div class="analysis-section">
+                <h2>Analyse Quantitative</h2>
+                <div class="model-selection">
+                    <label><input type="radio" name="regressionModel" value="affine" checked> Affine (y=mx+c)</label>
+                    <label><input type="radio" name="regressionModel" value="linear"> Linéaire (y=mx)</label>
+                </div>
+                <div class="button-group">
+                    <button id="calculate-btn">Calculer</button>
+                    <button id="clear-btn">Effacer</button>
+                </div>
+                <div class="results-container" id="results-container">
+                    <p id="points-result">En attente de calcul...</p>
+                    <p id="equation-result"></p>
+                    <p id="r2-result"></p>
+                    <hr id="result-separator" style="display: none; border-color: var(--border-dark);">
+                    <p id="sample-area-result" class="sample-result"></p>
+                    <p id="concentration-result" class="sample-result"></p>
+                </div>
+            </div>
+            <button id="theme-toggle" style="margin-top: 1em; width: 100%;">Changer de Thème</button>
+        </div>
+
+        <div class="main-content">
+            <div class="chart-container">
+                <canvas id="chromatogramChartCanvas"></canvas>
+            </div>
+            <div class="chart-container">
+                <canvas id="calibrationChartCanvas"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            let chromatogramChart, calibrationChart;
+            const TR_ETALON = 4.5;
+            const LARGEUR_PIC = 0.12;
+
+            const generatePeakData = (pos, h, w) => Array.from({length: 401}, (_, i) => ({ x: (i/400)*10, y: h * Math.exp(-(( (i/400)*10 - pos) ** 2) / (2 * w ** 2)) }));
+            
+            // **BUG CORRIGÉ ICI** : La fonction utilise maintenant `peak.position`, `peak.height`, `peak.width`
+            const generateSampleData = (peaks) => {
+                const data = Array.from({length: 401}, (_, i) => ({ x: (i/400)*10, y: 0 }));
+                data.forEach(point => { 
+                    point.y = peaks.reduce((sum, peak) => sum + peak.height * Math.exp(-(((point.x - peak.position) ** 2) / (2 * peak.width ** 2))), 0); 
+                });
+                return data;
+            };
+
+            const calculatePeakArea = (data, targetX, peakWidth) => {
+                const range = 4 * peakWidth;
+                const start = targetX - range;
+                const end = targetX + range;
+                const relevantPoints = data.filter(p => p.x >= start && p.x <= end);
+                let area = 0;
+                for (let i = 0; i < relevantPoints.length - 1; i++) {
+                    area += ((relevantPoints[i].y + relevantPoints[i+1].y) / 2) * (relevantPoints[i+1].x - relevantPoints[i].x);
+                }
+                return area;
+            };
+
+            const linearRegressionLogic = (points, throughOrigin) => {
+                const n = points.length;
+                if (n < (throughOrigin ? 1 : 2)) return null;
+                let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0, sumY2 = 0;
+                points.forEach(({ x, y }) => { sumX += x; sumY += y; sumXY += x * y; sumX2 += x * x; sumY2 += y * y; });
+                if (throughOrigin) {
+                    if (sumX2 === 0) return null;
+                    const slope = sumXY / sumX2;
+                    const ssResidual = points.reduce((sum, p) => sum + (p.y - slope * p.x) ** 2, 0);
+                    const r2 = 1 - (ssResidual / sumY2);
+                    return { slope, intercept: 0, r2 };
+                } else {
+                    const denominator = (n * sumX2 - sumX * sumX);
+                    if (denominator === 0) return null;
+                    const slope = (n * sumXY - sumX * sumY) / denominator;
+                    const intercept = (sumY - slope * sumX) / n;
+                    const r2 = Math.pow((n * sumXY - sumX * sumY) / Math.sqrt(denominator * (n * sumY2 - sumY * sumY)), 2);
+                    return { slope, intercept, r2 };
+                }
+            };
+            
+            // **BUG CORRIGÉ ICI** : Utilisation des noms de propriétés consistants
+            const samplePeaks = [
+                { position: 2.1, height: 70, width: 0.1 },
+                { position: TR_ETALON, height: 50, width: LARGEUR_PIC },
+                { position: 7.8, height: 60, width: 0.15 }
+            ];
+            
+            const datasets = {
+                standard1: { label: 'Étalon 1', data: generatePeakData(TR_ETALON, 20, LARGEUR_PIC), borderColor: '#36a2eb' },
+                standard2: { label: 'Étalon 2', data: generatePeakData(TR_ETALON, 40, LARGEUR_PIC), borderColor: '#4bc0c0' },
+                standard3: { label: 'Étalon 3', data: generatePeakData(TR_ETALON, 60, LARGEUR_PIC), borderColor: '#ffce56' },
+                standard4: { label: 'Étalon 4', data: generatePeakData(TR_ETALON, 80, LARGEUR_PIC), borderColor: '#ff9f40' },
+                standard5: { label: 'Étalon 5', data: generatePeakData(TR_ETALON, 100, LARGEUR_PIC), borderColor: '#ff6384' },
+                sample: { label: 'Échantillon', data: generateSampleData(samplePeaks), borderColor: 'white' }
+            };
+            Object.values(datasets).forEach(d => { d.borderWidth = 2; d.pointRadius = 0; d.tension = 0.1; });
+            datasets.sample.borderWidth = 2.5;
+
+            const getChartOptions = (title, xLabel, yLabel, isDark, extraOptions = {}) => ({
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'top', labels: { color: isDark ? '#e0e0e0' : '#333' } },
+                    title: { display: true, text: title, color: isDark ? '#e0e0e0' : '#333', font: { size: 16 } },
+                    ...extraOptions.plugins
+                },
+                scales: {
+                    x: { type: 'linear', title: { display: true, text: xLabel, color: isDark ? '#ccc' : '#666' }, ticks: { color: isDark ? '#ccc' : '#666' }, grid: { color: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' } },
+                    y: { min: 0, title: { display: true, text: yLabel, color: isDark ? '#ccc' : '#666' }, ticks: { color: isDark ? '#ccc' : '#666' }, grid: { color: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' } }
+                }
+            });
+
+            const chromaCtx = document.getElementById('chromatogramChartCanvas').getContext('2d');
+            chromatogramChart = new Chart(chromaCtx, { type: 'line', data: { datasets: Object.values(datasets) }, options: getChartOptions('Chromatogrammes', 'Temps de rétention (min)', 'Intensité (u.a.)', true) });
+            
+            const calibCtx = document.getElementById('calibrationChartCanvas').getContext('2d');
+            calibrationChart = new Chart(calibCtx, {
+                type: 'scatter',
+                data: { datasets: [
+                    { label: 'Étalons', data: [], backgroundColor: '#ff6384', radius: 5 },
+                    { label: 'Régression', data: [], type: 'line', borderColor: '#36a2eb', borderWidth: 2, pointRadius: 0, fill: false, tension: 0 },
+                    { label: 'Échantillon', data: [], backgroundColor: 'var(--sample-color)', radius: 7, borderColor: 'white', borderWidth: 2 }
+                ]},
+                options: getChartOptions('Courbe de Calibration', 'Concentration', 'Aire de Pic (u.a.*min)', true, {
+                    plugins: { tooltip: { callbacks: { label: (ctx) => `Conc: ${ctx.parsed.x.toFixed(2)}, Aire: ${ctx.parsed.y.toFixed(3)}` } } }
+                })
+            });
+
+            const concentrationResultEl = document.getElementById('concentration-result'), sampleAreaResultEl = document.getElementById('sample-area-result'), resultSeparator = document.getElementById('result-separator');
+            document.querySelectorAll('.chromatogram-selection input[type="checkbox"]').forEach(cb => {
+                datasets[cb.id].hidden = !cb.checked;
+                cb.addEventListener('change', () => {
+                    datasets[cb.id].hidden = !cb.checked;
+                    chromatogramChart.update();
+                    if (cb.id === 'sample' && !cb.checked) {
+                        concentrationResultEl.innerHTML = "L'échantillon n'est pas affiché.";
+                        sampleAreaResultEl.innerHTML = "";
+                    }
+                });
+            });
+            chromatogramChart.update();
+
+            document.getElementById('calculate-btn').addEventListener('click', () => {
+                const points = [];
+                for (let i = 1; i <= 5; i++) {
+                    if (document.getElementById(`standard${i}`).checked) {
+                        const conc = parseFloat(document.getElementById(`conc${i}`).value);
+                        if (!isNaN(conc)) {
+                            const area = calculatePeakArea(datasets[`standard${i}`].data, TR_ETALON, LARGEUR_PIC);
+                            points.push({ x: conc, y: area });
+                        }
+                    }
+                }
+                const eqEl = document.getElementById('equation-result'), r2El = document.getElementById('r2-result'), ptsEl = document.getElementById('points-result');
+                const regression = linearRegressionLogic(points, document.querySelector('input[name="regressionModel"]:checked').value === 'linear');
+                
+                if (!regression) {
+                    ptsEl.textContent = 'Erreur: Pas assez de points pour la calibration.';
+                    eqEl.textContent = ''; r2El.textContent = ''; concentrationResultEl.textContent = ''; sampleAreaResultEl.textContent = ''; resultSeparator.style.display = 'none';
+                    return;
+                }
+
+                ptsEl.innerHTML = `Calibration sur <strong>${points.length} points</strong>.`;
+                eqEl.innerHTML = `Équation: <strong>y = ${regression.slope.toFixed(4)}x ${regression.intercept >= 0 ? '+' : '-'} ${Math.abs(regression.intercept).toFixed(3)}</strong>`;
+                r2El.innerHTML = `R²: <strong>${regression.r2.toFixed(4)}</strong>`;
+                resultSeparator.style.display = 'block';
+
+                if (document.getElementById('sample').checked) {
+                    const sampleArea = calculatePeakArea(datasets.sample.data, TR_ETALON, LARGEUR_PIC);
+                    const sampleConc = regression.slope !== 0 ? (sampleArea - regression.intercept) / regression.slope : 0;
+                    sampleAreaResultEl.innerHTML = `Aire Échantillon: <strong>${sampleArea.toFixed(3)}</strong>`;
+                    concentrationResultEl.innerHTML = `Conc. Échantillon: <strong>${sampleConc.toFixed(2)}</strong>`;
+                    calibrationChart.data.datasets[2].data = [{ x: sampleConc, y: sampleArea }];
+                } else {
+                    sampleAreaResultEl.textContent = "";
+                    concentrationResultEl.innerHTML = "L'échantillon n'est pas affiché.";
+                    calibrationChart.data.datasets[2].data = [];
+                }
+
+                calibrationChart.data.datasets[0].data = points;
+                const xVals = points.map(p => p.x), minX = Math.min(0, ...xVals), maxX = Math.max(...xVals);
+                calibrationChart.data.datasets[1].data = [{ x: minX, y: regression.slope * minX + regression.intercept }, { x: maxX, y: regression.slope * maxX + regression.intercept }];
+                calibrationChart.update();
+            });
+
+            document.getElementById('clear-btn').addEventListener('click', () => {
+                calibrationChart.data.datasets.forEach(ds => ds.data = []);
+                calibrationChart.update();
+                document.getElementById('points-result').textContent = 'En attente de calcul...';
+                document.getElementById('equation-result').textContent = '';
+                document.getElementById('r2-result').textContent = '';
+                sampleAreaResultEl.textContent = '';
+                concentrationResultEl.textContent = '';
+                resultSeparator.style.display = 'none';
+            });
+
+            document.getElementById('theme-toggle').addEventListener('click', () => {
+                document.body.classList.toggle('dark-theme');
+                const isDark = document.body.classList.contains('dark-theme');
+                chromatogramChart.options = getChartOptions('Chromatogrammes', 'Temps de rétention (min)', 'Intensité (u.a.)', isDark);
+                calibrationChart.options = getChartOptions('Courbe de Calibration', 'Concentration', 'Aire de Pic (u.a.*min)', isDark, { plugins: { tooltip: { callbacks: { label: (ctx) => `Conc: ${ctx.parsed.x.toFixed(2)}, Aire: ${ctx.parsed.y.toFixed(3)}` } } } });
+                datasets.sample.borderColor = isDark ? 'white' : 'black';
+                resultSeparator.style.borderColor = isDark ? 'var(--border-dark)' : 'var(--border-light)';
+                chromatogramChart.update();
+                calibrationChart.update();
+            });
+            
+            datasets.sample.borderColor = document.body.classList.contains('dark-theme') ? 'white' : 'black';
+            chromatogramChart.update();
+        });
+    </script>
+
+</body>
+</html>
