@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+<meta name="description" content="Calculateur de la consommation et du coût des solvants de phase mobile en HPLC selon le débit, la proportion de solvant organique et la durée des analyses. Outil du BTSa ANABIOTEC, lycée Le Gros Chêne, Pontivy.">
+<link rel="canonical" href="https://philrob56.github.io/anabiotec-commun/outils/cout-solvant.html">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculateur de coût des solvants en HPLC | BTSa ANABIOTEC</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0e7c7b 0%, #0a4f4f 100%);
+            padding: 15px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            max-width: 950px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            color: #0e7c7b;
+            text-align: center;
+            margin-bottom: 5px;
+            font-size: 24px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 15px;
+            font-size: 12px;
+        }
+
+        .section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 12px;
+        }
+
+        .section-title {
+            font-size: 15px;
+            color: #0e7c7b;
+            margin-bottom: 10px;
+            font-weight: 600;
+            border-bottom: 2px solid #0e7c7b;
+            padding-bottom: 5px;
+        }
+
+        .input-group {
+            margin-bottom: 0;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 500;
+            font-size: 13px;
+        }
+
+        input[type="number"], select {
+            width: 100%;
+            padding: 8px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+        }
+
+        input[type="number"]:focus, select:focus {
+            outline: none;
+            border-color: #0e7c7b;
+            box-shadow: 0 0 0 3px rgba(14,124,123, 0.1);
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .results {
+            background: linear-gradient(135deg, #0e7c7b 0%, #0a4f4f 100%);
+            border-radius: 10px;
+            padding: 15px;
+            color: white;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 6px;
+            margin-bottom: 8px;
+            backdrop-filter: blur(10px);
+        }
+
+        .result-item:last-child {
+            margin-bottom: 0;
+            background: rgba(255,255,255,0.2);
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .result-label {
+            font-weight: 500;
+            font-size: 13px;
+        }
+
+        .result-value {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .info-box {
+            background: #e7f3f2;
+            border-left: 4px solid #0e7c7b;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 12px;
+            font-size: 11px;
+            color: #0a5c5b;
+        }
+
+        @media (max-width: 768px) {
+            .grid-3 {
+                grid-template-columns: 1fr;
+            }
+            
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 15px;
+            }
+            
+            h1 {
+                font-size: 20px;
+            }
+        }
+    </style>
+<!-- anb-commun --><script src="https://philrob56.github.io/anabiotec-commun/anb-commun.js"></script><!-- /anb-commun -->
+<!-- anb-charte --><style>body{background:#f6f8f7!important;background-image:none!important;flex-direction:column!important;justify-content:flex-start!important;align-items:center!important}</style><!-- /anb-charte -->
+</head>
+<body>
+<!-- anb-charte --><div class="anb-head"><div class="anb-crumb"><i></i><a href="https://sites.google.com/view/anabioteclegroschene/accueil" target="_top" style="color:inherit;text-decoration:none" title="Tous les outils du BTSa ANABIOTEC"><b>BTSa ANABIOTEC</b></a><span>›</span>Chromatographie</div><div class="anb-right"><div class="anb-tag">LEGTA Le Gros Chêne · Pontivy</div><button type="button" class="anb-print" onclick="anbPrint()" title="Ouvrir une version imprimable (PDF)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimer / PDF</button></div></div><!-- /anb-charte -->
+    <div class="container">
+        <h1>💧 Calculateur de coût solvant HPLC</h1>
+        <p class="subtitle">Estimation du coût en solvant pour vos analyses chromatographiques</p>
+
+        <div class="section">
+            <div class="section-title">⚙️ Paramètres chromatographiques</div>
+            
+            <div class="grid-3">
+                <div class="input-group">
+                    <label for="flowRate">Débit (mL/min)</label>
+                    <input type="number" id="flowRate" value="1.0" step="0.1" min="0.1" max="5.0">
+                </div>
+
+                <div class="input-group">
+                    <label for="solventPercent">Solvant organique (%)</label>
+                    <input type="number" id="solventPercent" value="50" step="5" min="0" max="100">
+                </div>
+
+                <div class="input-group">
+                    <label for="duration">Durée (heures)</label>
+                    <input type="number" id="duration" value="0.25" step="0.05" min="0.05" max="24">
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">💰 Paramètres économiques</div>
+            
+            <div class="grid-3">
+                <div class="input-group">
+                    <label for="solventType">Type de solvant</label>
+                    <select id="solventType">
+                        <option value="methanol">Méthanol</option>
+                        <option value="acetonitrile">Acétonitrile</option>
+                        <option value="custom">Personnalisé</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label for="solventCost">Coût (€/L)</label>
+                    <input type="number" id="solventCost" value="45" step="1" min="0">
+                </div>
+
+                <div class="input-group">
+                    <label for="nbAnalyses">Nombre d'analyses</label>
+                    <input type="number" id="nbAnalyses" value="1" step="1" min="1">
+                </div>
+            </div>
+        </div>
+
+        <div class="results">
+            <div class="section-title" style="color: white; border-color: rgba(255,255,255,0.3);">📊 Résultats</div>
+            
+            <div class="result-item">
+                <span class="result-label">Volume total mobile:</span>
+                <span class="result-value" id="totalVolume">-</span>
+            </div>
+            
+            <div class="result-item">
+                <span class="result-label">Volume solvant organique:</span>
+                <span class="result-value" id="organicVolume">-</span>
+            </div>
+            
+            <div class="result-item">
+                <span class="result-label">Coût par analyse:</span>
+                <span class="result-value" id="costPerAnalysis">-</span>
+            </div>
+            
+            <div class="result-item">
+                <span class="result-label">Coût total (× <span id="nbDisplay">1</span>):</span>
+                <span class="result-value" id="totalCost">-</span>
+            </div>
+        </div>
+
+        <div class="info-box">
+            ℹ️ <strong>Note:</strong> Ce calculateur prend en compte uniquement le coût du solvant organique (méthanol ou acétonitrile). 
+            Les coûts incluent la phase mobile utilisée pendant l'analyse, mais n'incluent pas l'équilibrage de la colonne, 
+            le rinçage, ni les autres consommables (vials, septa, filtres...).
+        </div>
+    </div>
+
+    <script>
+        // Prix typiques des solvants (€/L)
+        const solventPrices = {
+            methanol: 45,
+            acetonitrile: 150
+        };
+
+        // Éléments DOM
+        const flowRate = document.getElementById('flowRate');
+        const solventPercent = document.getElementById('solventPercent');
+        const duration = document.getElementById('duration');
+        const solventType = document.getElementById('solventType');
+        const solventCost = document.getElementById('solventCost');
+        const nbAnalyses = document.getElementById('nbAnalyses');
+        const nbDisplay = document.getElementById('nbDisplay');
+
+        // Résultats
+        const totalVolume = document.getElementById('totalVolume');
+        const organicVolume = document.getElementById('organicVolume');
+        const costPerAnalysis = document.getElementById('costPerAnalysis');
+        const totalCost = document.getElementById('totalCost');
+
+        // Changement de type de solvant
+        solventType.addEventListener('change', function() {
+            if (this.value !== 'custom') {
+                solventCost.value = solventPrices[this.value];
+            }
+            calculate();
+        });
+
+        // Calcul automatique
+        [flowRate, solventPercent, duration, solventCost, nbAnalyses].forEach(element => {
+            element.addEventListener('input', calculate);
+        });
+
+        nbAnalyses.addEventListener('input', function() {
+            nbDisplay.textContent = this.value;
+        });
+
+        function calculate() {
+            const flow = parseFloat(flowRate.value);
+            const percent = parseFloat(solventPercent.value) / 100;
+            const timeHours = parseFloat(duration.value);
+            const cost = parseFloat(solventCost.value);
+            const nb = parseInt(nbAnalyses.value);
+
+            // Conversion heures -> minutes pour le calcul
+            const timeMin = timeHours * 60;
+
+            // Volume total de phase mobile (mL)
+            const totalVol = flow * timeMin;
+            
+            // Volume de solvant organique (mL)
+            const organicVol = totalVol * percent;
+            
+            // Coût par analyse (€)
+            const costPer = (organicVol / 1000) * cost;
+            
+            // Coût total (€)
+            const costTotal = costPer * nb;
+
+            // Affichage
+            totalVolume.textContent = totalVol.toFixed(1) + ' mL';
+            organicVolume.textContent = organicVol.toFixed(1) + ' mL';
+            costPerAnalysis.textContent = costPer.toFixed(3) + ' €';
+            totalCost.textContent = costTotal.toFixed(2) + ' €';
+        }
+
+        // Calcul initial
+        calculate();
+    </script>
+
+</body>
+</html>
