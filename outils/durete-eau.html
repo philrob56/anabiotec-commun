@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+<meta name="description" content="Calculateur de la dureté de l’eau (titre hydrotimétrique en degrés français) à partir des concentrations en calcium et en magnésium. Outil du BTSa ANABIOTEC, lycée Le Gros Chêne, Pontivy.">
+<link rel="canonical" href="https://philrob56.github.io/anabiotec-commun/outils/durete-eau.html">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculateur de dureté de l’eau (TH, °f) | BTSa ANABIOTEC</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #0e7c7b;
+            --accent-color: #16a085;
+            --light-color: #ecf0f1;
+            --dark-color: #2c3e50;
+            --danger-color: #e74c3c;
+            --warning-color: #f39c12;
+            --success-color: #2ecc71;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: var(--dark-color);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: var(--primary-color);
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+            margin-bottom: 20px;
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        input[type="number"] {
+            width: 70%;
+            max-width: 300px;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+            display: block;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        input[type="number"]:focus {
+            border-color: var(--secondary-color);
+            outline: none;
+        }
+
+        button {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #0a5c5b;
+        }
+
+        .result {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .result-card {
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            color: white;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .hardness-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .water-quality {
+            font-size: 1.5rem;
+            margin: 10px 0;
+        }
+
+        .very-soft {
+            background-color: #0e7c7b;
+        }
+
+        .soft {
+            background-color: #2ecc71;
+        }
+
+        .moderately-hard {
+            background-color: #f39c12;
+        }
+
+        .hard {
+            background-color: #e67e22;
+        }
+
+        .very-hard {
+            background-color: #e74c3c;
+        }
+
+        .explanation {
+            background-color: var(--light-color);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .info-table th, .info-table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .info-table th {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        .info-table tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 2rem;
+            color: var(--dark-color);
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            .card {
+                padding: 15px;
+            }
+
+            .hardness-value {
+                font-size: 1.5rem;
+            }
+
+            .water-quality {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+<!-- anb-commun --><script src="https://philrob56.github.io/anabiotec-commun/anb-commun.js"></script><!-- /anb-commun -->
+</head>
+<body>
+<!-- anb-charte --><div class="anb-head"><div class="anb-crumb"><i></i><a href="https://sites.google.com/view/anabioteclegroschene/accueil" target="_top" style="color:inherit;text-decoration:none" title="Tous les outils du BTSa ANABIOTEC"><b>BTSa ANABIOTEC</b></a><span>›</span>TP <span>›</span> Semestre 4</div><div class="anb-right"><div class="anb-tag">LEGTA Le Gros Chêne · Pontivy</div><button type="button" class="anb-print" onclick="anbPrint()" title="Ouvrir une version imprimable (PDF)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimer / PDF</button></div></div><!-- /anb-charte -->
+    <div class="container">
+        <div class="header">
+            <h1>Calculateur de Dureté de l'Eau</h1>
+            <p>Déterminez la dureté de votre eau à partir des concentrations en calcium et magnésium</p>
+        </div>
+
+        <div class="card">
+            <h2>Entrez les valeurs mesurées</h2>
+            <div class="form-group">
+                <label for="calcium">Concentration en Calcium (mg/L)</label>
+                <input type="number" id="calcium" min="0" step="0.1" placeholder="Ex: 80">
+            </div>
+            <div class="form-group">
+                <label for="magnesium">Concentration en Magnésium (mg/L)</label>
+                <input type="number" id="magnesium" min="0" step="0.1" placeholder="Ex: 15">
+            </div>
+            <button id="calculate">Calculer la dureté</button>
+        </div>
+
+        <div id="result" class="result">
+            <div class="card">
+                <h2>Résultats</h2>
+                <div id="hardness-card" class="result-card">
+                    <div class="hardness-value" id="hardness-value">0°f</div>
+                    <div class="water-quality" id="water-quality">Qualité de l'eau</div>
+                </div>
+                <div class="explanation">
+                    <p id="explanation-text">Entrez les valeurs de calcium et magnésium pour obtenir une évaluation de la dureté de votre eau.</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Échelle de dureté de l'eau</h2>
+                <table class="info-table">
+                    <thead>
+                        <tr>
+                            <th>Degrés français (°f)</th>
+                            <th>Qualité de l'eau</th>
+                            <th>Caractéristiques</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>0 - 7</td>
+                            <td>Très douce</td>
+                            <td>Peu de tartre, mais peut être agressive pour les canalisations</td>
+                        </tr>
+                        <tr>
+                            <td>7 - 15</td>
+                            <td>Douce</td>
+                            <td>Équilibre satisfaisant, peu d'entartrage</td>
+                        </tr>
+                        <tr>
+                            <td>15 - 25</td>
+                            <td>Moyennement dure</td>
+                            <td>Risque de tartre modéré</td>
+                        </tr>
+                        <tr>
+                            <td>25 - 42</td>
+                            <td>Dure</td>
+                            <td>Formation de tartre importante, utilisez un adoucisseur</td>
+                        </tr>
+                        <tr>
+                            <td>> 42</td>
+                            <td>Très dure</td>
+                            <td>Entartrage sévère, traitement fortement recommandé</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>© 2026 | Calculateur de Dureté de l'Eau</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const calculateButton = document.getElementById('calculate');
+            const resultDiv = document.getElementById('result');
+            const hardnessValue = document.getElementById('hardness-value');
+            const waterQuality = document.getElementById('water-quality');
+            const hardnessCard = document.getElementById('hardness-card');
+            const explanationText = document.getElementById('explanation-text');
+
+            calculateButton.addEventListener('click', function() {
+                // Récupérer les valeurs
+                const calcium = parseFloat(document.getElementById('calcium').value) || 0;
+                const magnesium = parseFloat(document.getElementById('magnesium').value) || 0;
+
+                // Vérifier si les deux valeurs sont entrées
+                if (calcium === 0 && magnesium === 0) {
+                    alert("Veuillez entrer au moins une des deux valeurs (calcium ou magnésium).");
+                    return;
+                }
+
+                // Calculer la dureté en degrés français (°f)
+                // Formule: (Ca²⁺ × 2.5 + Mg²⁺ × 4.1) / 10
+                const hardness = ((calcium * 2.5) + (magnesium * 4.1)) / 10;
+                
+                // Afficher le résultat arrondi à 1 décimale
+                hardnessValue.textContent = hardness.toFixed(1) + ' °f';
+                
+                // Déterminer la qualité de l'eau
+                let quality = '';
+                let colorClass = '';
+                let explanation = '';
+                
+                if (hardness < 7) {
+                    quality = 'Eau très douce';
+                    colorClass = 'very-soft';
+                    explanation = 'Votre eau est très douce. Elle contient peu de minéraux et produit peu de tartre. Cependant, une eau trop douce peut être agressive pour les canalisations en métal.';
+                } else if (hardness < 15) {
+                    quality = 'Eau douce';
+                    colorClass = 'soft';
+                    explanation = 'Votre eau est douce. Elle présente un bon équilibre entre minéralisation et risque d\'entartrage. Idéale pour la consommation quotidienne.';
+                } else if (hardness < 25) {
+                    quality = 'Eau moyennement dure';
+                    colorClass = 'moderately-hard';
+                    explanation = 'Votre eau est moyennement dure. Le risque d\'entartrage existe mais reste modéré. Un détartrage occasionnel des appareils peut être nécessaire.';
+                } else if (hardness < 42) {
+                    quality = 'Eau dure';
+                    colorClass = 'hard';
+                    explanation = 'Votre eau est dure. Le calcaire se dépose facilement et peut endommager vos appareils. Un adoucisseur d\'eau serait bénéfique.';
+                } else {
+                    quality = 'Eau très dure';
+                    colorClass = 'very-hard';
+                    explanation = 'Votre eau est très dure. L\'entartrage est important et réduit la durée de vie de vos équipements. Un système de traitement de l\'eau est fortement recommandé.';
+                }
+                
+                // Mettre à jour l'interface
+                waterQuality.textContent = quality;
+                hardnessCard.className = 'result-card ' + colorClass;
+                explanationText.textContent = explanation;
+                
+                // Afficher les résultats
+                resultDiv.style.display = 'block';
+                
+                // Scroll vers les résultats
+                resultDiv.scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+    </script>
+
+</body>
+</html>
