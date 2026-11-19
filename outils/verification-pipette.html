@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+<meta name="description" content="Vérification d’une micropipette par gravimétrie selon l’ISO 8655 : masse volumique de l’eau selon la température, justesse et fidélité comparées aux limites de la norme. Outil du BTSa ANABIOTEC, lycée Le Gros Chêne, Pontivy.">
+<link rel="canonical" href="https://philrob56.github.io/anabiotec-commun/outils/verification-pipette.html">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vérification de pipette selon l’ISO 8655 : calculateur | BTSa ANABIOTEC</title>
+    <style>
+        :root {
+            --primary-color: #0e7c7b;
+            --success-color: #28a745;
+            --error-color: #dc3545;
+            --light-bg: #f8f9fa;
+            --dark-text: #212529;
+            --light-text: #6c757d;
+            --border-color: #dee2e6;
+        }
+
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.5;
+            margin: 0;
+            background-color: var(--light-bg);
+            color: var(--dark-text);
+            display: flex;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+            max-width: 1100px;
+            width: 100%;
+        }
+
+        @media (min-width: 992px) {
+            .container {
+                grid-template-columns: 1fr 1.2fr;
+            }
+        }
+        
+        .card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+        }
+
+        h1, h2 {
+            color: var(--dark-text);
+            margin-top: 0;
+        }
+
+        h1 { font-size: 1.6rem; margin-bottom: 0.5rem; }
+        h2 { font-size: 1.4rem; border-bottom: 2px solid var(--primary-color); padding-bottom: 0.5rem; margin-bottom: 1rem; }
+
+        .form-group {
+            margin-bottom: 0.8rem;
+        }
+
+        label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.3rem;
+            font-size: 0.9rem;
+            color: var(--light-text);
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 0.6rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 0.9rem;
+            -moz-appearance: textfield;
+        }
+        
+        input[type=number]::-webkit-outer-spin-button,
+        input[type=number]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(14,124,123, 0.25);
+        }
+        
+        .weighing-input-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 0.5rem;
+        }
+        
+        .limits-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.8rem;
+        }
+
+        button {
+            width: 100%;
+            padding: 0.7rem;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            margin-top: 0.5rem;
+        }
+        
+        .btn-primary { background-color: var(--primary-color); color: white; }
+        .btn-primary:hover { background-color: #0a5c5b; }
+        button:active { transform: scale(0.98); }
+
+        #results-container { display: none; }
+        
+        #results p {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid #e9ecef;
+            margin: 0;
+            font-size: 0.95rem;
+        }
+        #results p:last-child { border-bottom: none; }
+        
+        #results strong { color: var(--dark-text); }
+        
+        .status { font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 4px; }
+        .pass { color: var(--success-color); background-color: rgba(40, 167, 69, 0.1); }
+        .fail { color: var(--error-color); background-color: rgba(220, 53, 69, 0.1); }
+        .info { color: #17a2b8; background-color: rgba(23, 162, 184, 0.1); text-align: center; display: block; padding: 0.5rem; border-radius: 4px; margin-bottom: 1rem; font-size: 0.9rem; }
+    </style>
+<!-- anb-commun --><script src="https://philrob56.github.io/anabiotec-commun/anb-commun.js"></script><!-- /anb-commun -->
+<!-- anb-charte --><style>body{flex-direction:column!important;justify-content:flex-start!important;align-items:center!important}@media (max-width:700px){body>*{max-width:100%;box-sizing:border-box}}</style><!-- /anb-charte -->
+</head>
+<body>
+<!-- anb-charte --><div class="anb-head"><div class="anb-crumb"><i></i><a href="https://sites.google.com/view/anabioteclegroschene/accueil" target="_top" style="color:inherit;text-decoration:none" title="Tous les outils du BTSa ANABIOTEC"><b>BTSa ANABIOTEC</b></a><span>›</span>Chimie</div><div class="anb-right"><div class="anb-tag">LEGTA Le Gros Chêne · Pontivy</div><button type="button" class="anb-print" onclick="anbPrint()" title="Ouvrir une version imprimable (PDF)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimer / PDF</button></div></div><!-- /anb-charte -->
+
+<div class="container">
+    <div class="card" id="input-card">
+        <header>
+            <h1>Agent de Vérification de Pipette</h1>
+            <p style="color: var(--light-text); font-size: 0.9rem; margin-top: -0.3rem;">Entrez les données de calibration. Les limites ISO 8655 sont utilisées par défaut.</p>
+        </header>
+        <form id="pipetteForm" onsubmit="event.preventDefault(); calculate();">
+            <div class="form-group">
+                <label for="pipetteVolume">Volume Nominal (µL)</label>
+                <input type="number" id="pipetteVolume" placeholder="ex: 1000" required>
+            </div>
+            <div class="limits-container">
+                <div class="form-group">
+                    <label for="waterTemp">Température de l'eau (°C)</label>
+                    <input type="number" id="waterTemp" placeholder="ex: 21.5" step="0.1" required>
+                </div>
+                <div class="form-group">
+                    <label for="airPressure">Pression (hPa, recommandé)</label>
+                    <input type="number" id="airPressure" placeholder="ex: 1013">
+                </div>
+            </div>
+            <div class="limits-container">
+                 <div class="form-group">
+                    <label for="limitAccuracy">Limite Justesse (%) (opt.)</label>
+                    <input type="number" id="limitAccuracy" placeholder="ex: 0.6" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label for="limitPrecision">Limite Fidélité (%) (opt.)</label>
+                    <input type="number" id="limitPrecision" placeholder="ex: 0.15" step="0.01">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Entrez jusqu'à 10 pesées (mg)</label>
+                <div id="weighings" class="weighing-input-container">
+                    <input type="number" class="weighing" placeholder="Pesée 1" step="any"><input type="number" class="weighing" placeholder="Pesée 2" step="any">
+                    <input type="number" class="weighing" placeholder="Pesée 3" step="any"><input type="number" class="weighing" placeholder="Pesée 4" step="any">
+                    <input type="number" class="weighing" placeholder="Pesée 5" step="any"><input type="number" class="weighing" placeholder="Pesée 6" step="any">
+                    <input type="number" class="weighing" placeholder="Pesée 7" step="any"><input type="number" class="weighing" placeholder="Pesée 8" step="any">
+                    <input type="number" class="weighing" placeholder="Pesée 9" step="any"><input type="number" class="weighing" placeholder="Pesée 10" step="any">
+                </div>
+            </div>
+            <button type="submit" class="btn-primary">Vérifier la conformité</button>
+        </form>
+    </div>
+
+    <div class="card" id="results-container">
+        <h2>Rapport de Vérification</h2>
+        <div id="results"></div>
+    </div>
+</div>
+
+<script>
+    // --- TABLES DE DONNÉES ---
+    const zFactorTable = {
+        20: { 980: 1.0028, 1000: 1.0028, 1020: 1.0029, 1040: 1.0029 },
+        21: { 980: 1.0030, 1000: 1.0030, 1020: 1.0031, 1040: 1.0031 },
+        22: { 980: 1.0032, 1000: 1.0033, 1020: 1.0033, 1040: 1.0034 },
+        23: { 980: 1.0034, 1000: 1.0035, 1020: 1.0035, 1040: 1.0036 },
+        24: { 980: 1.0037, 1000: 1.0038, 1020: 1.0038, 1040: 1.0039 },
+        25: { 980: 1.0039, 1000: 1.0040, 1020: 1.0040, 1040: 1.0041 },
+    };
+    const iso8655Tolerances = { 10: {acc: 1.0, prec: 0.5}, 20: {acc: 0.8, prec: 0.4}, 50: {acc: 0.8, prec: 0.3}, 100: {acc: 0.8, prec: 0.15}, 200: {acc: 0.8, prec: 0.15}, 1000: {acc: 0.6, prec: 0.15}, 5000: {acc: 0.6, prec: 0.15}, 10000: {acc: 0.6, prec: 0.15}};
+    const grubbsCriticalValues = { 3: 1.155, 4: 1.481, 5: 1.715, 6: 1.887, 7: 2.020, 8: 2.126, 9: 2.215, 10: 2.290 };
+
+    // --- GESTION DES ÉVÉNEMENTS ---
+    document.getElementById('weighings').addEventListener('keydown', handleArrowNavigation);
+
+    function handleArrowNavigation(e) {
+        if (!e.target.classList.contains('weighing') || !e.key.startsWith('Arrow')) return;
+        e.preventDefault();
+        const inputs = Array.from(document.querySelectorAll('.weighing'));
+        const currentIndex = inputs.indexOf(e.target);
+        let nextIndex = -1;
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') nextIndex = currentIndex + 1;
+        else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') nextIndex = currentIndex - 1;
+        if (nextIndex >= 0 && nextIndex < inputs.length) inputs[nextIndex].focus();
+    }
+
+    // --- FONCTIONS DE CALCUL ---
+    function getZFactor(temp, pressure) {
+        pressure = isNaN(pressure) ? 1013 : pressure; // Default pressure
+        
+        // Find closest temperature key
+        const tempKeys = Object.keys(zFactorTable).map(Number);
+        const closestTemp = tempKeys.reduce((prev, curr) => (Math.abs(curr - temp) < Math.abs(prev - temp) ? curr : prev));
+        
+        const pressureTable = zFactorTable[closestTemp];
+        
+        // Find closest pressure key
+        const pressureKeys = Object.keys(pressureTable).map(Number);
+        const closestPressure = pressureKeys.reduce((prev, curr) => (Math.abs(curr - pressure) < Math.abs(prev - pressure) ? curr : prev));
+
+        return pressureTable[closestPressure];
+    }
+
+    function getTolerance(volume) {
+        const volumes = Object.keys(iso8655Tolerances).map(Number);
+        const closestVolume = volumes.reduce((prev, curr) => (Math.abs(curr - volume) < Math.abs(prev - volume) ? curr : prev));
+        return iso8655Tolerances[closestVolume];
+    }
+    
+    function runGrubbsTest(data) {
+        const n = data.length;
+        if (n < 3 || n > 10) return { isOutlier: false, cleanData: data };
+        const mean = data.reduce((a, b) => a + b, 0) / n;
+        const stdDev = Math.sqrt(data.map(x => Math.pow(x - mean, 2)).reduce((a, b) => a + b, 0) / (n - 1));
+        if (stdDev === 0) return { isOutlier: false, cleanData: data };
+        let maxDev = 0, outlierValue = null;
+        data.forEach(val => {
+            const dev = Math.abs(val - mean);
+            if (dev > maxDev) { maxDev = dev; outlierValue = val; }
+        });
+        const gCalculated = maxDev / stdDev;
+        const gCritical = grubbsCriticalValues[n];
+        if (gCalculated > gCritical) return { isOutlier: true, outlierValue, cleanData: data.filter(val => val !== outlierValue) };
+        return { isOutlier: false, cleanData: data };
+    }
+
+    function calculate() {
+        const pipetteVolume = parseFloat(document.getElementById('pipetteVolume').value);
+        const waterTemp = parseFloat(document.getElementById('waterTemp').value);
+        const airPressure = parseFloat(document.getElementById('airPressure').value);
+        const userAccuracyLimit = parseFloat(document.getElementById('limitAccuracy').value);
+        const userPrecisionLimit = parseFloat(document.getElementById('limitPrecision').value);
+        const weighingsRaw = Array.from(document.getElementsByClassName('weighing')).map(i => parseFloat(i.value)).filter(v => !isNaN(v));
+
+        if (isNaN(pipetteVolume) || isNaN(waterTemp) || weighingsRaw.length < 3) {
+            alert('Veuillez entrer des valeurs valides pour le volume, la température et au moins 3 pesées.');
+            return;
+        }
+
+        const grubbsResult = runGrubbsTest(weighingsRaw);
+        const weighings = grubbsResult.cleanData;
+        
+        const isoTolerance = getTolerance(pipetteVolume);
+        const finalAccuracyLimit = !isNaN(userAccuracyLimit) ? userAccuracyLimit : isoTolerance.acc;
+        const finalPrecisionLimit = !isNaN(userPrecisionLimit) ? userPrecisionLimit : isoTolerance.prec;
+
+        const pressureUsed = isNaN(airPressure) ? 1013 : airPressure;
+        const zFactor = getZFactor(waterTemp, pressureUsed);
+        const meanWeight = weighings.reduce((a, b) => a + b, 0) / weighings.length;
+        const meanVolume = meanWeight * zFactor;
+        const stdDev = isNaN(meanVolume) ? 0 : Math.sqrt(weighings.map(x => Math.pow(x * zFactor - meanVolume, 2)).reduce((a, b) => a + b, 0) / (weighings.length - 1));
+        const accuracy = ((meanVolume - pipetteVolume) / pipetteVolume) * 100;
+        const precision = (meanVolume === 0) ? 0 : (stdDev / meanVolume) * 100;
+
+        const accuracyPass = Math.abs(accuracy) <= finalAccuracyLimit;
+        const precisionPass = precision <= finalPrecisionLimit;
+
+        const resultsContainer = document.getElementById('results-container');
+        const resultsDiv = document.getElementById('results');
+        
+        let outlierInfo = grubbsResult.isOutlier ? `<p class="info">Valeur aberrante exclue: <strong>${grubbsResult.outlierValue.toFixed(3)} mg</strong></p>` : '';
+
+        resultsDiv.innerHTML = `
+            ${outlierInfo}
+            <p><strong>Conditions:</strong> <span>${pipetteVolume} µL @ ${waterTemp.toFixed(1)}°C / ${pressureUsed.toFixed(0)} hPa</span></p>
+            <p><strong>Facteur Z appliqué:</strong> <span>${zFactor}</span></p>
+            <p><strong>Pesées valides:</strong> <span>${weighings.length} / ${weighingsRaw.length}</span></p>
+            <p><strong>Volume moyen délivré:</strong> <span>${meanVolume.toFixed(3)} µL</span></p>
+            <hr>
+            <p><strong>Justesse (Erreur Syst.):</strong> 
+                <span>${accuracy.toFixed(3)}%
+                    <span class="status ${accuracyPass ? 'pass' : 'fail'}">${accuracyPass ? 'Conforme' : 'Non Conforme'}</span>
+                </span>
+            </p>
+            <p><strong>Limite de justesse utilisée:</strong> <span>±${finalAccuracyLimit.toFixed(2)}% ${!isNaN(userAccuracyLimit) ? '(perso.)' : '(ISO)'}</span></p>
+            <p><strong>Fidélité (CV):</strong> 
+                <span>${precision.toFixed(3)}%
+                    <span class="status ${precisionPass ? 'pass' : 'fail'}">${precisionPass ? 'Conforme' : 'Non Conforme'}</span>
+                </span>
+            </p>
+            <p><strong>Limite de fidélité utilisée:</strong> <span>≤${finalPrecisionLimit.toFixed(2)}% ${!isNaN(userPrecisionLimit) ? '(perso.)' : '(ISO)'}</span></p>
+        `;
+        resultsContainer.style.display = 'block';
+    }
+</script>
+
+
+</body>
+</html>
