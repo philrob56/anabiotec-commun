@@ -1,0 +1,965 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="description" content="Introduction interactive à la spectrométrie d’absorption atomique de flamme (SAA) pour le TP de dosage du sodium, du potassium et du magnésium dans les eaux. Outil du BTSa ANABIOTEC, lycée Le Gros Chêne, Pontivy.">
+<link rel="canonical" href="https://philrob56.github.io/anabiotec-commun/outils/principe-saa.html">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Principe de la spectrométrie d’absorption atomique (SAA) | BTSa ANABIOTEC</title>
+<meta name="description" content="Introduction interactive à la spectrométrie d'absorption atomique de flamme — BTS ANABIOTEC">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#F3F5F8; --surface:#FFFFFF; --surface-2:#EAEEF3; --ink:#16212C; --muted:#56636F; --rule:#D5DCE4;
+  --amber:#E09600; --amber-ink:#8F5B00; --amber-soft:#FBF0D8;
+  --teal:#0D6C72; --teal-soft:#DDEEEE;
+  --red:#B42318; --red-soft:#FBE7E4;
+  --glass:#C9D6E2; --metal:#6B7885; --grid-off:#D3DAE2;
+  --na:#E8A200; --k:#C0172E; --mg:#7B4FD6; --off:#2F7FD0;
+  --flame-a:#F7B64A; --flame-b:#5BA6E8;
+  --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body:"IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0E141B; --surface:#151D26; --surface-2:#1C2631; --ink:#E5EBF1; --muted:#9AA8B6; --rule:#2A3643;
+    --amber:#FFB42E; --amber-ink:#FFC95C; --amber-soft:#2C2313;
+    --teal:#56C4C9; --teal-soft:#142C2E;
+    --red:#FF7A6B; --red-soft:#34191A;
+    --glass:#3A4958; --metal:#8795A3; --grid-off:#253040;
+    --na:#FFBA1F; --k:#FF4F63; --mg:#A585FF; --off:#5AA5F0;
+    --flame-a:#F7A93A; --flame-b:#3E8ED6;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0E141B; --surface:#151D26; --surface-2:#1C2631; --ink:#E5EBF1; --muted:#9AA8B6; --rule:#2A3643;
+  --amber:#FFB42E; --amber-ink:#FFC95C; --amber-soft:#2C2313;
+  --teal:#56C4C9; --teal-soft:#142C2E;
+  --red:#FF7A6B; --red-soft:#34191A;
+  --glass:#3A4958; --metal:#8795A3; --grid-off:#253040;
+  --na:#FFBA1F; --k:#FF4F63; --mg:#A585FF; --off:#5AA5F0;
+  --flame-a:#F7A93A; --flame-b:#3E8ED6;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16.5px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1100px;margin:0 auto;padding-inline:20px;padding-block:28px 64px}
+.prose{max-width:68ch}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.1}
+h1{font-size:clamp(2.1rem,5.2vw,3.6rem);font-weight:800;letter-spacing:-.02em}
+h2{font-size:clamp(1.55rem,3.2vw,2.15rem);font-weight:800;letter-spacing:-.01em}
+h3{font-size:1.2rem;font-weight:600}
+p{margin:0}
+.eyebrow{font-family:var(--mono);font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.mono{font-family:var(--mono)}
+.num{font-variant-numeric:tabular-nums}
+sub,sup{font-size:.72em;line-height:0}
+strong{font-weight:600}
+a{color:var(--teal)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+
+/* ---------- En-tête ---------- */
+header.top{display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--rule);padding-bottom:12px;margin-bottom:36px}
+.hero{display:grid;gap:18px;margin-bottom:28px}
+.hero .lede{font-size:1.12rem;color:var(--muted);max-width:62ch}
+.hero .lede strong{color:var(--ink)}
+
+/* ---------- Simulateur ---------- */
+.sim{background:var(--surface);border:1px solid var(--rule);border-radius:14px;padding:18px;display:grid;gap:18px}
+.sim-fig{overflow-x:auto}
+.sim-fig svg{display:block;width:100%;min-width:640px;height:auto}
+.sim-bottom{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.15fr);gap:18px;align-items:start}
+.panel{display:grid;gap:12px}
+.panel-title{font-family:var(--mono);font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.seg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--rule);border-radius:10px;overflow:hidden;background:var(--surface-2)}
+.seg button{border:0;background:transparent;padding:8px 14px;cursor:pointer;display:grid;line-height:1.2;text-align:left;border-right:1px solid var(--rule)}
+.seg button:last-child{border-right:0}
+.seg button .s{font-weight:600}
+.seg button .l{font-family:var(--mono);font-size:.72rem;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.seg button[aria-pressed="true"] .l{color:inherit;opacity:.75}
+.slider{display:grid;gap:6px}
+.slider label{display:flex;justify-content:space-between;gap:12px;font-size:.92rem}
+.slider output{font-family:var(--mono);font-weight:500}
+input[type=range]{width:100%;accent-color:var(--amber)}
+.readouts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.ro{background:var(--surface-2);border-radius:10px;padding:10px 12px;display:grid;gap:2px}
+.ro .k{font-family:var(--mono);font-size:.72rem;color:var(--muted)}
+.ro .v{white-space:nowrap;font-family:var(--mono);font-size:clamp(1rem,1.6vw,1.2rem);font-weight:500;font-variant-numeric:tabular-nums}
+.ro.main{background:var(--amber-soft)}
+.ro.main .v{color:var(--amber-ink)}
+.warn{font-size:.86rem;padding:8px 10px;border-radius:8px;background:var(--red-soft);color:var(--red)}
+.note{font-size:.86rem;color:var(--muted)}
+.cal svg{width:100%;height:auto;display:block}
+
+/* ---------- Sections ---------- */
+section{margin-top:72px;display:grid;gap:22px}
+.sec-head{display:grid;gap:8px}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;align-items:start}
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:14px;padding:18px}
+.formula{font-family:var(--mono);font-size:1.12rem;background:var(--surface);border:1px solid var(--rule);border-left:3px solid var(--amber);border-radius:0 10px 10px 0;padding:14px 18px;display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px}
+.frac{display:inline-grid;text-align:center;vertical-align:middle}
+.frac>span:first-child{border-bottom:1.5px solid currentColor;padding:0 4px}
+.frac>span:last-child{padding:0 4px}
+.legend{font-size:.92rem;color:var(--muted);display:grid;gap:4px}
+.legend b{color:var(--ink);font-family:var(--mono);font-weight:500}
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px}
+.btn{border:1px solid var(--rule);background:var(--surface-2);padding:9px 14px;border-radius:9px;cursor:pointer;font-weight:500;display:inline-flex;align-items:center;gap:8px}
+.btn:hover{border-color:var(--muted)}
+.btn .dot{width:10px;height:10px;border-radius:50%;flex:none}
+.levels svg,.lamp svg,.scene svg{width:100%;height:auto;display:block}
+.status{font-family:var(--mono);font-size:.9rem;min-height:1.6em}
+
+/* Boltzmann */
+.boltz{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:28px;align-items:start}
+.grid-wrap{background:var(--surface);border:1px solid var(--rule);border-radius:14px;padding:12px}
+canvas#grid{width:100%;height:auto;aspect-ratio:1/1;display:block;image-rendering:pixelated}
+.grid-cap{font-size:.84rem;color:var(--muted);margin-top:8px}
+.big-ratio{font-family:var(--display);font-size:clamp(1.8rem,4vw,2.6rem);font-weight:800;color:var(--amber-ink);font-variant-numeric:tabular-nums}
+
+/* Étapes */
+.steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;counter-reset:st}
+.steps li{background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:14px;display:grid;gap:8px;align-content:start;position:relative}
+.steps li .n{font-family:var(--mono);font-size:.74rem;color:var(--muted)}
+.steps li svg{width:100%;height:70px}
+.steps li .eq{font-family:var(--mono);font-size:.86rem}
+.steps li.flame{background:linear-gradient(180deg,var(--amber-soft),var(--surface) 70%)}
+.steps li.abs{border-color:var(--amber)}
+.chip{justify-self:start;font-family:var(--mono);font-size:.68rem;letter-spacing:.05em;text-transform:uppercase;padding:2px 8px;border-radius:99px;background:var(--amber);color:#1b1300}
+.flameband{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-top:-12px}
+.flameband span{grid-column:2/5;text-align:center;font-family:var(--mono);font-size:.8rem;color:var(--amber-ink);border-top:2px solid var(--amber);padding-top:6px}
+.flameband em{grid-column:5;text-align:center;font-family:var(--mono);font-style:normal;font-size:.8rem;color:var(--amber-ink);padding-top:8px}
+
+/* Modules */
+.modules{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.module{background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:16px;display:grid;gap:6px;align-content:start}
+.module .n{font-family:var(--mono);font-size:.74rem;color:var(--muted)}
+.module h3{font-size:1.08rem}
+.module p{font-size:.93rem;color:var(--muted)}
+.sub{display:grid;gap:18px;margin-top:22px}
+.sub h3{font-size:1.35rem}
+
+/* Lampe */
+.stepper{display:flex;flex-wrap:wrap;gap:6px}
+.stepper button{border:1px solid var(--rule);background:var(--surface-2);border-radius:99px;padding:6px 12px;cursor:pointer;font-size:.9rem}
+.stepper button[aria-pressed="true"]{background:var(--teal);border-color:var(--teal);color:var(--bg)}
+.scene{background:var(--surface-2);border-radius:12px;padding:10px}
+.scene-cap{font-size:.95rem;min-height:3.2em}
+.checks{list-style:none;padding:0;margin:0;display:grid;gap:6px}
+.checks li{padding-left:22px;position:relative}
+.checks li::before{content:"";position:absolute;left:4px;top:.6em;width:8px;height:8px;border-radius:2px;background:var(--teal)}
+
+/* Flammes */
+.flames{display:grid;gap:10px}
+.frow{display:grid;grid-template-columns:minmax(0,220px) minmax(0,1fr);gap:14px;align-items:center}
+.frow .name{font-weight:600;font-size:.95rem}
+.frow .use{display:block;font-weight:400;font-size:.82rem;color:var(--muted)}
+.track{position:relative;height:30px;background:var(--surface-2);border-radius:6px}
+.bar{position:absolute;top:0;bottom:0;border-radius:6px;background:linear-gradient(90deg,color-mix(in srgb,var(--amber) 25%,transparent),var(--amber));display:flex;align-items:center;justify-content:flex-end;padding-right:8px}
+.bar.narrow{justify-content:flex-start}.bar.narrow b{position:absolute;left:calc(100% + 8px);color:var(--ink)}
+.bar b{font-family:var(--mono);font-weight:500;font-size:.82rem;color:#1b1300;white-space:nowrap}
+.frow.tp .track{outline:2px solid var(--teal);outline-offset:2px}
+.frow.tp .name::after{content:"ce TP";margin-left:8px;font-family:var(--mono);font-size:.68rem;text-transform:uppercase;letter-spacing:.05em;padding:2px 7px;border-radius:99px;background:var(--teal);color:var(--bg)}
+.axis{display:grid;grid-template-columns:minmax(0,220px) minmax(0,1fr);gap:14px}
+.axis .ticks{position:relative;height:18px;font-family:var(--mono);font-size:.72rem;color:var(--muted)}
+.axis .ticks span{position:absolute;transform:translateX(-50%);white-space:nowrap}
+.pc{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:12px}
+.pc .col{border-radius:12px;padding:16px;display:grid;gap:8px;align-content:start}
+.pc .pro{background:var(--teal-soft)}
+.pc .con{background:var(--red-soft)}
+.pc h4{margin:0;font-family:var(--mono);font-size:.78rem;letter-spacing:.07em;text-transform:uppercase}
+.pc .pro h4{color:var(--teal)} .pc .con h4{color:var(--red)}
+.pc ul{margin:0;padding-left:18px;display:grid;gap:6px;font-size:.95rem}
+
+/* Chaîne optique */
+.chain{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.chain li{font-size:.9rem;padding:6px 12px;border-radius:8px;background:var(--surface);border:1px solid var(--rule)}
+.chain li.arrow{border:0;background:none;padding:0 2px;color:var(--muted)}
+.chain li.opt{border-color:var(--mg)}
+.chain li.elec{border-color:var(--teal)}
+
+.today{background:var(--ink);color:var(--bg);border-radius:14px;padding:22px;display:grid;gap:10px}
+.today .eyebrow{color:inherit;opacity:.7}
+.today strong{color:var(--amber)}
+
+/* Vers le TP */
+.tp{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.tp .card{display:grid;gap:10px;align-content:start}
+.tp .who{font-family:var(--mono);font-size:.8rem;color:var(--muted)}
+.tp .fix{font-family:var(--mono);font-weight:500;padding:8px 10px;border-radius:8px;background:var(--surface-2)}
+.ei{display:flex;gap:6px;flex-wrap:wrap}
+.ei span{font-family:var(--mono);font-size:.8rem;padding:3px 8px;border-radius:6px;background:var(--surface-2)}
+.ei span.best{background:var(--amber);color:#1b1300}
+footer{margin-top:64px;padding-top:14px;border-top:1px solid var(--rule);font-size:.85rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-between}
+
+/* SVG helpers */
+.s-ink{fill:var(--ink)} .s-muted{fill:var(--muted)} .s-surface{fill:var(--surface)} .s-surface2{fill:var(--surface-2)}
+.t{font-family:var(--body);font-size:13px;fill:var(--ink)}
+.t-s{font-family:var(--body);font-size:11.5px;fill:var(--muted)}
+.t-m{font-family:var(--mono);font-size:12px;fill:var(--muted)}
+.t-b{font-family:var(--display);font-weight:600;font-size:15px;fill:var(--ink)}
+.stroke-ink{stroke:var(--ink)} .stroke-rule{stroke:var(--rule)} .stroke-muted{stroke:var(--muted)}
+
+@keyframes twinkle{0%,100%{opacity:1}50%{opacity:.45}}
+.atom{animation:twinkle 1.6s ease-in-out infinite}
+@keyframes flick{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.04)}}
+.flamebody{transform-origin:50% 100%;transform-box:fill-box;animation:flick 1.3s ease-in-out infinite}
+@media (prefers-reduced-motion: reduce){.atom,.flamebody{animation:none}}
+
+@media (max-width:900px){
+  .sim-bottom{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .sim-bottom .cal{grid-column:1/-1}
+  .steps{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .steps li.abs{grid-column:1/-1}
+  .flameband{display:none}
+  .modules{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .boltz,.two{grid-template-columns:minmax(0,1fr)}
+  .boltz .grid-wrap{max-width:360px}
+}
+@media (max-width:620px){
+  body{font-size:16px}
+  .sim{padding:12px}
+  .sim-bottom{grid-template-columns:minmax(0,1fr)}
+  .readouts{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .steps{grid-template-columns:minmax(0,1fr)}
+  .modules,.tp,.pc{grid-template-columns:minmax(0,1fr)}
+  .frow,.axis{grid-template-columns:minmax(0,1fr)}
+  .axis>span:first-child{display:none}
+  .frow{gap:4px}
+}
+@media (min-width:621px){ .chip{display:none} }
+
+/* Classification */
+.pt-wrap{overflow-x:auto;background:var(--surface);border:1px solid var(--rule);border-radius:14px;padding:14px}
+.pt{display:grid;grid-template-columns:repeat(18,minmax(34px,1fr));grid-template-rows:repeat(7,auto) 14px repeat(2,auto);gap:4px;min-width:680px;position:relative}
+.pt button{aspect-ratio:1/1;border:0;border-radius:6px;padding:3px 4px;cursor:pointer;display:grid;grid-template-rows:auto 1fr;text-align:left;line-height:1;position:relative;font:inherit;transition:transform .12s}
+.pt button:hover{transform:scale(1.08);z-index:2}
+.pt .z{font-family:var(--mono);font-size:.56rem;opacity:.8}
+.pt .sy{font-family:var(--display);font-weight:800;font-size:clamp(.8rem,1.5vw,1.08rem);align-self:center;justify-self:center}
+.pt .cA{background:var(--teal);color:var(--bg)}
+.pt .cN{background:var(--ink);color:var(--bg)}
+.pt .cV{background:var(--amber);color:#1b1300}
+.pt .cX{background:var(--surface-2);color:var(--muted)}
+.pt .hy::after{content:"H";position:absolute;top:2px;right:2px;width:12px;height:12px;border-radius:50%;background:var(--amber);color:#1b1300;font-family:var(--mono);font-size:.5rem;display:grid;place-items:center;font-weight:600}
+.pt .intp{outline:3px solid var(--amber);outline-offset:1px}
+.pt button[aria-pressed="true"]{box-shadow:0 0 0 3px var(--bg),0 0 0 5px var(--ink);z-index:3}
+.pt .ph{border:1px dashed var(--rule);border-radius:6px;display:grid;place-items:center;font-family:var(--mono);font-size:.6rem;color:var(--muted);aspect-ratio:1/1}
+.pt .lbl{font-family:var(--body);font-style:italic;font-size:.8rem;color:var(--muted);display:flex;align-items:center;justify-content:flex-end;padding-right:6px}
+.pt-legend{position:absolute;grid-column:3/13;grid-row:1/4;display:flex;flex-wrap:wrap;align-content:center;gap:6px 18px;padding:0 10px;font-size:.84rem}
+.pt-legend span{display:inline-flex;align-items:center;gap:7px}
+.pt-legend i{width:14px;height:14px;border-radius:4px;display:inline-block;flex:none}
+.pt-legend i.h{border-radius:50%;background:var(--amber);font-style:normal;font-family:var(--mono);font-size:.55rem;display:grid;place-items:center;color:#1b1300}
+.pt-legend i.t{background:transparent;outline:3px solid var(--amber);outline-offset:-3px}
+.pt-side{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:14px;align-items:start}
+.pt-info{background:var(--surface);border:1px solid var(--rule);border-radius:14px;padding:16px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 16px;align-items:center}
+.pt-info .bigsym{grid-row:1/4;width:72px;height:72px;border-radius:10px;display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:1.9rem}
+.pt-info .nm{font-family:var(--display);font-weight:600;font-size:1.25rem}
+.pt-info .cat{font-size:.92rem;color:var(--muted)}
+.pt-info .det{grid-column:1/-1;margin-top:8px;font-size:.95rem}
+.pt-count{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+@media (max-width:760px){.pt-side{grid-template-columns:minmax(0,1fr)}.pt-legend{font-size:.72rem;gap:4px 10px}}
+</style>
+
+<style>body{margin:0}[hidden]{display:none!important}</style>
+<!-- anb-commun --><script src="https://philrob56.github.io/anabiotec-commun/anb-commun.js"></script><!-- /anb-commun -->
+</head>
+<body>
+<!-- anb-charte --><div class="anb-head"><div class="anb-crumb"><i></i><a href="https://sites.google.com/view/anabioteclegroschene/accueil" target="_top" style="color:inherit;text-decoration:none" title="Tous les outils du BTSa ANABIOTEC"><b>BTSa ANABIOTEC</b></a><span>›</span>TP <span>›</span> Semestre 1</div><div class="anb-right"><div class="anb-tag">LEGTA Le Gros Chêne · Pontivy</div><button type="button" class="anb-print" onclick="anbPrint()" title="Ouvrir une version imprimable (PDF)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimer / PDF</button></div></div><!-- /anb-charte -->
+<div class="wrap">
+<header class="top">
+  <span class="eyebrow">BTS ANABIOTEC · Chimie analytique · Introduction au TP</span>
+  <span class="eyebrow">Dosage de Na⁺, K⁺ et Mg²⁺ dans les eaux</span>
+</header>
+
+<div class="hero">
+  <span class="eyebrow">Spectrométrie d'absorption atomique de flamme (SAA)</span>
+  <h1>Un atome n'absorbe que sa propre lumière</h1>
+  <p class="lede">La SAA éclaire une flamme avec la lumière de l'élément à doser. Les atomes de cet élément, amenés dans la flamme par l'échantillon, en absorbent une partie : <strong>plus il y a d'atomes, moins la lumière passe</strong>. Faites varier la concentration pour le voir.</p>
+</div>
+
+<!-- ================= SIMULATEUR ================= -->
+<div class="sim" id="sim">
+  <div class="sim-fig">
+    <svg id="simsvg" viewBox="0 0 1000 300" role="img" aria-label="Schéma animé d'un spectromètre d'absorption atomique : lampe, flamme, monochromateur, détecteur">
+      <defs>
+        <linearGradient id="beamFade" x1="0" x2="1" y1="0" y2="0">
+          <stop id="bf0" offset="0" stop-opacity="1"/>
+          <stop id="bf1" offset="1" stop-opacity="1"/>
+        </linearGradient>
+        <linearGradient id="flameGrad" x1="0" x2="0" y1="1" y2="0">
+          <stop offset="0" stop-color="var(--flame-b)" stop-opacity=".85"/>
+          <stop offset=".55" stop-color="var(--flame-a)" stop-opacity=".75"/>
+          <stop offset="1" stop-color="var(--flame-a)" stop-opacity=".15"/>
+        </linearGradient>
+      </defs>
+      <!-- Lampe -->
+      <g>
+        <rect x="18" y="110" width="150" height="80" rx="30" fill="var(--glass)" opacity=".55" class="stroke-muted" stroke-width="1.5"/>
+        <rect x="18" y="138" width="8" height="24" fill="var(--glass)" class="stroke-muted" stroke-width="1"/>
+        <path d="M120 128 h28 v44 h-28 v-8 h20 v-28 h-20z" fill="var(--metal)"/>
+        <rect x="124" y="136" width="16" height="28" rx="2" id="cathGlow" opacity=".75"/>
+        <line x1="70" y1="130" x2="70" y2="170" stroke="var(--metal)" stroke-width="3"/>
+        <text x="93" y="213" text-anchor="middle" class="t-b">Lampe à</text>
+        <text x="93" y="231" text-anchor="middle" class="t-b">cathode creuse</text>
+        <text x="93" y="248" text-anchor="middle" class="t-s" id="lampLbl">cathode en sodium</text>
+      </g>
+      <!-- Faisceau I0 -->
+      <line x1="170" y1="150" x2="360" y2="150" stroke-width="12" stroke-linecap="butt" id="beam0"/>
+      <text x="262" y="132" text-anchor="middle" class="t-b">I₀</text>
+      <!-- Flamme -->
+      <g>
+        <path class="flamebody" d="M372 232 C 372 170, 400 150, 405 95 C 420 130, 430 120, 442 70 C 455 118, 468 128, 480 92 C 488 150, 510 170, 510 232 Z" fill="url(#flameGrad)"/>
+        <line x1="360" y1="150" x2="522" y2="150" stroke="url(#beamFade)" stroke-width="12" id="beamIn"/>
+        <g id="atoms"></g>
+        <rect x="360" y="232" width="162" height="14" rx="2" fill="var(--metal)"/>
+        <rect x="433" y="246" width="16" height="22" fill="var(--metal)"/>
+        <path d="M441 290 L441 268" class="stroke-muted" stroke-width="1.5" stroke-dasharray="3 3"/>
+        <text x="441" y="44" text-anchor="middle" class="t-b">Flamme air–acétylène ≈ 2 300 °C</text>
+        <text x="441" y="62" text-anchor="middle" class="t-s">atomisation : M⁺(aq) → M(g)</text>
+        <text x="455" y="292" class="t-s">échantillon nébulisé</text>
+      </g>
+      <!-- Faisceau I -->
+      <line x1="522" y1="150" x2="640" y2="150" stroke-width="12" id="beam1"/>
+      <text x="581" y="132" text-anchor="middle" class="t-b">I</text>
+      <!-- Monochromateur -->
+      <g>
+        <rect x="640" y="104" width="128" height="92" rx="10" class="s-surface2 stroke-muted" stroke-width="1.5"/>
+        <line x1="672" y1="178" x2="736" y2="122" stroke="var(--mg)" stroke-width="4" stroke-linecap="round"/>
+        <text x="704" y="215" text-anchor="middle" class="t-b">Monochromateur</text>
+        <text x="704" y="233" text-anchor="middle" class="t-m" id="lamLbl">λ = 589,0 nm</text>
+      </g>
+      <line x1="768" y1="150" x2="830" y2="150" stroke-width="8" id="beam2"/>
+      <!-- Détecteur -->
+      <g>
+        <rect x="830" y="110" width="150" height="80" rx="10" fill="var(--ink)"/>
+        <text x="905" y="145" text-anchor="middle" font-family="var(--mono)" font-size="13" fill="var(--bg)">PM</text>
+        <text x="905" y="170" text-anchor="middle" font-family="var(--mono)" font-size="17" fill="var(--amber)" id="detA">A = 0,000</text>
+        <text x="905" y="215" text-anchor="middle" class="t-b">Détecteur</text>
+        <text x="905" y="233" text-anchor="middle" class="t-s">photomultiplicateur</text>
+      </g>
+    </svg>
+  </div>
+
+  <div class="sim-bottom">
+    <div class="panel">
+      <span class="panel-title">Élément dosé</span>
+      <div class="seg" role="group" aria-label="Élément" data-elsel>
+        <button type="button" data-el="Na" aria-pressed="true"><span class="s">Na</span><span class="l">589,0 nm</span></button>
+        <button type="button" data-el="K" aria-pressed="false"><span class="s">K</span><span class="l">766,5 nm</span></button>
+        <button type="button" data-el="Mg" aria-pressed="false"><span class="s">Mg</span><span class="l">285,2 nm</span></button>
+      </div>
+      <div class="slider">
+        <label for="conc"><span>Concentration dans la solution aspirée</span><output id="concOut" class="num">0,40 mg·L⁻¹</output></label>
+        <input type="range" id="conc" min="0" max="100" value="16" step="1">
+      </div>
+      <p class="note">Coefficients illustratifs. Les vraies sensibilités sont données par le cahier des éléments de l'appareil.</p>
+    </div>
+    <div class="panel">
+      <span class="panel-title">Mesure</span>
+      <div class="readouts">
+        <div class="ro"><span class="k">I₀</span><span class="v">100 %</span></div>
+        <div class="ro"><span class="k">I</span><span class="v" id="roI">–</span></div>
+        <div class="ro main"><span class="k">A</span><span class="v" id="roA">–</span></div>
+      </div>
+      <p class="formula" style="font-size:.98rem">A = log (I₀ / I) = k·C</p>
+      <div class="warn" id="warn" hidden>Hors zone linéaire : diluez l'échantillon pour revenir au milieu de la gamme.</div>
+    </div>
+    <div class="panel cal">
+      <span class="panel-title">Droite d'étalonnage</span>
+      <svg id="calsvg" viewBox="0 0 360 222" role="img" aria-label="Courbe d'étalonnage absorbance en fonction de la concentration"></svg>
+    </div>
+  </div>
+</div>
+
+<!-- ================= 1. ABSORPTION ================= -->
+<section id="absorption">
+  <div class="sec-head">
+    <span class="eyebrow">Principe de l'absorption atomique</span>
+    <h2>Un quantum d'énergie, ni plus ni moins</h2>
+  </div>
+  <div class="two">
+    <div class="prose" style="display:grid;gap:14px">
+      <p>Un atome à l'état fondamental passe dans un état excité si on lui fournit un <strong>quantum d'énergie exactement égal</strong> à l'écart entre les deux niveaux. Cette énergie peut être thermique, cinétique ou lumineuse.</p>
+      <div class="formula">ΔE = E₁ − E₀ = h·ν = <span class="frac"><span>h·c</span><span>λ</span></span></div>
+      <div class="legend">
+        <span><b>h</b> = 6,626 × 10⁻³⁴ J·s (constante de Planck)</span>
+        <span><b>ν</b> fréquence (s⁻¹) · <b>c</b> = 3,00 × 10⁸ m·s⁻¹ · <b>λ</b> longueur d'onde (m)</span>
+      </div>
+      <p>Chaque élément a ses propres niveaux, donc ses propres <strong>raies</strong>. Un photon d'une autre longueur d'onde traverse l'atome sans être absorbé. C'est pour cela qu'on utilise une <strong>lampe dont la cathode est faite de l'élément à doser</strong>.</p>
+      <div class="stats" id="eStats"></div>
+    </div>
+    <div class="card" style="display:grid;gap:12px">
+      <div class="seg" role="group" aria-label="Élément" data-elsel>
+        <button type="button" data-el="Na" aria-pressed="true"><span class="s">Na</span><span class="l">589,0 nm</span></button>
+        <button type="button" data-el="K" aria-pressed="false"><span class="s">K</span><span class="l">766,5 nm</span></button>
+        <button type="button" data-el="Mg" aria-pressed="false"><span class="s">Mg</span><span class="l">285,2 nm</span></button>
+      </div>
+      <div class="levels"><svg id="lvsvg" viewBox="0 0 560 290" role="img" aria-label="Diagramme de niveaux d'énergie avec photon incident"></svg></div>
+      <div class="btnrow">
+        <button class="btn" type="button" id="photonRes"><span class="dot" id="dotRes"></span><span id="lblRes">Photon à 589,0 nm</span></button>
+        <button class="btn" type="button" id="photonOff"><span class="dot" style="background:var(--off)"></span>Photon à 450 nm</button>
+      </div>
+      <p class="status" id="lvStatus" aria-live="polite">Envoyez un photon sur l'atome.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 2. BOLTZMANN ================= -->
+<section id="boltzmann">
+  <div class="sec-head">
+    <span class="eyebrow">Loi de distribution de Boltzmann</span>
+    <h2>Dans la flamme, presque tous les atomes restent au repos</h2>
+  </div>
+  <div class="boltz">
+    <div class="grid-wrap">
+      <canvas id="grid" width="400" height="400" aria-label="Grille de 10 000 atomes, les atomes excités sont mis en évidence"></canvas>
+      <p class="grid-cap">10 000 atomes dans la flamme. Chaque atome excité est marqué en couleur.</p>
+    </div>
+    <div style="display:grid;gap:16px">
+      <div class="formula"><span class="frac"><span>N<sub>n</sub></span><span>N<sub>0</sub></span></span> = <span class="frac"><span>G<sub>n</sub></span><span>G<sub>0</sub></span></span> · e<sup>−ΔE / k·T</sup></div>
+      <div class="legend">
+        <span><b>N<sub>n</sub>, N<sub>0</sub></b> nombres d'atomes sur l'état excité n et sur l'état fondamental</span>
+        <span><b>G<sub>n</sub>, G<sub>0</sub></b> poids statistiques · <b>ΔE</b> écart d'énergie (J)</span>
+        <span><b>k</b> = 1,380 649 × 10⁻²³ J·K⁻¹ · <b>T</b> température absolue (K)</span>
+      </div>
+      <div class="seg" role="group" aria-label="Élément" data-elsel>
+        <button type="button" data-el="Na" aria-pressed="true"><span class="s">Na</span><span class="l">589,0 nm</span></button>
+        <button type="button" data-el="K" aria-pressed="false"><span class="s">K</span><span class="l">766,5 nm</span></button>
+        <button type="button" data-el="Mg" aria-pressed="false"><span class="s">Mg</span><span class="l">285,2 nm</span></button>
+      </div>
+      <div class="seg" role="group" aria-label="Flamme" id="flameSel"></div>
+      <div>
+        <div class="eyebrow" id="bzLabel">Proportion d'atomes excités</div>
+        <div class="big-ratio" id="bzRatio">–</div>
+        <p id="bzText" class="prose"></p>
+      </div>
+      <p class="prose">L'immense majorité des atomes reste à l'état fondamental : ce sont eux qui absorbent la raie de la lampe. La SAA mesure donc N<sub>0</sub>, qui dépend peu de la température. L'émission de flamme, elle, mesure les rares atomes excités.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 3. BEER-LAMBERT + ÉTAPES ================= -->
+<section id="etapes">
+  <div class="sec-head">
+    <span class="eyebrow">De la solution au signal</span>
+    <h2>Cinq transformations en quelques millisecondes</h2>
+  </div>
+  <ol class="steps">
+    <li>
+      <span class="n">1</span>
+      <svg viewBox="0 0 120 70" aria-hidden="true"><path d="M36 10 v44 a6 6 0 0 0 6 6 h36 a6 6 0 0 0 6 -6 v-44" fill="none" class="stroke-muted" stroke-width="2"/><rect x="38" y="28" width="44" height="30" rx="3" fill="var(--teal-soft)"/><circle cx="50" cy="40" r="4" fill="var(--teal)"/><circle cx="66" cy="48" r="4" fill="var(--teal)"/><circle cx="60" cy="36" r="3" fill="var(--muted)"/><circle cx="72" cy="38" r="3" fill="var(--muted)"/></svg>
+      <h3>Solution</h3>
+      <span class="eq">M⁺ + X⁻</span>
+    </li>
+    <li class="flame">
+      <span class="n">2</span>
+      <svg viewBox="0 0 120 70" aria-hidden="true"><g fill="var(--teal)" opacity=".8"><circle cx="30" cy="40" r="4"/><circle cx="46" cy="28" r="3"/><circle cx="52" cy="48" r="5"/><circle cx="68" cy="34" r="3"/><circle cx="80" cy="50" r="4"/><circle cx="92" cy="30" r="3"/><circle cx="62" cy="18" r="2.5"/></g></svg>
+      <h3>Nébulisation</h3>
+      <span class="eq">aérosol de gouttelettes</span>
+      <span class="chip">flamme</span>
+    </li>
+    <li class="flame">
+      <span class="n">3</span>
+      <svg viewBox="0 0 120 70" aria-hidden="true"><g class="stroke-muted" stroke-width="1.5" fill="var(--surface)"><rect x="44" y="20" width="32" height="32"/><path d="M44 20 l10 -8 h32 l-10 8z"/><path d="M76 20 l10 -8 v32 l-10 8z"/></g><g fill="var(--teal)"><circle cx="52" cy="28" r="3"/><circle cx="68" cy="44" r="3"/></g><g fill="var(--muted)"><circle cx="68" cy="28" r="3"/><circle cx="52" cy="44" r="3"/></g></svg>
+      <h3>Désolvatation</h3>
+      <span class="eq">sel MX solide</span>
+      <span class="chip">flamme</span>
+    </li>
+    <li class="flame">
+      <span class="n">4</span>
+      <svg viewBox="0 0 120 70" aria-hidden="true"><circle cx="40" cy="36" r="9" fill="var(--teal)"/><circle cx="82" cy="36" r="7" fill="var(--muted)"/><path d="M54 36 h14" class="stroke-muted" stroke-width="1.5" stroke-dasharray="3 3"/><text x="40" y="62" text-anchor="middle" class="t-m">M°</text><text x="82" y="62" text-anchor="middle" class="t-m">X°</text></svg>
+      <h3>Atomisation</h3>
+      <span class="eq">M° + X°</span>
+      <span class="chip">flamme</span>
+    </li>
+    <li class="abs">
+      <span class="n">5</span>
+      <svg viewBox="0 0 120 70" aria-hidden="true"><path d="M8 36 q5 -10 10 0 t10 0 t10 0 t10 0 t10 0" fill="none" stroke="var(--amber)" stroke-width="2.5"/><path d="M62 36 h8" stroke="var(--amber)" stroke-width="2.5"/><circle cx="88" cy="36" r="11" fill="var(--red)"/><text x="88" y="40" text-anchor="middle" font-family="var(--mono)" font-size="11" fill="#fff">M*</text></svg>
+      <h3>Absorption</h3>
+      <span class="eq">M° + h·ν → M*</span>
+    </li>
+  </ol>
+  <div class="flameband" aria-hidden="true"><span>dans la flamme air / acétylène (≈ 2 300 °C)</span><em>A = f(C)</em></div>
+
+  <div class="two" style="margin-top:8px">
+    <div class="prose" style="display:grid;gap:12px">
+      <h3>La loi de Beer-Lambert</h3>
+      <p>L'absorbance est proportionnelle au nombre d'atomes à l'état fondamental présents sur le trajet du faisceau. Comme ce nombre est proportionnel à la concentration de la solution aspirée, on obtient une relation linéaire, exploitée par étalonnage externe.</p>
+    </div>
+    <div style="display:grid;gap:10px">
+      <div class="formula">A = log <span class="frac"><span>I₀</span><span>I</span></span> = K · l · N₀ &nbsp;⟹&nbsp; A = k · C</div>
+      <div class="legend">
+        <span><b>I₀, I</b> intensités incidente et transmise</span>
+        <span><b>K</b> coefficient d'absorption atomique · <b>l</b> trajet optique dans la flamme (cm)</span>
+        <span><b>N₀</b> concentration en atomes à l'état fondamental</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 4. APPAREILLAGE ================= -->
+<section id="appareil">
+  <div class="sec-head">
+    <span class="eyebrow">L'appareillage</span>
+    <h2>Quatre modules alignés sur un même faisceau</h2>
+  </div>
+  <div class="modules">
+    <div class="module"><span class="n">Source</span><h3>Lampe à cathode creuse</h3><p>Émet le spectre de raies de l'élément à doser.</p></div>
+    <div class="module"><span class="n">Atomiseur</span><h3>Nébuliseur + flamme</h3><p>Transforme la solution en une population d'atomes libres.</p></div>
+    <div class="module"><span class="n">Sélection</span><h3>Monochromateur</h3><p>Isole la raie de résonance et élimine les autres raies de la source.</p></div>
+    <div class="module"><span class="n">Mesure</span><h3>Détecteur</h3><p>Mesure l'intensité de la raie en présence et en absence d'atomes absorbants.</p></div>
+  </div>
+
+  <!-- Lampe -->
+  <div class="sub">
+    <h3>La source : lampe à cathode creuse</h3>
+    <div class="two">
+      <div style="display:grid;gap:14px">
+        <div class="lamp card">
+          <svg viewBox="0 0 520 200" role="img" aria-label="Coupe d'une lampe à cathode creuse">
+            <rect x="60" y="40" width="400" height="110" rx="46" fill="var(--glass)" opacity=".45" class="stroke-muted" stroke-width="1.5"/>
+            <rect x="30" y="72" width="34" height="46" rx="4" fill="var(--surface)" class="stroke-muted" stroke-width="1.5"/>
+            <path d="M40 95 q5 -8 10 0 t10 0 t10 0" fill="none" id="lampWave" stroke-width="2.5"/>
+            <path d="M330 62 h70 v66 h-70 v-12 h56 v-42 h-56z" fill="var(--metal)"/>
+            <rect x="336" y="76" width="48" height="38" rx="3" id="lampGlow" opacity=".8"/>
+            <line x1="220" y1="60" x2="220" y2="150" stroke="var(--metal)" stroke-width="4"/>
+            <line x1="220" y1="150" x2="220" y2="185" stroke="var(--metal)" stroke-width="2"/>
+            <line x1="400" y1="128" x2="400" y2="185" stroke="var(--metal)" stroke-width="2"/>
+            <g fill="var(--muted)" opacity=".7"><circle cx="120" cy="80" r="3"/><circle cx="160" cy="118" r="3"/><circle cx="270" cy="84" r="3"/><circle cx="290" cy="122" r="3"/><circle cx="180" cy="70" r="3"/></g>
+            <text x="47" y="140" text-anchor="middle" class="t-s">fenêtre</text>
+            <text x="47" y="154" text-anchor="middle" class="t-s">quartz</text>
+            <text x="220" y="30" text-anchor="middle" class="t-s">anode (+)</text>
+            <text x="365" y="30" text-anchor="middle" class="t-s">cathode creuse (−)</text>
+            <text x="365" y="44" text-anchor="middle" class="t-m" id="lampEl">en sodium</text>
+            <text x="130" y="176" text-anchor="middle" class="t-s">Ne ou Ar, quelques mbar</text>
+            <text x="310" y="196" text-anchor="middle" class="t-m">400 à 500 V</text>
+          </svg>
+        </div>
+        <div class="prose" style="display:grid;gap:10px">
+          <p>Une ampoule remplie de néon ou d'argon sous quelques millibars contient une anode et une <strong>cathode cylindrique faite de l'élément à doser</strong>. Les raies émises sortent par une fenêtre en quartz.</p>
+          <ul class="checks">
+            <li>Raies fines, quasi monochromatiques</li>
+            <li>Émission stable dans le temps</li>
+            <li>Intensité élevée</li>
+          </ul>
+          <p class="note">Les lampes, mono- ou multi-élémentaires, sont montées sur une tourelle rotative.</p>
+        </div>
+      </div>
+      <div class="card" style="display:grid;gap:12px">
+        <span class="panel-title">Ce qui se passe dans la lampe</span>
+        <div class="stepper" id="lampSteps" role="group" aria-label="Étapes dans la lampe"></div>
+        <div class="scene"><svg id="scene" viewBox="0 0 400 180" role="img" aria-label="Étape du fonctionnement de la lampe"></svg></div>
+        <p class="scene-cap" id="sceneCap" aria-live="polite"></p>
+        <div class="btnrow"><button class="btn" type="button" id="lampPlay">Lire les 4 étapes</button></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Atomiseur -->
+  <div class="sub">
+    <h3>L'atomiseur : nébuliseur et flamme</h3>
+    <div class="two">
+      <p class="prose">Le <strong>nébuliseur</strong> pulvérise la solution en fines gouttelettes dans une chambre de mélange. Les grosses gouttes se déposent sur les parois : seul l'aérosol fin, <strong>environ 1 à 10 % de l'échantillon</strong>, atteint la flamme.</p>
+      <p class="prose">Le <strong>brûleur à fente</strong>, placé dans l'axe optique, offre une grande longueur d'absorption, de <strong>5 à 10 cm</strong>. C'est le terme l de la loi de Beer-Lambert.</p>
+    </div>
+    <div class="card flames" role="table" aria-label="Principales flammes utilisées en SAA">
+      <span class="panel-title">Principales flammes (températures indicatives, variables selon les sources)</span>
+      <div id="flameRows" style="display:grid;gap:10px"></div>
+      <div class="axis" aria-hidden="true"><span></span><div class="ticks"><span style="left:0%">0</span><span style="left:31.25%">1 000</span><span style="left:62.5%">2 000</span><span style="left:93.75%">3 000 °C</span></div></div>
+    </div>
+    <div class="pc">
+      <div class="col pro">
+        <h4>Avantage</h4>
+        <ul><li>Introduction continue de l'échantillon, donc signal stable et facile à mesurer.</li></ul>
+      </div>
+      <div class="col con">
+        <h4>Inconvénients</h4>
+        <ul>
+          <li>Temps de séjour très court (≈ 10⁻³ s) : rendement d'atomisation faible.</li>
+          <li>Gaz de combustion (OH, CH) : absorptions non spécifiques, élargissement des raies.</li>
+          <li>Consommation d'échantillon importante.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Optique -->
+  <div class="sub">
+    <h3>Optique et mesure</h3>
+    <p class="prose">Le <strong>monochromateur</strong> élimine toute lumière de longueur d'onde différente de la raie de travail et fixe la bande passante. Le <strong>récepteur</strong> transforme la lumière restante en un signal numérique.</p>
+    <ol class="chain" aria-label="Chaîne optique et électronique">
+      <li class="opt">Fente d'entrée</li><li class="arrow" aria-hidden="true">→</li>
+      <li class="opt">Réseau de diffraction</li><li class="arrow" aria-hidden="true">→</li>
+      <li class="opt">Fente de sortie</li><li class="arrow" aria-hidden="true">→</li>
+      <li class="elec">Photomultiplicateur</li><li class="arrow" aria-hidden="true">→</li>
+      <li class="elec">Démodulateur</li><li class="arrow" aria-hidden="true">→</li>
+      <li class="elec">Amplificateur</li><li class="arrow" aria-hidden="true">→</li>
+      <li class="elec">Convertisseur A/N</li>
+    </ol>
+    <div class="today">
+      <span class="eyebrow">Et aujourd'hui ?</span>
+      <p>Les spectromètres actuels corrigent l'absorption non spécifique (lampe au deutérium ou effet Zeeman) et peuvent atomiser en <strong>four graphite</strong>, avec des limites de détection environ 100 fois plus basses. Pour l'analyse multi-élémentaire en routine, les laboratoires agro-alimentaires utilisent de plus en plus l'<strong>ICP-OES</strong> et l'<strong>ICP-MS</strong>.</p>
+    </div>
+  </div>
+</section>
+
+
+<!-- ================= CLASSIFICATION ================= -->
+<section id="classif">
+  <div class="sec-head">
+    <span class="eyebrow">Classification périodique</span>
+    <h2>Environ 65 éléments dosables par SAA</h2>
+    <p class="prose" style="color:var(--muted)">Essentiellement des métaux et des métalloïdes. La flamme air–acétylène convient à la plupart d'entre eux ; les éléments qui forment des oxydes réfractaires exigent la flamme N₂O–acétylène, plus chaude. Touchez un élément pour voir sa raie usuelle.</p>
+  </div>
+  <div class="pt-wrap">
+    <div class="pt" id="ptGrid" role="group" aria-label="Classification périodique des éléments dosables par SAA">
+      <div class="pt-legend" aria-hidden="true">
+        <span><i style="background:var(--teal)"></i>Flamme air–C₂H₂ (≈ 2 300 °C)</span>
+        <span><i style="background:var(--ink)"></i>Flamme N₂O–C₂H₂ (≈ 2 750 °C)</span>
+        <span><i style="background:var(--amber)"></i>Vapeur froide (Hg)</span>
+        <span><i style="background:var(--surface-2);outline:1px solid var(--rule)"></i>Non dosable directement</span>
+        <span><i class="h">H</i>Aussi par génération d'hydrures</span>
+        <span><i class="t"></i>Dosé dans le TP</span>
+      </div>
+    </div>
+  </div>
+  <div class="pt-side">
+    <div class="pt-count" id="ptCount"></div>
+    <div class="pt-info" id="ptInfo" aria-live="polite"></div>
+  </div>
+  <p class="note">Longueurs d'onde : raies de résonance usuelles, données à titre indicatif. Pour chaque dosage, se reporter au cahier des éléments de l'appareil. Le four graphite permet de doser la plupart de ces éléments à des teneurs environ 100 fois plus faibles.</p>
+</section>
+
+<!-- ================= 5. VERS LE TP ================= -->
+<section id="tp">
+  <div class="sec-head">
+    <span class="eyebrow">Vers le TP</span>
+    <h2>Deux pièges dans la flamme, deux additifs</h2>
+    <p class="prose" style="color:var(--muted)">Dans le TP, chaque groupe dose un seul élément. La matrice des fioles change selon le piège à éviter.</p>
+  </div>
+  <div class="tp">
+    <div class="card">
+      <span class="who">Groupe 3 · Mg²⁺ · 285,2 nm</span>
+      <h3>Interférence chimique</h3>
+      <p>Mg²⁺ forme avec les phosphates, sulfates et aluminates des composés réfractaires mal atomisés. Sans correction, on sous-estime la teneur.</p>
+      <span class="fix">HNO₃ 1 % + LaCl₃ 2 % (agent libérateur)</span>
+      <p class="note">La³⁺ capte ces anions et « libère » le magnésium.</p>
+    </div>
+    <div class="card">
+      <span class="who">Groupes 1 et 2 · Na⁺ 589,0 nm · K⁺ 766,5 nm</span>
+      <h3>Ionisation dans la flamme</h3>
+      <p>Na et K s'ionisent facilement. Les ions M⁺ n'absorbent pas à la longueur d'onde de mesure : le signal baisse et la droite se courbe.</p>
+      <span class="fix">HNO₃ 1 % + CsCl 2 g·L⁻¹ (tampon d'ionisation)</span>
+      <div class="ei" aria-label="Énergies de première ionisation"><span class="best">Cs 3,9 eV</span><span>K 4,3 eV</span><span>Na 5,1 eV</span><span>La 5,6 eV</span></div>
+      <p class="note">Le césium, plus facile à ioniser, sature la flamme en électrons et maintient Na et K à l'état d'atomes.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <span>Introduction au TP « Que contient vraiment votre eau ? » · BTS ANABIOTEC</span>
+  <span>LEGTA Le Gros Chêne · Pontivy</span>
+</footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+var h=6.62607015e-34, c=2.99792458e8, kB=1.380649e-23, eV=1.602176634e-19;
+var EL={
+  Na:{name:"sodium", lam:589.0, g:2, k:0.40, cmax:2.5, clin:1.0, color:"--na"},
+  K:{name:"potassium", lam:766.5, g:2, k:0.20, cmax:5.0, clin:2.0, color:"--k"},
+  Mg:{name:"magnésium", lam:285.2, g:3, k:1.00, cmax:1.0, clin:0.4, color:"--mg"}
+};
+var FLAMES=[
+  {id:"prop", s:"Propane–air", l:"≈ 1 900 °C", t:1900},
+  {id:"air", s:"Air–C₂H₂", l:"≈ 2 300 °C", t:2300},
+  {id:"n2o", s:"N₂O–C₂H₂", l:"≈ 2 750 °C", t:2750},
+  {id:"o2", s:"O₂–C₂H₂", l:"≈ 3 100 °C", t:3100}
+];
+var state={el:"Na", conc:0.40, flame:"air", scene:0};
+var reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+var NS="http://www.w3.org/2000/svg";
+function $(id){return document.getElementById(id);}
+function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
+function col(){return "var("+EL[state.el].color+")";}
+function fr(x,d){return x.toFixed(d).replace(".",",");}
+function sci(x,d){
+  if(x===0) return "0";
+  var e=Math.floor(Math.log10(x)), m=x/Math.pow(10,e);
+  if(m>=9.995&&d===1){m=1;e+=1;}
+  var sup={"-":"⁻","0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹"};
+  var es=String(e).split("").map(function(ch){return sup[ch];}).join("");
+  return fr(m,d)+" × 10"+es;
+}
+function big(n){ // 6700 -> "6 700", 3.3e8 -> "330 millions"
+  if(n>=1e9) return fr(n/1e9,n/1e9<10?1:0)+" milliards";
+  if(n>=1e6) return fr(n/1e6,n/1e6<10?1:0)+" millions";
+  return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g," ");
+}
+function el(tag,attrs,parent){var e=document.createElementNS(NS,tag);for(var k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e;}
+
+/* ---------- absorbance modèle ---------- */
+function absorb(C){
+  var e=EL[state.el];
+  if(C<=e.clin) return e.k*C;
+  var x=C-e.clin;
+  return e.k*e.clin + e.k*x/(1+1.4*x/e.clin);
+}
+
+/* ---------- atomes dans la flamme ---------- */
+var seedPts=[];
+(function(){var s=7;function r(){s=(s*9301+49297)%233280;return s/233280;}
+  for(var i=0;i<70;i++){var y=90+r()*135, half=12+ (y-80)*0.42; var x=441+(r()*2-1)*Math.min(half,64); seedPts.push([x,y,r()]);}
+})();
+
+function drawSim(){
+  var e=EL[state.el], C=state.conc, A=absorb(C), T=Math.pow(10,-A);
+  var colr=col();
+  ["beam0","beam1","beam2"].forEach(function(id){$(id).setAttribute("stroke",colr);});
+  $("bf0").setAttribute("stop-color",css(e.color));
+  $("bf1").setAttribute("stop-color",css(e.color));
+  $("bf1").setAttribute("stop-opacity",Math.max(0.06,T).toFixed(3));
+  $("beam1").setAttribute("stroke-opacity",Math.max(0.06,T).toFixed(3));
+  $("beam2").setAttribute("stroke-opacity",Math.max(0.06,T).toFixed(3));
+  $("cathGlow").setAttribute("fill",colr);
+  $("lampLbl").textContent="cathode en "+e.name;
+  $("lamLbl").textContent="λ = "+fr(e.lam,1)+" nm"+(state.el==="Mg"?" (UV)":"");
+  $("detA").textContent="A = "+fr(A,3);
+  var g=$("atoms"); while(g.firstChild) g.removeChild(g.firstChild);
+  var n=Math.round(C/e.cmax*70);
+  for(var i=0;i<n;i++){var p=seedPts[i];el("circle",{cx:p[0].toFixed(1),cy:p[1].toFixed(1),r:3.2,fill:colr,class:"atom",style:"animation-delay:"+(p[2]*1.6).toFixed(2)+"s"},g);}
+  $("concOut").textContent=fr(C,2)+" mg·L⁻¹";
+  $("roI").textContent=fr(T*100,1)+" %";
+  $("roA").textContent=fr(A,3);
+  $("warn").hidden=!(C>e.clin*1.02);
+  drawCal(A);
+}
+
+function drawCal(Acur){
+  var svg=$("calsvg"); while(svg.firstChild) svg.removeChild(svg.firstChild);
+  var e=EL[state.el], L=46,R=344,Tp=24,B=182, W=R-L, H=B-Tp;
+  var Amax=e.k*e.cmax; Amax=Math.ceil(Amax*10)/10;
+  function X(v){return L+v/e.cmax*W;} function Y(a){return B-a/Amax*H;}
+  el("rect",{x:L,y:Tp,width:(X(e.clin)-L),height:H,fill:"var(--teal-soft)"},svg);
+  var tl=el("text",{x:L+6,y:Tp+14,class:"t-m",fill:"var(--teal)"},svg); tl.textContent="zone linéaire"; tl.setAttribute("style","fill:var(--teal)");
+  for(var i=0;i<=4;i++){var a=Amax*i/4; el("line",{x1:L,x2:R,y1:Y(a),y2:Y(a),stroke:"var(--rule)","stroke-width":1},svg);
+    var t=el("text",{x:L-6,y:Y(a)+4,"text-anchor":"end",class:"t-m"},svg); t.textContent=fr(a,2);}
+  for(var j=0;j<=5;j++){var v=e.cmax*j/5; var t2=el("text",{x:X(v),y:B+16,"text-anchor":"middle",class:"t-m"},svg); t2.textContent=fr(v,(Math.abs(v-Math.round(v))<1e-9)?0:1);}
+  el("line",{x1:L,x2:R,y1:B,y2:B,stroke:"var(--muted)","stroke-width":1.2},svg);
+  el("line",{x1:L,x2:L,y1:Tp,y2:B,stroke:"var(--muted)","stroke-width":1.2},svg);
+  el("line",{x1:X(0),y1:Y(0),x2:X(e.cmax),y2:Y(Math.min(Amax,e.k*e.cmax)),stroke:"var(--muted)","stroke-width":1.2,"stroke-dasharray":"4 4"},svg);
+  var d=""; for(var k=0;k<=60;k++){var cc=e.cmax*k/60; var saved=state.conc; d+=(k?"L":"M")+X(cc).toFixed(1)+" "+Y(absorb(cc)).toFixed(1)+" ";}
+  el("path",{d:d,fill:"none",stroke:col(),"stroke-width":3},svg);
+  el("circle",{cx:X(state.conc),cy:Y(Acur),r:6,fill:"var(--surface)",stroke:"var(--ink)","stroke-width":2.5},svg);
+  var xl=el("text",{x:R,y:B+33,"text-anchor":"end",class:"t-m"},svg); xl.textContent="C (mg·L⁻¹)";
+  var yl=el("text",{x:L-6,y:12,"text-anchor":"end",class:"t-m"},svg); yl.textContent="A";
+  var dl=el("text",{x:R-4,y:Y(Math.min(Amax,e.k*e.cmax))+16,"text-anchor":"end",class:"t-s"},svg); dl.textContent="A = k·C idéal";
+}
+
+/* ---------- niveaux d'énergie ---------- */
+var lv={atomY:0,busy:false};
+function eUp(){return h*c/(EL[state.el].lam*1e-9)/eV;}
+function lvY1(){return 250-eUp()*46;}
+function drawLevels(){
+  var svg=$("lvsvg"); while(svg.firstChild) svg.removeChild(svg.firstChild);
+  var e=EL[state.el], y1=lvY1();
+  el("line",{x1:110,x2:400,y1:250,y2:250,stroke:"var(--ink)","stroke-width":3},svg);
+  el("line",{x1:110,x2:400,y1:y1,y2:y1,stroke:"var(--ink)","stroke-width":2.5},svg);
+  el("line",{x1:110,x2:400,y1:24,y2:24,stroke:"var(--muted)","stroke-width":1.5,"stroke-dasharray":"5 5"},svg);
+  var t0=el("text",{x:408,y:254,class:"t"},svg); t0.textContent="E₀";
+  var t0b=el("text",{x:408,y:270,class:"t-s"},svg); t0b.textContent="fondamental";
+  var t1=el("text",{x:408,y:y1+4,class:"t"},svg); t1.textContent="E₁";
+  var t1b=el("text",{x:408,y:y1+20,class:"t-s"},svg); t1b.textContent="1er état excité";
+  var t2=el("text",{x:408,y:28,class:"t-s"},svg); t2.textContent="niveaux supérieurs";
+  el("line",{x1:95,x2:95,y1:246,y2:y1+4,stroke:col(),"stroke-width":2,"marker-end":""},svg);
+  el("path",{d:"M89 "+(y1+12)+" L95 "+(y1+2)+" L101 "+(y1+12)+"Z",fill:col()},svg);
+  var dt=el("text",{x:88,y:(250+y1)/2,"text-anchor":"end",class:"t-m"},svg); dt.textContent="ΔE = "+fr(eUp(),2)+" eV";
+  for(var i=0;i<9;i++){ if(i===4) continue; el("circle",{cx:140+i*28,cy:242,r:7,fill:"var(--teal)",opacity:.55},svg);}
+  lv.atom=el("circle",{cx:252,cy:242,r:8,fill:"var(--teal)"},svg);
+  lv.photon=el("g",{opacity:0},svg);
+  lv.wave=el("path",{d:"",fill:"none","stroke-width":3,"stroke-linecap":"round"},lv.photon);
+  $("dotRes").style.background=col();
+  $("lblRes").textContent="Photon à "+fr(e.lam,1)+" nm";
+  var nu=c/(e.lam*1e-9), E=h*nu;
+  $("eStats").innerHTML=
+    '<div class="ro"><span class="k">λ</span><span class="v">'+fr(e.lam,1)+' nm</span></div>'+
+    '<div class="ro"><span class="k">ν = c / λ</span><span class="v">'+sci(nu,2)+' s⁻¹</span></div>'+
+    '<div class="ro main"><span class="k">ΔE = h·c / λ</span><span class="v">'+sci(E,2)+' J</span></div>'+
+    '<div class="ro"><span class="k">soit</span><span class="v">'+fr(E/eV,2)+' eV</span></div>';
+  $("lvStatus").textContent="Envoyez un photon sur l'atome.";
+}
+function wavePath(x0,len,wl){
+  var d="M"+x0+" 0"; var amp=7;
+  for(var x=0;x<=len;x+=2){d+=" L"+(x0+x)+" "+(amp*Math.sin(2*Math.PI*x/wl)).toFixed(2);}
+  return d;
+}
+function sendPhoton(res){
+  if(lv.busy) return; lv.busy=true;
+  var y1=lvY1(), yMid=246; var colr=res?css(EL[state.el].color):css("--off");
+  lv.wave.setAttribute("d",wavePath(0,70,res?22:14)); lv.wave.setAttribute("stroke",colr);
+  lv.photon.setAttribute("opacity",1);
+  $("lvStatus").textContent=res?"Le photon arrive à la bonne énergie …":"Le photon n'a pas la bonne énergie …";
+  var start=null, dur=reduce?1:1300, endX=res?178:560;
+  function step(ts){
+    if(!start) start=ts; var p=Math.min(1,(ts-start)/dur);
+    var x=-80+(endX+80)*p;
+    lv.photon.setAttribute("transform","translate("+x.toFixed(1)+" "+yMid+")");
+    if(p<1){requestAnimationFrame(step);return;}
+    if(res){
+      lv.photon.setAttribute("opacity",0);
+      lv.atom.setAttribute("cy",y1-8); lv.atom.setAttribute("fill",css("--red"));
+      $("lvStatus").textContent="Absorbé : l'atome passe de E₀ à E₁.";
+      setTimeout(function(){lv.atom.setAttribute("cy",242);lv.atom.setAttribute("fill",css("--teal"));lv.busy=false;$("lvStatus").textContent="Il revient à E₀ par chocs dans la flamme. Recommencez ?";},1600);
+    } else {
+      lv.photon.setAttribute("opacity",0);
+      $("lvStatus").textContent="Non absorbé : le photon traverse sans interaction.";
+      lv.busy=false;
+    }
+  }
+  requestAnimationFrame(step);
+}
+$("photonRes").addEventListener("click",function(){sendPhoton(true);});
+$("photonOff").addEventListener("click",function(){sendPhoton(false);});
+
+/* ---------- Boltzmann ---------- */
+var order=(function(){var a=[];for(var i=0;i<10000;i++)a.push(i);var s=42;function r(){s=(s*16807)%2147483647;return s/2147483647;}
+  for(var j=a.length-1;j>0;j--){var k=Math.floor(r()*(j+1));var t=a[j];a[j]=a[k];a[k]=t;}return a;})();
+function drawBoltz(){
+  var e=EL[state.el], f=FLAMES.filter(function(x){return x.id===state.flame;})[0];
+  var T=f.t+273.15, dE=h*c/(e.lam*1e-9), r=e.g*Math.exp(-dE/(kB*T));
+  var n=r*10000, shown=Math.round(n);
+  var cv=$("grid"), ctx=cv.getContext("2d"), cell=4;
+  ctx.fillStyle=css("--surface"); ctx.fillRect(0,0,400,400);
+  ctx.fillStyle=css("--grid-off");
+  for(var i=0;i<10000;i++){var x=(i%100)*cell, y=Math.floor(i/100)*cell; ctx.fillRect(x+.5,y+.5,cell-1,cell-1);}
+  ctx.fillStyle=css(e.color);
+  for(var j=0;j<shown;j++){var id=order[j],xx=(id%100)*cell,yy=Math.floor(id/100)*cell; ctx.fillRect(xx-3,yy-3,cell+6,cell+6);}
+  $("bzRatio").textContent="Nₙ / N₀ ≈ "+sci(r,1);
+  var one=1/r, txt="T = "+big(T)+" K. ";
+  if(n>=1) txt+="Environ "+fr(n,n<10?1:0)+" atome"+(n>=2?"s":"")+" excité"+(n>=2?"s":"")+" sur 10 000, soit 1 sur "+big(one)+".";
+  else txt+="Moins d'un atome excité sur cette grille : 1 atome sur "+big(one)+". Il faudrait des milliers de grilles comme celle-ci pour en trouver un.";
+  $("bzText").textContent=txt;
+}
+(function(){var s=$("flameSel");FLAMES.forEach(function(f){var b=document.createElement("button");b.type="button";b.dataset.flame=f.id;b.innerHTML='<span class="s">'+f.s+'</span><span class="l">'+f.l+'</span>';b.setAttribute("aria-pressed",f.id===state.flame);b.addEventListener("click",function(){state.flame=f.id;s.querySelectorAll("button").forEach(function(x){x.setAttribute("aria-pressed",x.dataset.flame===f.id);});drawBoltz();});s.appendChild(b);});})();
+
+/* ---------- Lampe ---------- */
+var SCENES=[
+  {t:"1. Ionisation", cap:"La tension de 400 à 500 V provoque une décharge qui ionise le gaz de remplissage : Ne → Ne⁺ + e⁻."},
+  {t:"2. Pulvérisation", cap:"Les ions Ne⁺, attirés par la cathode, la bombardent et en arrachent des atomes M de l'élément."},
+  {t:"3. Excitation", cap:"Les atomes M arrachés sont excités par les chocs avec les ions Ne⁺ et les électrons : M → M*."},
+  {t:"4. Émission", cap:"En revenant à l'état fondamental, M* émet les raies caractéristiques de l'élément, qui sortent par la fenêtre en quartz."}
+];
+function circ(g,x,y,r,fill,label,lc){el("circle",{cx:x,cy:y,r:r,fill:fill},g);var t=el("text",{x:x,y:y+4.5,"text-anchor":"middle","font-family":"var(--mono)","font-size":13,fill:lc||"#fff"},g);t.textContent=label;}
+function arrow(g,x1,y1,x2,y2,stroke){el("line",{x1:x1,y1:y1,x2:x2,y2:y2,stroke:stroke||"var(--muted)","stroke-width":3},g);var a=Math.atan2(y2-y1,x2-x1),s=9;el("path",{d:"M"+x2+" "+y2+" L"+(x2-s*Math.cos(a-0.45))+" "+(y2-s*Math.sin(a-0.45))+" L"+(x2-s*Math.cos(a+0.45))+" "+(y2-s*Math.sin(a+0.45))+"Z",fill:stroke||"var(--muted)"},g);}
+function drawScene(){
+  var svg=$("scene"); while(svg.firstChild) svg.removeChild(svg.firstChild);
+  var s=state.scene, sym=state.el, colr=col();
+  if(s===0){circ(svg,110,90,22,"var(--metal)","Ne");arrow(svg,145,90,235,90);circ(svg,275,90,24,"var(--amber)","Ne⁺","#1b1300");var t=el("text",{x:275,y:145,"text-anchor":"middle",class:"t"},svg);t.textContent="+ e⁻";var t2=el("text",{x:190,y:70,"text-anchor":"middle",class:"t-m"},svg);t2.textContent="décharge";}
+  if(s===1){el("rect",{x:70,y:20,width:26,height:140,fill:"var(--metal)"},svg);var tc=el("text",{x:83,y:14,"text-anchor":"middle",class:"t-s"},svg);tc.textContent="cathode ("+sym+")";circ(svg,300,50,22,"var(--amber)","Ne⁺","#1b1300");arrow(svg,276,58,106,98,"var(--amber)");arrow(svg,106,118,190,138,"var(--teal)");circ(svg,215,140,20,"var(--teal)",sym);}
+  if(s===2){circ(svg,110,90,24,"var(--teal)",sym);arrow(svg,145,90,245,90);circ(svg,285,90,26,"var(--red)",sym+"*");var t3=el("text",{x:195,y:140,"text-anchor":"middle",class:"t"},svg);t3.textContent="chocs Ne⁺, e⁻";}
+  if(s===3){circ(svg,90,90,26,"var(--red)",sym+"*");var d="M125 90";for(var x=0;x<=170;x+=2){d+=" L"+(125+x)+" "+(90+10*Math.sin(2*Math.PI*x/28)).toFixed(1);}el("path",{d:d,fill:"none",stroke:colr,"stroke-width":3.5},svg);arrow(svg,300,90,320,90,colr);circ(svg,350,90,20,"var(--teal)",sym);var t4=el("text",{x:210,y:140,"text-anchor":"middle",class:"t"},svg);t4.textContent="h·ν à "+fr(EL[sym].lam,1)+" nm";}
+  $("sceneCap").textContent=SCENES[s].cap;
+  $("lampSteps").querySelectorAll("button").forEach(function(b,i){b.setAttribute("aria-pressed",i===s);});
+}
+(function(){var w=$("lampSteps");SCENES.forEach(function(sc,i){var b=document.createElement("button");b.type="button";b.textContent=sc.t;b.addEventListener("click",function(){stopPlay();state.scene=i;drawScene();});w.appendChild(b);});})();
+var playT=null;
+function stopPlay(){if(playT){clearInterval(playT);playT=null;$("lampPlay").textContent="Lire les 4 étapes";}}
+$("lampPlay").addEventListener("click",function(){
+  if(playT){stopPlay();return;}
+  state.scene=0;drawScene();$("lampPlay").textContent="Arrêter";
+  playT=setInterval(function(){if(state.scene>=3){stopPlay();return;}state.scene++;drawScene();},2400);
+});
+function drawLamp(){$("lampGlow").setAttribute("fill",col());$("lampWave").setAttribute("stroke",col());$("lampEl").textContent="en "+EL[state.el].name;}
+
+/* ---------- Flammes ---------- */
+(function(){
+  var rows=[
+    {n:"C₂H₂ + O₂",u:"composés réfractaires",a:3100,b:3100},
+    {n:"C₂H₂ + N₂O",u:"éléments réfractaires (Al, Si, Ti…)",a:2750,b:2750},
+    {n:"C₂H₂ + air",u:"cas général",a:2300,b:2300,tp:true},
+    {n:"Propane / butane + air",u:"éléments facilement ionisables (alcalins)",a:1900,b:1900},
+    {n:"H₂ + Ar (+ air entraîné)",u:"hydrures volatils (As, Se…)",a:300,b:1000}
+  ];
+  var box=$("flameRows");
+  rows.forEach(function(r){
+    var d=document.createElement("div"); d.className="frow"+(r.tp?" tp":""); d.setAttribute("role","row");
+    var left=r.a===r.b?0:r.a/3200*100, width=(r.b/3200*100)-left;
+    d.innerHTML='<span class="name" role="rowheader">'+r.n+'<span class="use">'+r.u+'</span></span>'+
+      '<div class="track" role="cell"><div class="bar'+(width<40?' narrow':'')+'" style="left:'+left+'%;width:'+width+'%"><b>'+(r.a===r.b?"≈ "+big(r.a)+" °C":big(r.a)+" à "+big(r.b)+" °C")+'</b></div></div>';
+    box.appendChild(d);
+  });
+})();
+
+/* ---------- Synchronisation élément ---------- */
+function setEl(sym){
+  var oldE=EL[state.el], frac=state.conc/oldE.cmax;
+  state.el=sym; var e=EL[sym];
+  state.conc=Math.round(frac*e.cmax*100)/100;
+  $("conc").value=Math.round(state.conc/e.cmax*100);
+  document.querySelectorAll("[data-elsel] button").forEach(function(b){b.setAttribute("aria-pressed",b.dataset.el===sym);});
+  renderAll();
+}
+document.querySelectorAll("[data-elsel] button").forEach(function(b){b.addEventListener("click",function(){setEl(b.dataset.el);});});
+$("conc").addEventListener("input",function(){state.conc=Math.round(this.value/100*EL[state.el].cmax*100)/100;drawSim();});
+
+function renderAll(){drawSim();drawLevels();drawBoltz();drawScene();drawLamp();}
+renderAll();
+if(window.matchMedia){var mq=window.matchMedia("(prefers-color-scheme: dark)");if(mq.addEventListener)mq.addEventListener("change",renderAll);}
+new MutationObserver(renderAll).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+})();
+</script>
+<script>
+(function(){
+"use strict";
+var PT=[{"s": "H", "z": 1, "r": 1, "c": 1, "k": "X", "n": "Hydrogène", "l": "", "h": false, "tp": false, "why": "Non-métal : ses raies de résonance sont dans l'UV lointain (< 190 nm), hors de portée de l'appareil."}, {"s": "He", "z": 2, "r": 1, "c": 18, "k": "X", "n": "Hélium", "l": "", "h": false, "tp": false, "why": "Gaz noble : aucune chimie en solution, raies dans l'UV lointain."}, {"s": "Li", "z": 3, "r": 2, "c": 1, "k": "A", "n": "Lithium", "l": "670,8", "h": false, "tp": false, "why": ""}, {"s": "Be", "z": 4, "r": 2, "c": 2, "k": "N", "n": "Béryllium", "l": "234,9", "h": false, "tp": false, "why": ""}, {"s": "B", "z": 5, "r": 2, "c": 13, "k": "N", "n": "Bore", "l": "249,7", "h": false, "tp": false, "why": ""}, {"s": "C", "z": 6, "r": 2, "c": 14, "k": "X", "n": "Carbone", "l": "", "h": false, "tp": false, "why": "Non-métal : ses raies de résonance sont dans l'UV lointain (< 190 nm), hors de portée de l'appareil."}, {"s": "N", "z": 7, "r": 2, "c": 15, "k": "X", "n": "Azote", "l": "", "h": false, "tp": false, "why": "Non-métal : ses raies de résonance sont dans l'UV lointain (< 190 nm), hors de portée de l'appareil."}, {"s": "O", "z": 8, "r": 2, "c": 16, "k": "X", "n": "Oxygène", "l": "", "h": false, "tp": false, "why": "Non-métal : ses raies de résonance sont dans l'UV lointain (< 190 nm), hors de portée de l'appareil."}, {"s": "F", "z": 9, "r": 2, "c": 17, "k": "X", "n": "Fluor", "l": "", "h": false, "tp": false, "why": "Non-métal : ses raies de résonance sont dans l'UV lointain (< 190 nm), hors de portée de l'appareil."}, {"s": "Ne", "z": 10, "r": 2, "c": 18, "k": "X", "n": "Néon", "l": "", "h": false, "tp": false, "why": "Gaz noble : aucune chimie en solution, raies dans l'UV lointain."}, {"s": "Na", "z": 11, "r": 3, "c": 1, "k": "A", "n": "Sodium", "l": "589,0", "h": false, "tp": true, "why": ""}, {"s": "Mg", "z": 12, "r": 3, "c": 2, "k": "A", "n": "Magnésium", "l": "285,2", "h": false, "tp": true, "why": ""}, {"s": "Al", "z": 13, "r": 3, "c": 13, "k": "N", "n": "Aluminium", "l": "309,3", "h": false, "tp": false, "why": ""}, {"s": "Si", "z": 14, "r": 3, "c": 14, "k": "N", "n": "Silicium", "l": "251,6", "h": false, "tp": false, "why": ""}, {"s": "P", "z": 15, "r": 3, "c": 15, "k": "X", "n": "Phosphore", "l": "", "h": false, "tp": false, "why": "Non-métal : ses raies de résonance sont dans l'UV lointain (< 190 nm), hors de portée de l'appareil."}, {"s": "S", "z": 16, "r": 3, "c": 16, "k": "X", "n": "Soufre", "l": "", "h": false, "tp": false, "why": "Non-métal : ses raies de résonance sont dans l'UV lointain (< 190 nm), hors de portée de l'appareil."}, {"s": "Cl", "z": 17, "r": 3, "c": 17, "k": "X", "n": "Chlore", "l": "", "h": false, "tp": false, "why": "Non-métal : ses raies de résonance sont dans l'UV lointain (< 190 nm), hors de portée de l'appareil."}, {"s": "Ar", "z": 18, "r": 3, "c": 18, "k": "X", "n": "Argon", "l": "", "h": false, "tp": false, "why": "Gaz noble : aucune chimie en solution, raies dans l'UV lointain."}, {"s": "K", "z": 19, "r": 4, "c": 1, "k": "A", "n": "Potassium", "l": "766,5", "h": false, "tp": true, "why": ""}, {"s": "Ca", "z": 20, "r": 4, "c": 2, "k": "A", "n": "Calcium", "l": "422,7", "h": false, "tp": false, "why": ""}, {"s": "Sc", "z": 21, "r": 4, "c": 3, "k": "N", "n": "Scandium", "l": "391,2", "h": false, "tp": false, "why": ""}, {"s": "Ti", "z": 22, "r": 4, "c": 4, "k": "N", "n": "Titane", "l": "364,3", "h": false, "tp": false, "why": ""}, {"s": "V", "z": 23, "r": 4, "c": 5, "k": "N", "n": "Vanadium", "l": "318,4", "h": false, "tp": false, "why": ""}, {"s": "Cr", "z": 24, "r": 4, "c": 6, "k": "A", "n": "Chrome", "l": "357,9", "h": false, "tp": false, "why": ""}, {"s": "Mn", "z": 25, "r": 4, "c": 7, "k": "A", "n": "Manganèse", "l": "279,5", "h": false, "tp": false, "why": ""}, {"s": "Fe", "z": 26, "r": 4, "c": 8, "k": "A", "n": "Fer", "l": "248,3", "h": false, "tp": false, "why": ""}, {"s": "Co", "z": 27, "r": 4, "c": 9, "k": "A", "n": "Cobalt", "l": "240,7", "h": false, "tp": false, "why": ""}, {"s": "Ni", "z": 28, "r": 4, "c": 10, "k": "A", "n": "Nickel", "l": "232,0", "h": false, "tp": false, "why": ""}, {"s": "Cu", "z": 29, "r": 4, "c": 11, "k": "A", "n": "Cuivre", "l": "324,8", "h": false, "tp": false, "why": ""}, {"s": "Zn", "z": 30, "r": 4, "c": 12, "k": "A", "n": "Zinc", "l": "213,9", "h": false, "tp": false, "why": ""}, {"s": "Ga", "z": 31, "r": 4, "c": 13, "k": "A", "n": "Gallium", "l": "287,4", "h": false, "tp": false, "why": ""}, {"s": "Ge", "z": 32, "r": 4, "c": 14, "k": "N", "n": "Germanium", "l": "265,1", "h": true, "tp": false, "why": ""}, {"s": "As", "z": 33, "r": 4, "c": 15, "k": "A", "n": "Arsenic", "l": "193,7", "h": true, "tp": false, "why": ""}, {"s": "Se", "z": 34, "r": 4, "c": 16, "k": "A", "n": "Sélénium", "l": "196,0", "h": true, "tp": false, "why": ""}, {"s": "Br", "z": 35, "r": 4, "c": 17, "k": "X", "n": "Brome", "l": "", "h": false, "tp": false, "why": "Non-métal : ses raies de résonance sont dans l'UV lointain (< 190 nm), hors de portée de l'appareil."}, {"s": "Kr", "z": 36, "r": 4, "c": 18, "k": "X", "n": "Krypton", "l": "", "h": false, "tp": false, "why": "Gaz noble : aucune chimie en solution, raies dans l'UV lointain."}, {"s": "Rb", "z": 37, "r": 5, "c": 1, "k": "A", "n": "Rubidium", "l": "780,0", "h": false, "tp": false, "why": ""}, {"s": "Sr", "z": 38, "r": 5, "c": 2, "k": "A", "n": "Strontium", "l": "460,7", "h": false, "tp": false, "why": ""}, {"s": "Y", "z": 39, "r": 5, "c": 3, "k": "N", "n": "Yttrium", "l": "410,2", "h": false, "tp": false, "why": ""}, {"s": "Zr", "z": 40, "r": 5, "c": 4, "k": "N", "n": "Zirconium", "l": "360,1", "h": false, "tp": false, "why": ""}, {"s": "Nb", "z": 41, "r": 5, "c": 5, "k": "N", "n": "Niobium", "l": "334,9", "h": false, "tp": false, "why": ""}, {"s": "Mo", "z": 42, "r": 5, "c": 6, "k": "N", "n": "Molybdène", "l": "313,3", "h": false, "tp": false, "why": ""}, {"s": "Tc", "z": 43, "r": 5, "c": 7, "k": "X", "n": "Technétium", "l": "", "h": false, "tp": false, "why": "Élément radioactif : pas de lampe ni d'usage en routine."}, {"s": "Ru", "z": 44, "r": 5, "c": 8, "k": "A", "n": "Ruthénium", "l": "349,9", "h": false, "tp": false, "why": ""}, {"s": "Rh", "z": 45, "r": 5, "c": 9, "k": "A", "n": "Rhodium", "l": "343,5", "h": false, "tp": false, "why": ""}, {"s": "Pd", "z": 46, "r": 5, "c": 10, "k": "A", "n": "Palladium", "l": "244,8", "h": false, "tp": false, "why": ""}, {"s": "Ag", "z": 47, "r": 5, "c": 11, "k": "A", "n": "Argent", "l": "328,1", "h": false, "tp": false, "why": ""}, {"s": "Cd", "z": 48, "r": 5, "c": 12, "k": "A", "n": "Cadmium", "l": "228,8", "h": false, "tp": false, "why": ""}, {"s": "In", "z": 49, "r": 5, "c": 13, "k": "A", "n": "Indium", "l": "303,9", "h": false, "tp": false, "why": ""}, {"s": "Sn", "z": 50, "r": 5, "c": 14, "k": "A", "n": "Étain", "l": "224,6", "h": true, "tp": false, "why": ""}, {"s": "Sb", "z": 51, "r": 5, "c": 15, "k": "A", "n": "Antimoine", "l": "217,6", "h": true, "tp": false, "why": ""}, {"s": "Te", "z": 52, "r": 5, "c": 16, "k": "A", "n": "Tellure", "l": "214,3", "h": true, "tp": false, "why": ""}, {"s": "I", "z": 53, "r": 5, "c": 17, "k": "X", "n": "Iode", "l": "", "h": false, "tp": false, "why": "Non-métal : ses raies de résonance sont dans l'UV lointain (< 190 nm), hors de portée de l'appareil."}, {"s": "Xe", "z": 54, "r": 5, "c": 18, "k": "X", "n": "Xénon", "l": "", "h": false, "tp": false, "why": "Gaz noble : aucune chimie en solution, raies dans l'UV lointain."}, {"s": "Cs", "z": 55, "r": 6, "c": 1, "k": "A", "n": "Césium", "l": "852,1", "h": false, "tp": false, "why": ""}, {"s": "Ba", "z": 56, "r": 6, "c": 2, "k": "N", "n": "Baryum", "l": "553,6", "h": false, "tp": false, "why": ""}, {"s": "Hf", "z": 72, "r": 6, "c": 4, "k": "N", "n": "Hafnium", "l": "307,3", "h": false, "tp": false, "why": ""}, {"s": "Ta", "z": 73, "r": 6, "c": 5, "k": "N", "n": "Tantale", "l": "271,5", "h": false, "tp": false, "why": ""}, {"s": "W", "z": 74, "r": 6, "c": 6, "k": "N", "n": "Tungstène", "l": "255,1", "h": false, "tp": false, "why": ""}, {"s": "Re", "z": 75, "r": 6, "c": 7, "k": "N", "n": "Rhénium", "l": "346,0", "h": false, "tp": false, "why": ""}, {"s": "Os", "z": 76, "r": 6, "c": 8, "k": "N", "n": "Osmium", "l": "290,9", "h": false, "tp": false, "why": ""}, {"s": "Ir", "z": 77, "r": 6, "c": 9, "k": "A", "n": "Iridium", "l": "208,9", "h": false, "tp": false, "why": ""}, {"s": "Pt", "z": 78, "r": 6, "c": 10, "k": "A", "n": "Platine", "l": "265,9", "h": false, "tp": false, "why": ""}, {"s": "Au", "z": 79, "r": 6, "c": 11, "k": "A", "n": "Or", "l": "242,8", "h": false, "tp": false, "why": ""}, {"s": "Hg", "z": 80, "r": 6, "c": 12, "k": "V", "n": "Mercure", "l": "253,7", "h": false, "tp": false, "why": ""}, {"s": "Tl", "z": 81, "r": 6, "c": 13, "k": "A", "n": "Thallium", "l": "276,8", "h": false, "tp": false, "why": ""}, {"s": "Pb", "z": 82, "r": 6, "c": 14, "k": "A", "n": "Plomb", "l": "217,0", "h": false, "tp": false, "why": ""}, {"s": "Bi", "z": 83, "r": 6, "c": 15, "k": "A", "n": "Bismuth", "l": "223,1", "h": true, "tp": false, "why": ""}, {"s": "Po", "z": 84, "r": 6, "c": 16, "k": "X", "n": "Polonium", "l": "", "h": false, "tp": false, "why": "Élément radioactif : pas de lampe ni d'usage en routine."}, {"s": "At", "z": 85, "r": 6, "c": 17, "k": "X", "n": "Astate", "l": "", "h": false, "tp": false, "why": "Élément radioactif : pas de lampe ni d'usage en routine."}, {"s": "Rn", "z": 86, "r": 6, "c": 18, "k": "X", "n": "Radon", "l": "", "h": false, "tp": false, "why": "Gaz noble : aucune chimie en solution, raies dans l'UV lointain."}, {"s": "Fr", "z": 87, "r": 7, "c": 1, "k": "X", "n": "Francium", "l": "", "h": false, "tp": false, "why": "Élément radioactif : pas de lampe ni d'usage en routine."}, {"s": "Ra", "z": 88, "r": 7, "c": 2, "k": "X", "n": "Radium", "l": "", "h": false, "tp": false, "why": "Élément radioactif : pas de lampe ni d'usage en routine."}, {"s": "Rf", "z": 104, "r": 7, "c": 4, "k": "X", "n": "Rutherfordium", "l": "", "h": false, "tp": false, "why": "Élément radioactif : pas de lampe ni d'usage en routine."}, {"s": "Db", "z": 105, "r": 7, "c": 5, "k": "X", "n": "Dubnium", "l": "", "h": false, "tp": false, "why": "Élément radioactif : pas de lampe ni d'usage en routine."}, {"s": "Sg", "z": 106, "r": 7, "c": 6, "k": "X", "n": "Seaborgium", "l": "", "h": false, "tp": false, "why": "Élément radioactif : pas de lampe ni d'usage en routine."}, {"s": "Bh", "z": 107, "r": 7, "c": 7, "k": "X", "n": "Bohrium", "l": "", "h": false, "tp": false, "why": "Élément radioactif : pas de lampe ni d'usage en routine."}, {"s": "Hs", "z": 108, "r": 7, "c": 8, "k": "X", "n": "Hassium", "l": "", "h": false, "tp": false, "why": "Élément radioactif : pas de lampe ni d'usage en routine."}, {"s": "Mt", "z": 109, "r": 7, "c": 9, "k": "X", "n": "Meitnérium", "l": "", "h": false, "tp": false, "why": "Élément radioactif : pas de lampe ni d'usage en routine."}, {"s": "Ds", "z": 110, "r": 7, "c": 10, "k": "X", "n": "Darmstadtium", "l": "", "h": false, "tp": false, "why": "Élément radioactif : pas de lampe ni d'usage en routine."}, {"s": "Rg", "z": 111, "r": 7, "c": 11, "k": "X", "n": "Roentgenium", "l": "", "h": false, "tp": false, "why": "Élément radioactif : pas de lampe ni d'usage en routine."}, {"s": "Cn", "z": 112, "r": 7, "c": 12, "k": "X", "n": "Copernicium", "l": "", "h": false, "tp": false, "why": "Élément radioactif : pas de lampe ni d'usage en routine."}, {"s": "Nh", "z": 113, "r": 7, "c": 13, "k": "X", "n": "Nihonium", "l": "", "h": false, "tp": false, "why": "Élément radioactif : pas de lampe ni d'usage en routine."}, {"s": "Fl", "z": 114, "r": 7, "c": 14, "k": "X", "n": "Flérovium", "l": "", "h": false, "tp": false, "why": "Élément radioactif : pas de lampe ni d'usage en routine."}, {"s": "Mc", "z": 115, "r": 7, "c": 15, "k": "X", "n": "Moscovium", "l": "", "h": false, "tp": false, "why": "Élément radioactif : pas de lampe ni d'usage en routine."}, {"s": "Lv", "z": 116, "r": 7, "c": 16, "k": "X", "n": "Livermorium", "l": "", "h": false, "tp": false, "why": "Élément radioactif : pas de lampe ni d'usage en routine."}, {"s": "Ts", "z": 117, "r": 7, "c": 17, "k": "X", "n": "Tennesse", "l": "", "h": false, "tp": false, "why": "Élément radioactif : pas de lampe ni d'usage en routine."}, {"s": "Og", "z": 118, "r": 7, "c": 18, "k": "X", "n": "Oganesson", "l": "", "h": false, "tp": false, "why": "Gaz noble : aucune chimie en solution, raies dans l'UV lointain."}, {"s": "La", "z": 57, "r": 9, "c": 3, "k": "N", "n": "Lanthane", "l": "550,1", "h": false, "tp": false, "why": ""}, {"s": "Ce", "z": 58, "r": 9, "c": 4, "k": "X", "n": "Cérium", "l": "", "h": false, "tp": false, "why": "Raies trop peu sensibles : le cérium n'est pas dosé par SAA en pratique."}, {"s": "Pr", "z": 59, "r": 9, "c": 5, "k": "N", "n": "Praséodyme", "l": "495,1", "h": false, "tp": false, "why": ""}, {"s": "Nd", "z": 60, "r": 9, "c": 6, "k": "N", "n": "Néodyme", "l": "463,4", "h": false, "tp": false, "why": ""}, {"s": "Pm", "z": 61, "r": 9, "c": 7, "k": "X", "n": "Prométhium", "l": "", "h": false, "tp": false, "why": "Élément radioactif : pas de lampe ni d'usage en routine."}, {"s": "Sm", "z": 62, "r": 9, "c": 8, "k": "N", "n": "Samarium", "l": "429,7", "h": false, "tp": false, "why": ""}, {"s": "Eu", "z": 63, "r": 9, "c": 9, "k": "N", "n": "Europium", "l": "459,4", "h": false, "tp": false, "why": ""}, {"s": "Gd", "z": 64, "r": 9, "c": 10, "k": "N", "n": "Gadolinium", "l": "368,4", "h": false, "tp": false, "why": ""}, {"s": "Tb", "z": 65, "r": 9, "c": 11, "k": "N", "n": "Terbium", "l": "432,6", "h": false, "tp": false, "why": ""}, {"s": "Dy", "z": 66, "r": 9, "c": 12, "k": "N", "n": "Dysprosium", "l": "421,2", "h": false, "tp": false, "why": ""}, {"s": "Ho", "z": 67, "r": 9, "c": 13, "k": "N", "n": "Holmium", "l": "410,4", "h": false, "tp": false, "why": ""}, {"s": "Er", "z": 68, "r": 9, "c": 14, "k": "N", "n": "Erbium", "l": "400,8", "h": false, "tp": false, "why": ""}, {"s": "Tm", "z": 69, "r": 9, "c": 15, "k": "N", "n": "Thulium", "l": "371,8", "h": false, "tp": false, "why": ""}, {"s": "Yb", "z": 70, "r": 9, "c": 16, "k": "N", "n": "Ytterbium", "l": "398,8", "h": false, "tp": false, "why": ""}, {"s": "Lu", "z": 71, "r": 9, "c": 17, "k": "N", "n": "Lutécium", "l": "336,0", "h": false, "tp": false, "why": ""}, {"s": "Ac", "z": 89, "r": 10, "c": 3, "k": "X", "n": "Actinium", "l": "", "h": false, "tp": false, "why": "Élément radioactif : pas de lampe ni d'usage en routine."}, {"s": "Th", "z": 90, "r": 10, "c": 4, "k": "X", "n": "Thorium", "l": "", "h": false, "tp": false, "why": "Élément radioactif : pas de lampe ni d'usage en routine."}, {"s": "Pa", "z": 91, "r": 10, "c": 5, "k": "X", "n": "Protactinium", "l": "", "h": false, "tp": false, "why": "Élément radioactif : pas de lampe ni d'usage en routine."}, {"s": "U", "z": 92, "r": 10, "c": 6, "k": "N", "n": "Uranium", "l": "358,5", "h": false, "tp": false, "why": ""}, {"s": "Np", "z": 93, "r": 10, "c": 7, "k": "X", "n": "Neptunium", "l": "", "h": false, "tp": false, "why": "Élément radioactif : pas de lampe ni d'usage en routine."}, {"s": "Pu", "z": 94, "r": 10, "c": 8, "k": "X", "n": "Plutonium", "l": "", "h": false, "tp": false, "why": "Élément radioactif : pas de lampe ni d'usage en routine."}, {"s": "Am", "z": 95, "r": 10, "c": 9, "k": "X", "n": "Américium", "l": "", "h": false, "tp": false, "why": "Élément radioactif : pas de lampe ni d'usage en routine."}, {"s": "Cm", "z": 96, "r": 10, "c": 10, "k": "X", "n": "Curium", "l": "", "h": false, "tp": false, "why": "Élément radioactif : pas de lampe ni d'usage en routine."}, {"s": "Bk", "z": 97, "r": 10, "c": 11, "k": "X", "n": "Berkélium", "l": "", "h": false, "tp": false, "why": "Élément radioactif : pas de lampe ni d'usage en routine."}, {"s": "Cf", "z": 98, "r": 10, "c": 12, "k": "X", "n": "Californium", "l": "", "h": false, "tp": false, "why": "Élément radioactif : pas de lampe ni d'usage en routine."}, {"s": "Es", "z": 99, "r": 10, "c": 13, "k": "X", "n": "Einsteinium", "l": "", "h": false, "tp": false, "why": "Élément radioactif : pas de lampe ni d'usage en routine."}, {"s": "Fm", "z": 100, "r": 10, "c": 14, "k": "X", "n": "Fermium", "l": "", "h": false, "tp": false, "why": "Élément radioactif : pas de lampe ni d'usage en routine."}, {"s": "Md", "z": 101, "r": 10, "c": 15, "k": "X", "n": "Mendélévium", "l": "", "h": false, "tp": false, "why": "Élément radioactif : pas de lampe ni d'usage en routine."}, {"s": "No", "z": 102, "r": 10, "c": 16, "k": "X", "n": "Nobélium", "l": "", "h": false, "tp": false, "why": "Élément radioactif : pas de lampe ni d'usage en routine."}, {"s": "Lr", "z": 103, "r": 10, "c": 17, "k": "X", "n": "Lawrencium", "l": "", "h": false, "tp": false, "why": "Élément radioactif : pas de lampe ni d'usage en routine."}];
+var CAT={A:"Flamme air–acétylène (≈ 2 300 °C)",N:"Flamme N₂O–acétylène (≈ 2 750 °C) : élément réfractaire",V:"Vapeur froide (réduction par SnCl₂ ou NaBH₄)",X:"Non dosable directement par SAA"};
+var grid=document.getElementById("ptGrid"), info=document.getElementById("ptInfo"), cur=null, btns={};
+function row(r){return r;}
+PT.forEach(function(e){
+  var b=document.createElement("button"); b.type="button";
+  b.className="c"+e.k+(e.h?" hy":"")+(e.tp?" intp":"");
+  b.style.gridColumn=e.c; b.style.gridRow=row(e.r);
+  b.innerHTML='<span class="z">'+e.z+'</span><span class="sy">'+e.s+'</span>';
+  b.setAttribute("aria-label",e.n+", "+CAT[e.k]);
+  b.setAttribute("aria-pressed","false");
+  b.addEventListener("click",function(){show(e);});
+  grid.appendChild(b); btns[e.s]=b;
+});
+[[6,"57–71"],[7,"89–103"]].forEach(function(p){var d=document.createElement("div");d.className="ph";d.style.gridColumn=3;d.style.gridRow=p[0];d.textContent=p[1];grid.appendChild(d);});
+[[9,"Lanthanides"],[10,"Actinides"]].forEach(function(p){var d=document.createElement("div");d.className="lbl";d.style.gridColumn="1/3";d.style.gridRow=p[0];d.textContent=p[1];grid.appendChild(d);});
+var n={A:0,N:0,V:0}; PT.forEach(function(e){if(n[e.k]!==undefined)n[e.k]++;});
+document.getElementById("ptCount").innerHTML=
+ '<div class="ro"><span class="k">air–C₂H₂</span><span class="v">'+n.A+'</span></div>'+
+ '<div class="ro"><span class="k">N₂O–C₂H₂</span><span class="v">'+n.N+'</span></div>'+
+ '<div class="ro main"><span class="k">total dosable</span><span class="v">'+(n.A+n.N+n.V)+'</span></div>';
+var BG={A:"var(--teal)",N:"var(--ink)",V:"var(--amber)",X:"var(--surface-2)"}, FG={A:"var(--bg)",N:"var(--bg)",V:"#1b1300",X:"var(--muted)"};
+function show(e){
+  if(cur) btns[cur].setAttribute("aria-pressed","false");
+  cur=e.s; btns[e.s].setAttribute("aria-pressed","true");
+  var det="";
+  if(e.k==="X") det=e.why;
+  else{
+    det="Raie usuelle : <strong class='mono'>"+e.l+" nm</strong>"+(parseFloat(e.l.replace(",","."))<400?" (UV)":"")+".";
+    if(e.h) det+=" Également dosable par génération d'hydrures, beaucoup plus sensible.";
+    if(e.tp) det+=" <strong>Dosé dans le TP.</strong>";
+  }
+  info.innerHTML='<span class="bigsym" style="background:'+BG[e.k]+';color:'+FG[e.k]+'">'+e.s+'</span>'+
+    '<span class="nm">'+e.n+' <span class="mono" style="font-size:.85rem;color:var(--muted)">Z = '+e.z+'</span></span>'+
+    '<span class="cat">'+CAT[e.k]+'</span><span></span><p class="det">'+det+'</p>';
+  if(e.tp){var sel=document.querySelector('[data-elsel] button[data-el="'+e.s+'"]'); if(sel && sel.getAttribute("aria-pressed")!=="true") sel.click();}
+}
+show(PT.filter(function(e){return e.s==="Na";})[0]);
+})();
+</script>
+
+
+
+</body>
+</html>
