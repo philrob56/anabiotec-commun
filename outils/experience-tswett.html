@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="description" content="Simulation interactive de l’expérience historique de Tswett (1906) : séparation des pigments des feuilles sur une colonne de craie, à l’origine de la chromatographie. Outil du BTSa ANABIOTEC, lycée Le Gros Chêne, Pontivy.">
+<link rel="canonical" href="https://philrob56.github.io/anabiotec-commun/outils/experience-tswett.html">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>L’expérience de Tswett : séparation des pigments foliaires | BTSa ANABIOTEC</title>
+<style>
+:root{
+  --bg:#EDF2EF; --surface:#FFFFFF; --ink:#16302A; --muted:#51655E; --line:#CFDAD5;
+  --glass:#F7FAF9; --chalk:#FBFBF8; --chalk-edge:#C9D1CE; --eluent:#DCEBF2;
+  --accent:#1F6F5C; --accent-ink:#FFFFFF; --good:#1F7A4F; --bad:#B4432B;
+  --car:#E07B24; --chla:#1F8A70; --chlb:#8DB33A; --xan:#E2BB14;
+  --serif:"Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,Georgia,serif;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F1A17; --surface:#16241F; --ink:#E4EEEA; --muted:#9DB1A9; --line:#2A3C36;
+    --glass:#1B2B26; --chalk:#E9ECE6; --chalk-edge:#7E8B86; --eluent:#2B4450;
+    --accent:#5CC4A4; --accent-ink:#0F1A17; --good:#6FD39E; --bad:#F08A70;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F1A17; --surface:#16241F; --ink:#E4EEEA; --muted:#9DB1A9; --line:#2A3C36;
+  --glass:#1B2B26; --chalk:#E9ECE6; --chalk-edge:#7E8B86; --eluent:#2B4450;
+  --accent:#5CC4A4; --accent-ink:#0F1A17; --good:#6FD39E; --bad:#F08A70;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.55}
+.wrap{max-width:1080px;margin:0 auto;padding:28px 20px 56px}
+h1,h2,h3{font-family:var(--serif);font-weight:600;line-height:1.15;margin:0}
+h1{font-size:clamp(2rem,5vw,3.1rem);letter-spacing:-.01em}
+h2{font-size:1.6rem;margin-bottom:.5rem}
+h3{font-size:1.15rem}
+p{margin:.4rem 0 .8rem;max-width:68ch}
+.lede{font-size:1.08rem;color:var(--muted);max-width:60ch;margin-top:.6rem}
+header{margin-bottom:22px}
+
+/* ---------- laboratoire ---------- */
+.lab{display:grid;grid-template-columns:minmax(210px,260px) 1fr;gap:22px;align-items:start}
+.bench{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px 10px 8px;position:sticky;top:12px}
+.bench svg{display:block;width:100%;height:auto;max-height:78vh}
+.panel{display:flex;flex-direction:column;gap:18px;min-width:0}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:.55rem .95rem}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600;min-width:7.5rem}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.speed{display:flex;gap:4px;margin-left:auto}
+.speed button{padding:.4rem .6rem;font-size:.9rem}
+.speed button[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.eluent{margin-top:14px}
+.eluent label{display:flex;justify-content:space-between;gap:12px;font-weight:600}
+.eluent output{font-weight:400;color:var(--muted)}
+input[type=range]{width:100%;accent-color:var(--accent);margin:.6rem 0 .1rem}
+.hint{font-size:.88rem;color:var(--muted);margin:.2rem 0 0}
+.clock{font-variant-numeric:tabular-nums;font-weight:600}
+.status{font-weight:500;color:var(--muted);margin-left:6px}
+.status.on{color:var(--bad)}
+.kbd{font-size:.85rem;color:var(--muted);margin:.5rem 0 0}
+
+.chromato canvas{display:block;width:100%;height:210px}
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:.3rem .75rem;font-size:.92rem}
+.chip i{width:14px;height:14px;border-radius:50%;display:inline-block;flex:none}
+.chip[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:.45rem .5rem;border-bottom:1px solid var(--line)}
+th{font-weight:600;color:var(--muted);font-size:.9rem}
+td:not(:first-child),th:not(:first-child){text-align:right}
+td .sw{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px;vertical-align:1px}
+.res{margin-top:10px;font-size:.95rem}
+
+.card{display:grid;grid-template-columns:52px 1fr;gap:14px;align-items:start}
+.card .blob{width:52px;height:52px;border-radius:14px}
+.card dl{display:grid;grid-template-columns:max-content 1fr;gap:4px 14px;margin:.6rem 0 0;font-size:.95rem}
+.card dt{color:var(--muted)}
+.card dd{margin:0}
+
+/* ---------- comprendre ---------- */
+section.explain{margin-top:44px}
+.scale{position:relative;margin:26px 0 8px;padding-top:64px}
+.scale .bar{height:10px;border-radius:5px;background:linear-gradient(90deg,var(--line),var(--accent))}
+.scale .ends{display:flex;justify-content:space-between;font-size:.9rem;color:var(--muted);margin-top:6px}
+.pin{position:absolute;top:0;transform:translateX(-50%);text-align:center;font-size:.88rem;width:9.5rem}
+.pin i{display:block;width:18px;height:18px;border-radius:50%;margin:6px auto 0;border:2px solid var(--surface);box-shadow:0 0 0 1px var(--line)}
+.pin::after{content:"";display:block;width:2px;height:12px;background:var(--line);margin:0 auto}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:18px}
+
+/* ---------- quiz ---------- */
+section.quiz{margin-top:44px}
+.q{padding:16px 0;border-top:1px solid var(--line)}
+.q:first-of-type{border-top:0}
+.q h3{font-family:var(--sans);font-size:1.02rem;font-weight:600;margin-bottom:10px}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opts button[data-state="right"]{background:var(--good);border-color:var(--good);color:#fff}
+.opts button[data-state="wrong"]{border-color:var(--bad);color:var(--bad);text-decoration:line-through}
+.fb{margin:.6rem 0 0;font-size:.95rem;min-height:1.2em}
+.score{font-weight:600;margin-top:8px}
+footer{margin-top:40px;font-size:.85rem;color:var(--muted)}
+
+@media (max-width:760px){
+  .lab{grid-template-columns:1fr}
+  .bench{position:static;max-width:330px;margin:0 auto;width:100%}
+  .bench svg{max-height:48vh}
+  .two{grid-template-columns:1fr}
+  .speed{margin-left:0}
+  .pin{width:6.4rem;font-size:.78rem}
+  .scale{padding-top:78px}
+}
+@media (prefers-reduced-motion:reduce){ .drip{animation:none!important} }
+.drip{animation:drip 1s linear infinite;opacity:0}
+.paused .drip{animation-play-state:paused}
+@keyframes drip{0%{opacity:0;transform:translateY(0)}15%{opacity:1}100%{opacity:0;transform:translateY(20px)}}
+</style>
+<!-- anb-commun --><script src="https://philrob56.github.io/anabiotec-commun/anb-commun.js"></script><!-- /anb-commun -->
+</head>
+<body>
+<!-- anb-charte --><div class="anb-head"><div class="anb-crumb"><i></i><a href="https://sites.google.com/view/anabioteclegroschene/accueil" target="_top" style="color:inherit;text-decoration:none" title="Tous les outils du BTSa ANABIOTEC"><b>BTSa ANABIOTEC</b></a><span>›</span>Chromatographie</div><div class="anb-right"><div class="anb-tag">LEGTA Le Gros Chêne · Pontivy</div><button type="button" class="anb-print" onclick="anbPrint()" title="Ouvrir une version imprimable (PDF)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimer / PDF</button></div></div><!-- /anb-charte -->
+<div class="wrap">
+
+<header>
+  <h1>L'expérience de Tswett</h1>
+  <p class="lede">En 1906, le botaniste Mikhaïl Tswett verse un extrait de feuilles en haut d'une colonne de craie, puis fait couler de l'éther de pétrole. Les pigments, mélangés au départ, se séparent en bandes colorées : la chromatographie est née. Lancez l'élution pour reproduire l'expérience.</p>
+</header>
+
+<div class="lab">
+  <!-- ======== colonne ======== -->
+  <figure class="bench paused" id="bench" style="margin:0">
+    <svg viewBox="-16 0 236 560" role="img" aria-labelledby="svgTitle">
+      <title id="svgTitle">Colonne de carbonate de calcium traversée par l'éluant ; les bandes de pigments migrent vers le bas.</title>
+      <defs>
+        <clipPath id="bed"><rect x="66" y="108" width="68" height="370" rx="3"/></clipPath>
+      </defs>
+      <!-- réservoir d'éluant -->
+      <path d="M58 28 h84 v52 q0 8 -8 12 l-20 10 v6 h-28 v-6 l-20 -10 q-8 -4 -8 -12 z" fill="var(--glass)" stroke="var(--chalk-edge)" stroke-width="2"/>
+      <path id="resFill" d="M60 48 h80 v31 q0 6 -7 10 l-19 9 v4 h-28 v-4 l-19 -9 q-7 -4 -7 -10 z" fill="var(--eluent)"/>
+      <text x="100" y="20" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="system-ui,sans-serif" id="eluentLabel">éther de pétrole</text>
+      <circle class="drip" cx="100" cy="100" r="2.6" fill="var(--eluent)" stroke="var(--chalk-edge)" stroke-width=".6"/>
+      <!-- tube -->
+      <rect x="62" y="104" width="76" height="378" rx="6" fill="var(--glass)" stroke="var(--chalk-edge)" stroke-width="2.4"/>
+      <rect x="66" y="108" width="68" height="370" rx="3" fill="var(--chalk)"/>
+      <g id="grain" clip-path="url(#bed)" opacity=".35"></g>
+      <g id="bands" clip-path="url(#bed)"></g>
+      <!-- sortie -->
+      <path d="M86 482 h28 l-8 16 h-12 z" fill="var(--glass)" stroke="var(--chalk-edge)" stroke-width="2"/>
+      <rect x="97" y="498" width="6" height="14" fill="var(--glass)" stroke="var(--chalk-edge)" stroke-width="1.6"/>
+      <circle id="outDrop" cx="100" cy="522" r="4" fill="var(--eluent)" opacity="0"/>
+      <!-- repères -->
+      <g font-family="system-ui,sans-serif" font-size="10.5" fill="var(--muted)">
+        <line x1="140" y1="200" x2="152" y2="200" stroke="var(--chalk-edge)"/>
+        <text x="155" y="197">CaCO₃</text>
+        <text x="155" y="209">phase</text>
+        <text x="155" y="221">stationnaire</text>
+        <line x1="46" y1="112" x2="60" y2="112" stroke="var(--chalk-edge)"/>
+        <text x="44" y="109" text-anchor="end">dépôt</text>
+        <text x="44" y="121" text-anchor="end">de l'extrait</text>
+        <line x1="116" y1="505" x2="140" y2="505" stroke="var(--chalk-edge)"/>
+        <text x="143" y="502">détecteur</text>
+        <text x="143" y="514">440 nm</text>
+      </g>
+    </svg>
+  </figure>
+
+  <!-- ======== panneau ======== -->
+  <div class="panel">
+    <div class="box">
+      <div class="controls">
+        <button class="primary" id="play" aria-keyshortcuts="Space">▶ Lancer l'élution</button>
+        <button id="stop" disabled>■ Arrêter</button>
+        <button id="reset">Recommencer</button>
+        <span class="clock" aria-live="off">t = <span id="clock">0,0</span> min <span class="status" id="status" aria-live="polite"></span></span>
+        <div class="speed" role="group" aria-label="Vitesse de l'animation">
+          <button data-speed="1" aria-pressed="false">×1</button>
+          <button data-speed="2" aria-pressed="true">×2</button>
+          <button data-speed="4" aria-pressed="false">×4</button>
+        </div>
+      </div>
+      <p class="kbd">Barre d'espace : pause ou reprise à tout moment. « Arrêter » fige l'expérience pour observer les bandes dans la colonne.</p>
+      <div class="eluent">
+        <label for="acetone">Acétone ajoutée à l'éluant <output id="acOut">0 % — éther de pétrole pur</output></label>
+        <input type="range" id="acetone" min="0" max="30" step="5" value="0">
+        <p class="hint" id="acHint">Plus l'éluant est polaire, plus il déplace les pigments adsorbés sur la craie. Réglez-le avant de lancer l'élution.</p>
+      </div>
+    </div>
+
+    <div class="box chromato">
+      <h3>Chromatogramme enregistré en sortie de colonne</h3>
+      <canvas id="chart" aria-label="Chromatogramme : absorbance en fonction du temps" role="img"></canvas>
+      <div class="legend" id="legend" role="group" aria-label="Choisir un pigment"></div>
+    </div>
+
+    <div class="box">
+      <h3>Mesures</h3>
+      <table>
+        <thead><tr><th>Pigment</th><th>t<sub>r</sub> (min)</th><th>k</th></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <p class="res" id="res">Temps mort t<sub>m</sub> = 3,0 min (temps de traversée de l'éluant seul). La résolution entre les deux chlorophylles s'affichera après leur sortie.</p>
+    </div>
+
+    <div class="box" id="card" aria-live="polite"></div>
+  </div>
+</div>
+
+<!-- ======== comprendre ======== -->
+<section class="explain">
+  <h2>Pourquoi les pigments sortent-ils dans cet ordre ?</h2>
+  <p>La craie (carbonate de calcium) est <strong>polaire</strong>, l'éther de pétrole est <strong>apolaire</strong>. Chaque pigment passe sans cesse de l'une à l'autre : plus il est polaire, plus il reste adsorbé sur la craie, et plus il avance lentement.</p>
+  <div class="scale" aria-hidden="true">
+    <div class="pin" style="left:6%">β-carotène<i style="background:var(--car)"></i></div>
+    <div class="pin" style="left:40%">chlorophylle a<i style="background:var(--chla)"></i></div>
+    <div class="pin" style="left:63%">chlorophylle b<i style="background:var(--chlb)"></i></div>
+    <div class="pin" style="left:92%">xanthophylles<i style="background:var(--xan)"></i></div>
+    <div class="bar"></div>
+    <div class="ends"><span>apolaire : sort en premier</span><span>polaire : sort en dernier</span></div>
+  </div>
+  <div class="two">
+    <div class="box">
+      <h3>Ce qui distingue les molécules</h3>
+      <p>Le <strong>β-carotène</strong> est un hydrocarbure pur, sans aucun groupe polaire. La <strong>chlorophylle b</strong> ne diffère de la chlorophylle a que par un groupe aldéhyde –CHO à la place d'un méthyle –CH₃ : ce petit détail suffit à la retenir davantage. Les <strong>xanthophylles</strong> portent des groupes hydroxyle –OH : ce sont les plus polaires.</p>
+    </div>
+    <div class="box">
+      <h3>Le vocabulaire actuel</h3>
+      <p>Tswett réalisait une <strong>chromatographie d'adsorption en phase normale</strong> : phase stationnaire polaire, phase mobile apolaire. Ajouter de l'acétone augmente la <strong>force éluante</strong> : les temps de rétention diminuent, mais les bandes se rapprochent et la résolution chute.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ======== quiz ======== -->
+<section class="quiz">
+  <h2>Vérifier ses acquis</h2>
+  <div class="box" id="quiz"></div>
+</section>
+
+<footer>Simulation pédagogique : les temps de rétention sont modélisés et donnés à titre d'ordre de grandeur. BTS ANABIOTEC — chimie analytique.</footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+const $=s=>document.querySelector(s);
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const fr=(x,d=1)=>x.toFixed(d).replace(".",",");
+
+/* ---------------- pigments ---------------- */
+const PIG=[
+ {id:"car",nom:"β-carotène",v:"--car",k0:0.20,amp:0.60,
+  formule:"C₄₀H₅₆",famille:"caroténoïde (carotène)",couleur:"orange",
+  polar:"apolaire : hydrocarbure sans aucun groupe polaire",
+  role:"Pigment accessoire : il capte la lumière bleue et protège la chlorophylle de la photo-oxydation. Précurseur de la vitamine A."},
+ {id:"chla",nom:"chlorophylle a",v:"--chla",k0:2.40,amp:1.00,
+  formule:"C₅₅H₇₂MgN₄O₅",famille:"chlorophylle",couleur:"vert bleuté",
+  polar:"peu polaire : cycle porphyrine autour d'un ion Mg²⁺, longue chaîne phytol apolaire",
+  role:"Pigment principal : au centre réactionnel des photosystèmes, c'est elle qui convertit l'énergie lumineuse."},
+ {id:"chlb",nom:"chlorophylle b",v:"--chlb",k0:3.60,amp:0.55,
+  formule:"C₅₅H₇₀MgN₄O₆",famille:"chlorophylle",couleur:"vert jaune",
+  polar:"un peu plus polaire que la chlorophylle a : un groupe –CHO remplace un groupe –CH₃",
+  role:"Pigment de l'antenne collectrice : elle élargit la gamme de lumière absorbée par la feuille."},
+ {id:"xan",nom:"xanthophylles",v:"--xan",k0:5.20,amp:0.45,
+  formule:"C₄₀H₅₆O₂ (lutéine)",famille:"caroténoïdes oxygénés",couleur:"jaune",
+  polar:"les plus polaires : groupes hydroxyle –OH aux extrémités de la molécule",
+  role:"Pigments photoprotecteurs. Ce sont eux qui dominent la couleur des feuilles en automne, quand la chlorophylle disparaît."}
+];
+const TM=3.0;            // temps mort (min) : L = 1, u = 1/TM
+const S0=0.012;          // largeur initiale du dépôt (fraction de colonne)
+const BED={top:108,h:370};
+
+/* ---------------- état ---------------- */
+let st;
+function freshState(){
+  const ac=+$("#acetone").value/100;
+  return {
+    t:0, running:false, done:false, stopped:false, ac,
+    x:PIG.map(()=>0.02),
+    k:PIG.map(p=>p.k0*Math.exp(-5*ac)),
+    tr:PIG.map(()=>null), sigT:PIG.map(()=>null),
+    samples:[]
+  };
+}
+let speed=2, sel="chla", last=null;
+
+/* ---------------- colonne SVG ---------------- */
+const NS="http://www.w3.org/2000/svg";
+const gBands=$("#bands"), defs=document.querySelector("defs");
+const rects={};
+PIG.slice().reverse().forEach(p=>{
+  const g=document.createElementNS(NS,"linearGradient");
+  g.id="g-"+p.id; g.setAttribute("x1","0");g.setAttribute("y1","0");g.setAttribute("x2","0");g.setAttribute("y2","1");
+  [[0,0],[.22,.25],[.38,.75],[.5,1],[.62,.75],[.78,.25],[1,0]].forEach(([o,a])=>{
+    const s=document.createElementNS(NS,"stop");s.setAttribute("offset",o);
+    s.setAttribute("stop-color",`var(${p.v})`);s.setAttribute("stop-opacity",a);g.appendChild(s);});
+  defs.appendChild(g);
+  const r=document.createElementNS(NS,"rect");
+  r.setAttribute("x","66");r.setAttribute("width","68");r.setAttribute("fill",`url(#g-${p.id})`);
+  r.style.cursor="pointer";
+  r.addEventListener("click",()=>select(p.id));
+  const title=document.createElementNS(NS,"title");title.textContent=p.nom;r.appendChild(title);
+  gBands.appendChild(r);rects[p.id]=r;
+});
+// grain de la craie
+(function(){const g=$("#grain");let seed=7;const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647};
+  for(let i=0;i<260;i++){const c=document.createElementNS(NS,"circle");
+    c.setAttribute("cx",66+rnd()*68);c.setAttribute("cy",108+rnd()*370);c.setAttribute("r",.6+rnd()*1.1);
+    c.setAttribute("fill","var(--chalk-edge)");g.appendChild(c);}})();
+
+const sigmaX=x=>S0+0.022*Math.sqrt(Math.max(x,0));
+
+function drawColumn(){
+  PIG.forEach((p,i)=>{
+    const x=st.x[i], s=sigmaX(x), r=rects[p.id];
+    const h=Math.max(6*s*BED.h,6);
+    r.setAttribute("y",BED.top+x*BED.h-h/2);
+    r.setAttribute("height",h);
+    r.setAttribute("opacity",Math.min(1,(S0*2.4)/s).toFixed(3));
+    r.setAttribute("display",x-3*s>1?"none":"inline");
+  });
+  // goutte colorée en sortie
+  const sig=signalAt();
+  const tot=sig.reduce((a,b)=>a+b,0);
+  const drop=$("#outDrop");
+  if(st.running && tot>0.04){
+    const i=sig.indexOf(Math.max(...sig));
+    drop.setAttribute("fill",`var(${PIG[i].v})`);drop.setAttribute("opacity","1");
+  } else drop.setAttribute("opacity",st.running?"0.8":"0"),drop.setAttribute("fill","var(--eluent)");
+}
+
+/* ---------------- signal détecteur ---------------- */
+function signalAt(){
+  return PIG.map((p,i)=>{
+    const s=sigmaX(st.x[i]);
+    return p.amp*Math.exp(-0.5*((st.x[i]-1)/s)**2)*(S0*2.6/s);
+  });
+}
+
+/* ---------------- simulation ---------------- */
+function step(dt){
+  PIG.forEach((p,i)=>{
+    const before=st.x[i];
+    st.x[i]+= (1/TM)/(1+st.k[i])*dt;
+    if(before<1 && st.x[i]>=1 && st.tr[i]===null){
+      const frac=(1-before)/(st.x[i]-before);
+      st.tr[i]=st.t+frac*dt;
+      st.sigT[i]=sigmaX(1)*st.tr[i];
+      renderTable();
+    }
+  });
+  st.t+=dt;
+  st.samples.push({t:st.t,v:signalAt()});
+  if(st.tr.every(v=>v!==null) && st.t>Math.max(...st.tr)+2.5){
+    st.running=false;st.done=true;updateButtons();
+  }
+}
+function loop(ts){
+  if(!st.running){last=null;return;}
+  if(last!==null){
+    let dt=Math.min((ts-last)/1000,0.05)*speed;   // minutes simulées
+    const n=Math.ceil(dt/0.02);
+    for(let j=0;j<n && st.running;j++) step(dt/n);
+  }
+  last=ts;
+  drawColumn();drawChart();$("#clock").textContent=fr(st.t);
+  if(st.running) requestAnimationFrame(loop);
+}
+
+/* ---------------- chromatogramme ---------------- */
+const cv=$("#chart"), ctx=cv.getContext("2d");
+function drawChart(){
+  const dpr=window.devicePixelRatio||1, W=cv.clientWidth, H=cv.clientHeight;
+  if(cv.width!==Math.round(W*dpr)){cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);}
+  ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);
+  const pad={l:12,r:10,t:10,b:28};
+  const tmax=Math.max(24,Math.ceil((st.t+2)/4)*4);
+  const X=t=>pad.l+t/tmax*(W-pad.l-pad.r);
+  const Y=v=>H-pad.b-v/1.25*(H-pad.t-pad.b-26);
+  // axes
+  ctx.strokeStyle=css("--line");ctx.lineWidth=1;ctx.beginPath();
+  ctx.moveTo(pad.l,H-pad.b);ctx.lineTo(W-pad.r,H-pad.b);ctx.stroke();
+  ctx.fillStyle=css("--muted");ctx.font="12px system-ui,sans-serif";ctx.textAlign="center";
+  for(let t=0;t<=tmax;t+=4){ctx.fillText(t,X(t),H-pad.b+16);
+    ctx.beginPath();ctx.moveTo(X(t),H-pad.b);ctx.lineTo(X(t),H-pad.b+4);ctx.stroke();}
+  ctx.textAlign="right";ctx.fillText("min",W-pad.r,H-pad.b-6);
+  // temps mort
+  ctx.setLineDash([3,4]);ctx.beginPath();ctx.moveTo(X(TM),H-pad.b);ctx.lineTo(X(TM),pad.t+6);ctx.stroke();ctx.setLineDash([]);
+  ctx.textAlign="right";ctx.fillText("tₘ",X(TM)-4,(H-pad.b+pad.t)/2);
+  const S=st.samples;if(S.length<2)return;
+  // aires par pigment
+  PIG.forEach((p,i)=>{
+    ctx.beginPath();ctx.moveTo(X(S[0].t),Y(0));
+    for(const s of S) ctx.lineTo(X(s.t),Y(s.v[i]));
+    ctx.lineTo(X(S[S.length-1].t),Y(0));ctx.closePath();
+    ctx.globalAlpha=p.id===sel?0.55:0.3;ctx.fillStyle=css(p.v);ctx.fill();ctx.globalAlpha=1;
+  });
+  // signal total
+  ctx.beginPath();
+  S.forEach((s,j)=>{const v=s.v.reduce((a,b)=>a+b,0);j?ctx.lineTo(X(s.t),Y(v)):ctx.moveTo(X(s.t),Y(v));});
+  ctx.strokeStyle=css("--ink");ctx.lineWidth=1.6;ctx.stroke();
+  // repères t_r
+  ctx.font="11px system-ui,sans-serif";ctx.textAlign="center";ctx.fillStyle=css("--muted");
+  const lastX=[-99,-99,-99];
+  PIG.map((p,i)=>i).filter(i=>st.tr[i]!==null).sort((a,b)=>st.tr[a]-st.tr[b]).forEach(i=>{
+    const x=X(st.tr[i]);let row=0;
+    while(row<2 && x-lastX[row]<30) row++;
+    lastX[row]=x;ctx.fillStyle=css(PIG[i].v)==""?css("--muted"):css("--muted");
+    ctx.fillText(fr(st.tr[i]),x,pad.t+10+row*13);
+  });
+}
+
+/* ---------------- tableau & fiche ---------------- */
+function renderTable(){
+  $("#tbody").innerHTML=PIG.map((p,i)=>{
+    const tr=st.tr[i];
+    return `<tr><td><span class="sw" style="background:var(${p.v})"></span>${p.nom}</td>
+      <td>${tr===null?"—":fr(tr)}</td><td>${tr===null?"—":fr((tr-TM)/TM,2)}</td></tr>`;}).join("");
+  const a=1,b=2;
+  if(st.tr[a]!==null && st.tr[b]!==null){
+    const R=(st.tr[b]-st.tr[a])/(2*(st.sigT[a]+st.sigT[b]));
+    const q=R>=1.5?"séparation complète":R>=1?"séparation partielle":"bandes confondues";
+    $("#res").innerHTML=`Temps mort t<sub>m</sub> = 3,0 min. Résolution chlorophylle a / chlorophylle b : <strong>R = ${fr(R,2)}</strong> (${q}).`;
+  } else {
+    $("#res").innerHTML="Temps mort t<sub>m</sub> = 3,0 min (temps de traversée de l'éluant seul). La résolution entre les deux chlorophylles s'affichera après leur sortie.";
+  }
+}
+function renderCard(){
+  const p=PIG.find(q=>q.id===sel);
+  $("#card").innerHTML=`<div class="card"><div class="blob" style="background:var(${p.v})"></div><div>
+    <h3>${p.nom.charAt(0).toUpperCase()+p.nom.slice(1)}</h3>
+    <dl><dt>Formule</dt><dd>${p.formule}</dd><dt>Famille</dt><dd>${p.famille}</dd>
+    <dt>Couleur</dt><dd>${p.couleur}</dd><dt>Polarité</dt><dd>${p.polar}</dd></dl>
+    <p style="margin-top:.7rem">${p.role}</p></div></div>`;
+}
+function renderLegend(){
+  $("#legend").innerHTML=PIG.map(p=>`<button class="chip" data-id="${p.id}" aria-pressed="${p.id===sel}">
+    <i style="background:var(${p.v})"></i>${p.nom}</button>`).join("");
+  document.querySelectorAll(".chip").forEach(b=>b.addEventListener("click",()=>select(b.dataset.id)));
+}
+function select(id){sel=id;renderLegend();renderCard();drawChart();}
+
+/* ---------------- commandes ---------------- */
+function updateButtons(){
+  const play=$("#play");
+  play.textContent=st.running?"❚❚ Mettre en pause":st.stopped?"Élution arrêtée":st.done?"Élution terminée":st.t>0?"▶ Reprendre":"▶ Lancer l'élution";
+  play.disabled=st.done;
+  $("#stop").disabled=st.done||st.t===0;
+  const status=$("#status");
+  status.textContent=st.stopped?"(arrêtée)":(!st.running&&st.t>0&&!st.done)?"(en pause)":"";
+  status.classList.toggle("on",!st.running&&st.t>0&&!st.done);
+  $("#acetone").disabled=st.t>0;
+  $("#acHint").textContent=st.t>0?"Recommencez l'expérience pour modifier la composition de l'éluant."
+    :"Plus l'éluant est polaire, plus il déplace les pigments adsorbés sur la craie. Réglez-le avant de lancer l'élution.";
+  $("#bench").classList.toggle("paused",!st.running);
+}
+function toggle(){
+  if(st.done)return;
+  st.running=!st.running;updateButtons();
+  if(st.running){last=null;requestAnimationFrame(loop);}
+  else{drawColumn();drawChart();}
+}
+$("#play").addEventListener("click",toggle);
+$("#stop").addEventListener("click",()=>{
+  if(st.done||st.t===0)return;
+  st.running=false;st.done=true;st.stopped=true;updateButtons();drawColumn();drawChart();
+});
+document.addEventListener("keyup",e=>{
+  if(e.code==="Space"&&(e.target.tagName||"").toLowerCase()==="button")e.preventDefault();
+});
+document.addEventListener("keydown",e=>{
+  if(e.code!=="Space"||e.repeat)return;
+  const tag=(e.target.tagName||"").toLowerCase();
+  if(tag==="input"||tag==="textarea")return;
+  e.preventDefault();toggle();
+});
+$("#reset").addEventListener("click",()=>{st=freshState();renderTable();updateButtons();drawColumn();drawChart();$("#clock").textContent="0,0";});
+document.querySelectorAll(".speed button").forEach(b=>b.addEventListener("click",()=>{
+  speed=+b.dataset.speed;
+  document.querySelectorAll(".speed button").forEach(x=>x.setAttribute("aria-pressed",x===b));
+}));
+$("#acetone").addEventListener("input",e=>{
+  const v=+e.target.value;
+  $("#acOut").textContent=v===0?"0 % — éther de pétrole pur":`${v} %`;
+  $("#eluentLabel").textContent=v===0?"éther de pétrole":`éther de pétrole + ${v} % acétone`;
+  st=freshState();renderTable();drawColumn();drawChart();
+});
+window.addEventListener("resize",drawChart);
+if(window.matchMedia) matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change",drawChart);
+
+/* ---------------- quiz ---------------- */
+const QUIZ=[
+ {q:"Quel pigment sort en premier de la colonne ?",o:["la chlorophylle a","le β-carotène","les xanthophylles"],a:1,
+  e:"Le β-carotène est apolaire : il n'a presque aucune affinité pour la craie polaire et suit l'éluant."},
+ {q:"Dans l'expérience de Tswett, quelle est la phase stationnaire ?",o:["l'éther de pétrole","l'extrait de feuilles","le carbonate de calcium"],a:2,
+  e:"La craie reste immobile dans la colonne ; l'éther de pétrole est la phase mobile."},
+ {q:"On ajoute 20 % d'acétone à l'éluant. Que deviennent les temps de rétention ?",o:["ils augmentent","ils diminuent","ils ne changent pas"],a:1,
+  e:"L'acétone, plus polaire, augmente la force éluante : elle déplace les pigments adsorbés, qui migrent plus vite. Vérifiez-le avec le curseur."},
+ {q:"Pourquoi la chlorophylle b est-elle plus retenue que la chlorophylle a ?",o:["elle est plus lourde","elle porte un groupe –CHO plus polaire que –CH₃","elle ne contient pas de magnésium"],a:1,
+  e:"Le groupe aldéhyde rend la molécule légèrement plus polaire : elle s'adsorbe un peu plus fortement sur la craie."},
+ {q:"Avec le vocabulaire actuel, cette expérience est une chromatographie…",o:["d'adsorption en phase normale","de partage en phase inverse","d'exclusion stérique"],a:0,
+  e:"Phase stationnaire polaire, phase mobile apolaire, séparation par adsorption : c'est la phase normale."}
+];
+let score=0,answered=0;
+$("#quiz").innerHTML=QUIZ.map((q,i)=>`<div class="q"><h3>${i+1}. ${q.q}</h3>
+  <div class="opts">${q.o.map((o,j)=>`<button data-q="${i}" data-o="${j}">${o}</button>`).join("")}</div>
+  <p class="fb" id="fb${i}"></p></div>`).join("")+`<p class="score" id="score" aria-live="polite"></p>`;
+document.querySelectorAll(".opts button").forEach(b=>b.addEventListener("click",()=>{
+  const i=+b.dataset.q,j=+b.dataset.o,q=QUIZ[i];
+  const group=b.parentElement.querySelectorAll("button");
+  if(b.parentElement.dataset.done)return;
+  b.parentElement.dataset.done="1";answered++;
+  group.forEach((x,k)=>{x.disabled=true;if(k===q.a)x.dataset.state="right";});
+  if(j===q.a){score++;$("#fb"+i).innerHTML="<strong>Exact.</strong> "+q.e;}
+  else{b.dataset.state="wrong";$("#fb"+i).innerHTML="<strong>Pas tout à fait.</strong> "+q.e;}
+  if(answered===QUIZ.length)$("#score").textContent=`Score : ${score} / ${QUIZ.length}`;
+}));
+
+/* ---------------- init ---------------- */
+st=freshState();renderLegend();renderCard();renderTable();updateButtons();drawColumn();drawChart();
+})();
+</script>
+
+</body>
+</html>
