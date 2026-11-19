@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+<meta name="description" content="Découvrir la chromatographie en simulation : CCM de colorants (jaune de beurre, rouge Soudan, β-carotène) et chromatographie sur colonne, influence de la polarité de l’éluant. Outil du BTSa ANABIOTEC, lycée Le Gros Chêne, Pontivy.">
+<link rel="canonical" href="https://philrob56.github.io/anabiotec-commun/outils/presentation-chromatographie.html">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulateur de chromatographie : CCM et colonne | BTSa ANABIOTEC</title>
+    <style>
+        :root {
+            --bg-color: #1e1e1e;
+            --text-color: #e0e0e0;
+            --primary-color: #0e7c7b;
+            --border-color: #444;
+            --surface-color: #2a2a2a;
+            --silica-color: #f0ede4;
+            --solvent-front-color: #aaccff44;
+            --eluent-low-polarity: #fffbeB; /* Jaune pâle type hexane */
+            --eluent-high-polarity: #e7f5ff; /* Bleu pâle type EtOAc/MeOH */
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 1.5em;
+        }
+        .app-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2em;
+            max-width: 1400px;
+            margin: auto;
+        }
+        .simulation-module {
+            background-color: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5em;
+        }
+        h1, h2 {
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5em;
+            margin-top: 0;
+        }
+        .controls {
+            padding-bottom: 1em;
+            margin-bottom: 1em;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .control-group { margin-bottom: 1em; }
+        .control-group label { display: block; margin-bottom: 0.5em; }
+        .slider { width: 100%; }
+        .button-group { display: flex; gap: 1em; margin-top: 1em; }
+        button {
+            flex-grow: 1; padding: 12px; border: none; border-radius: 5px; cursor: pointer;
+            background-color: var(--primary-color); color: white; font-size: 1em;
+        }
+        button:disabled { background-color: #555; cursor: not-allowed; }
+        .visualization { text-align: center; }
+        #tlcPlate { background-color: var(--silica-color); border: 2px solid #333; }
+        #columnCanvas { border: 2px solid #333; /* Le fond sera géré par JS */ }
+        #chromatogramCanvas { background-color:#111; margin-top:1em; }
+        .compound-options { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5em; }
+        .results { margin-top: 1em; min-height: 7em; text-align: left; padding: 0 1em; }
+    </style>
+<style id="responsive-patch">
+@media (max-width: 700px) {
+*,*::before,*::after{box-sizing:border-box}
+body{padding:0.75em}
+.app-container{grid-template-columns:1fr !important;gap:1em}
+.simulation-module{width:auto !important;max-width:100%;min-width:0}
+.controls,.control-group{max-width:100%}
+canvas,svg,img{max-width:100%}
+}
+</style>
+<!-- anb-commun --><script src="https://philrob56.github.io/anabiotec-commun/anb-commun.js"></script><!-- /anb-commun -->
+<!-- anb-charte --><style>:root{--bg-color:#f6f8f7!important;--text-color:#0f2a2e!important;--border-color:#e3e9e8!important;--surface-color:#ffffff!important}#chromatogramCanvas{background-color:#0f2a2e!important;border-radius:10px}button:disabled{background-color:#9fb3b1!important}</style><!-- /anb-charte -->
+</head>
+<body>
+<!-- anb-charte --><div class="anb-head"><div class="anb-crumb"><i></i><a href="https://sites.google.com/view/anabioteclegroschene/accueil" target="_top" style="color:inherit;text-decoration:none" title="Tous les outils du BTSa ANABIOTEC"><b>BTSa ANABIOTEC</b></a><span>›</span>Chromatographie</div><div class="anb-right"><div class="anb-tag">LEGTA Le Gros Chêne · Pontivy</div><button type="button" class="anb-print" onclick="anbPrint()" title="Ouvrir une version imprimable (PDF)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimer / PDF</button></div></div><!-- /anb-charte -->
+
+    <div style="text-align: center; margin-bottom: 2em;">
+        <h1>Simulateur de Chromatographie</h1>
+    </div>
+
+    <div class="app-container">
+        <!-- MODULE CCM -->
+        <div class="simulation-module">
+            <h2>Chromatographie sur Couche Mince (CCM)</h2>
+            <div class="controls">
+                <div class="control-group">
+                    <label>Substances à déposer :</label>
+                    <div class="compound-options">
+                        <label><input type="checkbox" id="tlc-compoundA" checked> Jaune de Beurre</label>
+                        <label><input type="checkbox" id="tlc-compoundB" checked> Rouge Soudan</label>
+                        <label><input type="checkbox" id="tlc-compoundC" checked> β-Carotène</label>
+                        <label><input type="checkbox" id="tlc-unknown" checked> Échantillon X (mélange)</label>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label for="tlc-solvent-polarity">Polarité de l'éluant : <span id="tlc-solvent-value">5</span> / 10</label>
+                    <input type="range" id="tlc-solvent-polarity" class="slider" min="1" max="10" value="5">
+                </div>
+                <div class="button-group">
+                    <button id="tlc-run-btn">Lancer l'élution</button>
+                    <button id="tlc-reset-btn">Réinitialiser</button>
+                </div>
+            </div>
+            <div class="visualization">
+                <canvas id="tlcPlate" width="250" height="400"></canvas>
+                <div id="tlc-results" class="results"></div>
+            </div>
+        </div>
+
+        <!-- MODULE COLONNE -->
+        <div class="simulation-module">
+            <h2>Chromatographie sur Colonne</h2>
+            <div class="controls">
+                <div class="control-group">
+                    <label for="col-quantity">Quantité déposée : <span id="col-quantity-value">3</span> / 10</label>
+                    <input type="range" id="col-quantity" class="slider" min="1" max="10" value="3">
+                </div>
+                <div class="control-group">
+                    <label for="col-solvent-start">Polarité de départ : <span id="col-solvent-start-value">2</span> / 10</label>
+                    <input type="range" id="col-solvent-start" class="slider" min="1" max="10" value="2">
+                </div>
+                 <div class="control-group">
+                    <label for="col-solvent-end">Polarité d'arrivée : <span id="col-solvent-end-value">9</span> / 10</label>
+                    <input type="range" id="col-solvent-end" class="slider" min="1" max="10" value="9">
+                </div>
+                <div class="button-group">
+                    <button id="col-run-btn">Démarrer la colonne</button>
+                    <button id="col-reset-btn">Réinitialiser</button>
+                </div>
+            </div>
+            <div class="visualization">
+                <canvas id="columnCanvas" width="100" height="400"></canvas>
+                <canvas id="chromatogramCanvas" width="500" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- SIMULATION CCM (INCHANGÉ) ---
+        const tlcCanvas = document.getElementById('tlcPlate');
+        const tlcCtx = tlcCanvas.getContext('2d');
+        const tlcRunBtn = document.getElementById('tlc-run-btn');
+        const tlcResetBtn = document.getElementById('tlc-reset-btn');
+        const tlcSolventSlider = document.getElementById('tlc-solvent-polarity');
+        const tlcSolventValue = document.getElementById('tlc-solvent-value');
+        const tlcResults = document.getElementById('tlc-results');
+        let tlcAnimationId;
+        const compounds = { A: { name: 'Jaune de Beurre', polarity: 8, color: '#f7b801' }, B: { name: 'Rouge Soudan', polarity: 5, color: '#f25f5c' }, C: { name: 'β-Carotène', polarity: 1, color: '#fe9000' } };
+        const impurities = { I1: { name: 'Impureté 1', polarity: 6.5, color: '#9d4edd' }, I2: { name: 'Impureté 2', polarity: 3.5, color: '#8d99ae' } };
+        let unknownMixture = [];
+        const createUnknownMixture = () => { const mixture = []; const compoundKeys = Object.keys(compounds); const randomKey = compoundKeys[Math.floor(Math.random() * compoundKeys.length)]; mixture.push(compounds[randomKey]); if (Math.random() > 0.3) { mixture.push(impurities.I1); } if (Math.random() > 0.6) { mixture.push(impurities.I2); } unknownMixture = mixture; };
+        const drawTLCPlate = (solventFrontY = 0, spots = []) => { const w = tlcCanvas.width, h = tlcCanvas.height; tlcCtx.clearRect(0, 0, w, h); const baseY = h - 40; tlcCtx.strokeStyle = '#888'; tlcCtx.beginPath(); tlcCtx.moveTo(10, baseY); tlcCtx.lineTo(w - 10, baseY); tlcCtx.stroke(); if (solventFrontY > 0) { tlcCtx.fillStyle = '#aaccff44'; tlcCtx.fillRect(0, baseY, w, solventFrontY - baseY); tlcCtx.strokeStyle = '#aaccff'; tlcCtx.beginPath(); tlcCtx.moveTo(0, solventFrontY); tlcCtx.lineTo(w, solventFrontY); tlcCtx.stroke(); } spots.forEach(spot => { tlcCtx.fillStyle = spot.color; tlcCtx.beginPath(); tlcCtx.arc(spot.x, spot.y, 7, 0, Math.PI * 2); tlcCtx.fill(); }); };
+        const getInitialSpots = () => { const baseY = tlcCanvas.height - 40; const initialSpots = []; if(document.getElementById('tlc-compoundA').checked) { initialSpots.push({ ...compounds.A, x: 50, y: baseY }); } if(document.getElementById('tlc-compoundB').checked) { initialSpots.push({ ...compounds.B, x: 100, y: baseY }); } if(document.getElementById('tlc-compoundC').checked) { initialSpots.push({ ...compounds.C, x: 150, y: baseY }); } if(document.getElementById('tlc-unknown').checked) { unknownMixture.forEach(component => { initialSpots.push({ ...component, isUnknownComponent: true, x: 200, y: baseY }); }); } return initialSpots; };
+        const calculateRf = (compoundPolarity, solventPolarity) => { const affinityForMobilePhase = Math.pow(solventPolarity / 10, 2); const affinityForStationaryPhase = (10 - compoundPolarity) / 10; return Math.min(0.95, affinityForMobilePhase * affinityForStationaryPhase + 0.05); };
+        const runTLC = () => { cancelAnimationFrame(tlcAnimationId); tlcRunBtn.disabled = true; tlcResetBtn.disabled = false; const solventPolarity = parseInt(tlcSolventSlider.value); const spots = getInitialSpots(); spots.forEach(spot => spot.targetRf = calculateRf(spot.polarity, solventPolarity)); const h = tlcCanvas.height; const baseY = h - 40; const finalFrontY = 20; const travelDistance = baseY - finalFrontY; let currentFrontY = baseY; const animate = () => { if (currentFrontY <= finalFrontY) { tlcRunBtn.disabled = false; tlcResults.innerHTML = "<h3>Résultats (Rapport Frontal, R<sub>f</sub>)</h3>"; spots.forEach(spot => { const finalDistance = baseY - spot.y; const rf = finalDistance / travelDistance; const displayName = spot.isUnknownComponent ? `Composant de X` : spot.name; tlcResults.innerHTML += `<p><span style="color:${spot.color}; font-weight:bold;">■</span> ${displayName}: <strong>${rf.toFixed(2)}</strong></p>`; }); tlcResults.innerHTML += `<p><i>Identifiez le composé en trouvant la tache de même R<sub>f</sub> que l'un des étalons.</i></p>`; return; } currentFrontY -= 1; spots.forEach(spot => { const distanceTraveledByFront = baseY - currentFrontY; spot.y = baseY - (distanceTraveledByFront * spot.targetRf); }); drawTLCPlate(currentFrontY, spots); tlcAnimationId = requestAnimationFrame(animate); }; animate(); };
+        const resetTLC = () => { cancelAnimationFrame(tlcAnimationId); createUnknownMixture(); drawTLCPlate(0, getInitialSpots()); tlcResults.innerHTML = ""; tlcRunBtn.disabled = false; };
+        tlcSolventSlider.addEventListener('input', (e) => tlcSolventValue.textContent = e.target.value);
+        tlcRunBtn.addEventListener('click', runTLC);
+        tlcResetBtn.addEventListener('click', resetTLC);
+        document.querySelectorAll('.compound-options input').forEach(cb => cb.addEventListener('change', resetTLC));
+
+        // --- SIMULATION COLONNE ---
+        const colCanvas = document.getElementById('columnCanvas');
+        const colCtx = colCanvas.getContext('2d');
+        const chromatogramCanvas = document.getElementById('chromatogramCanvas');
+        const chromatogramCtx = chromatogramCanvas.getContext('2d');
+        const colRunBtn = document.getElementById('col-run-btn');
+        const colResetBtn = document.getElementById('col-reset-btn');
+        const colQuantitySlider = document.getElementById('col-quantity');
+        const colQuantityValue = document.getElementById('col-quantity-value');
+        const colSolventStartSlider = document.getElementById('col-solvent-start');
+        const colSolventStartValue = document.getElementById('col-solvent-start-value');
+        const colSolventEndSlider = document.getElementById('col-solvent-end');
+        const colSolventEndValue = document.getElementById('col-solvent-end-value');
+        let colAnimationId;
+
+        const baseColCompounds = [
+            { name: 'F', polarity: 8, color: '#f07167', concentration: 0.75 },
+            { name: 'G', polarity: 5, color: '#00afb9', concentration: 1.0 },
+            { name: 'H', polarity: 2, color: '#57cc99', concentration: 0.5 }
+        ];
+        const DETECTOR_LIMIT = 3500;
+
+        const getInitialColumnBands = () => {
+            const quantity = parseInt(colQuantitySlider.value);
+            const initialWidth = 5 + quantity * 1.5;
+            return baseColCompounds.map(c => ({...c, y: 30, width: initialWidth }));
+        };
+
+        const drawColumn = (bands, currentPolarity) => {
+            const w = colCanvas.width, h = colCanvas.height;
+            
+            // Fond de la colonne avec gradient de couleur
+            const gradient = colCtx.createLinearGradient(0, 0, 0, h);
+            const startColor = getComputedStyle(document.documentElement).getPropertyValue('--eluent-low-polarity').trim();
+            const endColor = getComputedStyle(document.documentElement).getPropertyValue('--eluent-high-polarity').trim();
+            const gradientPosition = (currentPolarity - 1) / 9; // 0 à 1
+            gradient.addColorStop(0, lerpColor(startColor, endColor, gradientPosition));
+            gradient.addColorStop(1, lerpColor(startColor, endColor, gradientPosition));
+            colCtx.fillStyle = gradient;
+            colCtx.fillRect(0,0,w,h);
+
+            bands.forEach(band => {
+                colCtx.fillStyle = band.color + 'aa';
+                colCtx.beginPath();
+                colCtx.ellipse(w / 2, band.y, w / 2 - 10, band.width, 0, 0, Math.PI * 2);
+                colCtx.fill();
+            });
+        };
+        
+        // Helper function to interpolate between two colors
+        function lerpColor(a, b, amount) { 
+            const ah = parseInt(a.replace(/#/g, ''), 16),
+                  ar = ah >> 16, ag = ah >> 8 & 0xff, ab = ah & 0xff,
+                  bh = parseInt(b.replace(/#/g, ''), 16),
+                  br = bh >> 16, bg = bh >> 8 & 0xff, bb = bh & 0xff,
+                  rr = ar + amount * (br - ar),
+                  rg = ag + amount * (bg - ag),
+                  rb = ab + amount * (bb - ab);
+            return '#' + ((1 << 24) + (rr << 16) + (rg << 8) + rb | 0).toString(16).slice(1);
+        }
+
+        const drawChromatogram = (data, maxIntensity, totalTime, steps) => {
+            const w = chromatogramCanvas.width, h = chromatogramCanvas.height;
+            const padding = { top: 20, right: 20, bottom: 40, left: 50 };
+            const plotWidth = w - padding.left - padding.right;
+            const plotHeight = h - padding.top - padding.bottom;
+            chromatogramCtx.clearRect(0, 0, w, h);
+            chromatogramCtx.fillStyle = '#e0e0e0';
+            chromatogramCtx.font = '12px Arial';
+            chromatogramCtx.textAlign = 'center';
+            chromatogramCtx.textBaseline = 'middle';
+            chromatogramCtx.strokeStyle = '#888';
+            chromatogramCtx.lineWidth = 1;
+            chromatogramCtx.beginPath();
+            chromatogramCtx.moveTo(padding.left, padding.top);
+            chromatogramCtx.lineTo(padding.left, h - padding.bottom);
+            chromatogramCtx.lineTo(w - padding.right, h - padding.bottom);
+            chromatogramCtx.stroke();
+            chromatogramCtx.fillText(`Temps (min)`, w / 2, h - 10);
+            chromatogramCtx.save();
+            chromatogramCtx.translate(15, h / 2);
+            chromatogramCtx.rotate(-Math.PI / 2);
+            chromatogramCtx.fillText("Intensité", 0, 0);
+            chromatogramCtx.restore();
+            for (let i = 0; i <= 6; i++) { const x = padding.left + (i / 6) * plotWidth; chromatogramCtx.beginPath(); chromatogramCtx.moveTo(x, h - padding.bottom); chromatogramCtx.lineTo(x, h - padding.bottom + 5); chromatogramCtx.stroke(); chromatogramCtx.fillText(Math.round(i/6 * totalTime), x, h - padding.bottom + 15); }
+            const yMax = Math.ceil(maxIntensity / 1000) * 1000 || 1000;
+            for (let i = 0; i <= 4; i++) { const y = h - padding.bottom - (i / 4) * plotHeight; chromatogramCtx.beginPath(); chromatogramCtx.moveTo(padding.left, y); chromatogramCtx.lineTo(padding.left - 5, y); chromatogramCtx.stroke(); chromatogramCtx.textAlign = 'right'; const labelValue = (i/4 * yMax); chromatogramCtx.fillText(labelValue, padding.left - 10, y); chromatogramCtx.textAlign = 'center';}
+            const scaleY = yMax > 0 ? plotHeight / yMax : 0;
+            data.forEach(compoundData => {
+                chromatogramCtx.strokeStyle = compoundData.color;
+                chromatogramCtx.lineWidth = 2;
+                chromatogramCtx.beginPath();
+                chromatogramCtx.moveTo(padding.left, h - padding.bottom - (compoundData.points[0] * scaleY || 0));
+                for (let i = 1; i < compoundData.points.length; i++) { const x = padding.left + i * (plotWidth / steps); const y = h - padding.bottom - (compoundData.points[i] * scaleY); chromatogramCtx.lineTo(x, y); }
+                chromatogramCtx.stroke();
+            });
+            chromatogramCtx.lineWidth = 1;
+        };
+        
+        const runColumn = () => {
+            cancelAnimationFrame(colAnimationId);
+            colRunBtn.disabled = true;
+            colResetBtn.disabled = false;
+            const quantity = parseInt(colQuantitySlider.value);
+            const quantityFactor = Math.pow(1.6, quantity - 1);
+            const solventStart = parseInt(colSolventStartSlider.value);
+            const solventEnd = parseInt(colSolventEndSlider.value);
+            const bands = getInitialColumnBands();
+            const totalSteps = 400;
+            const chromatogramData = bands.map(b => ({ color: b.color, points: [] }));
+            let timeStep = 0;
+            let maxIntensity = 0;
+
+            const animate = () => {
+                if (timeStep > totalSteps) { colRunBtn.disabled = false; return; }
+                const currentSolventPolarity = solventStart + (solventEnd - solventStart) * (timeStep / totalSteps);
+
+                for (let i = 0; i < bands.length; i++) {
+                    const band = bands[i];
+                    const maxSpeed = 4.0;
+                    const retentionFactor = Math.pow(band.polarity / 10, 2);
+                    const eluentPower = Math.pow(currentSolventPolarity / 10, 2);
+                    const speed = maxSpeed * (eluentPower / (eluentPower + retentionFactor));
+                    
+                    band.y += speed;
+                    band.width += 0.03;
+                    
+                    const theoreticalIntensity = (band.concentration * quantityFactor * 400) * Math.exp(-Math.pow(band.y - colCanvas.height, 2) / (2 * Math.pow(band.width * 2, 2)));
+                    const recordedIntensity = Math.min(theoreticalIntensity, DETECTOR_LIMIT);
+                    
+                    chromatogramData[i].points.push(recordedIntensity);
+                    if (recordedIntensity > maxIntensity) { maxIntensity = recordedIntensity; }
+                }
+                
+                drawColumn(bands, currentSolventPolarity);
+                drawChromatogram(chromatogramData, maxIntensity, 30, totalSteps);
+                timeStep++;
+                colAnimationId = requestAnimationFrame(animate);
+            };
+            animate();
+        };
+
+        const resetColumn = () => {
+            cancelAnimationFrame(colAnimationId);
+            const startPolarity = parseInt(colSolventStartSlider.value);
+            drawColumn(getInitialColumnBands(), startPolarity);
+            drawChromatogram(baseColCompounds.map(b => ({ color: b.color, points: [] })), DETECTOR_LIMIT, 30, 400);
+            colRunBtn.disabled = false;
+        };
+
+        colQuantitySlider.addEventListener('input', (e) => { colQuantityValue.textContent = e.target.value; resetColumn(); });
+        colSolventStartSlider.addEventListener('input', (e) => { colSolventStartValue.textContent = e.target.value; resetColumn(); });
+        colSolventEndSlider.addEventListener('input', (e) => { colSolventEndValue.textContent = e.target.value; resetColumn(); });
+        colRunBtn.addEventListener('click', runColumn);
+        colResetBtn.addEventListener('click', resetColumn);
+        
+        // Initialisation
+        resetTLC();
+        resetColumn();
+    });
+    </script>
+
+</body>
+</html>
