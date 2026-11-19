@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+<meta name="description" content="Convertisseur d’unités du Système international pour le laboratoire de chimie : masses, volumes, concentrations, pressions, températures et autres grandeurs. Outil du BTSa ANABIOTEC, lycée Le Gros Chêne, Pontivy.">
+<link rel="canonical" href="https://philrob56.github.io/anabiotec-commun/outils/convertisseur-unites.html">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Convertisseur d’unités SI pour le laboratoire | BTSa ANABIOTEC</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        /* --- NOUVELLE PALETTE DE COULEURS --- */
+        :root {
+            --gradient-start: #8e44ad; /* Violet */
+            --gradient-end: #0e7c7b;   /* Bleu Ciel */
+            --gradient-result-start: #6a11cb; /* Indigo */
+            --gradient-result-end: #2575fc;   /* Bleu Royal */
+            
+            --background-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --text-gradient: linear-gradient(45deg, var(--gradient-start), var(--gradient-end));
+            
+            --container-bg-color: #ffffff;
+            --text-color-primary: #1a202c;
+            --border-color: #d8e0e7;
+            --shadow-color: rgba(106, 17, 203, 0.15);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-image: var(--background-gradient);
+            margin: 0;
+            padding: 1rem;
+            box-sizing: border-box;
+        }
+
+        .converter-container {
+            background-color: var(--container-bg-color);
+            padding: 2.5rem 3rem;
+            border-radius: 20px;
+            box-shadow: 0 12px 28px var(--shadow-color);
+            width: 100%;
+            max-width: 540px;
+            border: 1px solid #eef2f5;
+        }
+
+        h1 {
+            text-align: center;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            margin-top: 0;
+            margin-bottom: 2.5rem;
+            /* Effet de texte en dégradé */
+            background-image: var(--text-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .input-group { margin-bottom: 1.5rem; }
+
+        .row {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .row .input-group { flex: 1; margin-bottom: 0; }
+
+        label {
+            display: block;
+            margin-bottom: 0.6rem;
+            color: #3d4a5c;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        input[type="number"], select {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            background-color: #fcfdff;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            appearance: none;
+        }
+
+        input[type="number"]:focus, select:focus {
+            outline: none;
+            border-color: var(--gradient-start);
+            box-shadow: 0 0 0 4px rgba(142, 68, 173, 0.1);
+        }
+        
+        select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 1rem center;
+            background-repeat: no-repeat;
+            background-size: 1.25em;
+            padding-right: 2.5rem;
+        }
+        
+        .action-btn {
+            background: none; border: none; padding: 0.5rem; cursor: pointer; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+        }
+        .action-btn:hover { background-color: rgba(142, 68, 173, 0.08); }
+        .action-btn svg { width: 24px; height: 24px; stroke: #8892a3; }
+        .action-btn:active { transform: scale(0.9); }
+
+        #result {
+            font-size: 1.25rem;
+            font-weight: 600;
+            text-align: center;
+            margin-top: 2rem;
+            padding: 1.2rem;
+            background-image: linear-gradient(45deg, var(--gradient-result-start), var(--gradient-result-end));
+            color: #ffffff;
+            border-radius: 10px;
+            min-height: 2.5rem;
+            word-wrap: break-word;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        @media (max-width: 580px) {
+            .converter-container { padding: 2rem 1.5rem; }
+            .row { flex-direction: column; gap: 0; align-items: stretch; }
+            .row .input-group { margin-bottom: 1.5rem; }
+            #swap-btn { margin: -0.5rem 0 0.5rem; align-self: center; transform: rotate(90deg); }
+        }
+    </style>
+<!-- anb-commun --><script src="https://philrob56.github.io/anabiotec-commun/anb-commun.js"></script><!-- /anb-commun -->
+<!-- anb-charte --><style>body{background:#f6f8f7!important;background-image:none!important}body{flex-direction:column!important;justify-content:flex-start!important;align-items:center!important}@media (max-width:700px){body>*{max-width:100%;box-sizing:border-box}}</style><!-- /anb-charte -->
+<!-- anb-fix --><style>:root{--gradient-start:#0a4f4f!important;--gradient-end:#2a9d8f!important;--gradient-result-start:#0a4f4f!important;--gradient-result-end:#0e7c7b!important}</style><!-- /anb-fix -->
+</head>
+<body>
+<!-- anb-charte --><div class="anb-head"><div class="anb-crumb"><i></i><a href="https://sites.google.com/view/anabioteclegroschene/accueil" target="_top" style="color:inherit;text-decoration:none" title="Tous les outils du BTSa ANABIOTEC"><b>BTSa ANABIOTEC</b></a><span>›</span>Chimie</div><div class="anb-right"><div class="anb-tag">LEGTA Le Gros Chêne · Pontivy</div><button type="button" class="anb-print" onclick="anbPrint()" title="Ouvrir une version imprimable (PDF)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimer / PDF</button></div></div><!-- /anb-charte -->
+
+    <div class="converter-container">
+        <h1>Convertisseur d'Unités SI</h1>
+        
+        <div class="row">
+            <div class="input-group">
+                <label for="category">Catégorie</label>
+                <select id="category"></select>
+            </div>
+            <div class="input-group">
+                <label for="inputValue">Valeur à convertir</label>
+                <input type="number" id="inputValue" value="1" step="any">
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="input-group">
+                <label for="fromUnit">De</label>
+                <select id="fromUnit"></select>
+            </div>
+            <button id="swap-btn" class="action-btn" aria-label="Inverser les unités">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" /></svg>
+            </button>
+            <div class="input-group">
+                <label for="toUnit">Vers</label>
+                <select id="toUnit"></select>
+            </div>
+        </div>
+        
+        <div id="result"></div>
+
+    </div>
+
+    <script>
+        // Le JavaScript est identique et n'a pas besoin d'être modifié.
+        document.addEventListener('DOMContentLoaded', () => {
+            const unitsByCategory = {
+                'Masse': ['ng', 'µg', 'mg', 'g', 'kg', 't'],
+                'Longueur': ['nm', 'µm', 'mm', 'cm', 'm', 'km'],
+                'Volume': ['nL', 'µL', 'mL', 'L', 'm³'],
+                'Température': ['C', 'K'],
+                'Vitesse': ['m/s', 'km/h']
+            };
+            const conversionFactors = {
+                Masse: { base: 'g', units: { 'ng': 1e-9, 'µg': 1e-6, 'mg': 1e-3, 'g': 1, 'kg': 1e3, 't': 1e6 } },
+                Longueur: { base: 'm', units: { 'nm': 1e-9, 'µm': 1e-6, 'mm': 1e-3, 'cm': 1e-2, 'm': 1, 'km': 1e3 } },
+                Volume: { base: 'L', units: { 'nL': 1e-9, 'µL': 1e-6, 'mL': 1e-3, 'L': 1, 'm³': 1e3 } },
+                Vitesse: { base: 'm/s', units: { 'm/s': 1, 'km/h': 1 / 3.6 } }
+            };
+
+            function localConvert(value, from, to, category) {
+                if (category === 'Température') {
+                    if (from === to) return value; let tempInC;
+                    if (from === 'C') tempInC = value; if (from === 'K') tempInC = value - 273.15;
+                    if (to === 'C') return tempInC; if (to === 'K') return tempInC + 273.15;
+                } else {
+                    const categoryInfo = conversionFactors[category];
+                    const valueInBase = value * categoryInfo.units[from];
+                    return valueInBase / categoryInfo.units[to];
+                }
+            }
+
+            const categorySelect = document.getElementById('category');
+            const fromUnitSelect = document.getElementById('fromUnit');
+            const toUnitSelect = document.getElementById('toUnit');
+            const inputValue = document.getElementById('inputValue');
+            const resultDiv = document.getElementById('result');
+            const swapBtn = document.getElementById('swap-btn');
+            
+            function populateCategories() {
+                Object.keys(unitsByCategory).forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = option.textContent = category;
+                    categorySelect.appendChild(option);
+                });
+            }
+
+            function populateUnits() {
+                const selectedCategory = categorySelect.value;
+                const units = unitsByCategory[selectedCategory];
+                fromUnitSelect.innerHTML = toUnitSelect.innerHTML = '';
+                units.forEach(unit => {
+                    const fromOption = document.createElement('option');
+                    const toOption = document.createElement('option');
+                    fromOption.value = toOption.value = unit;
+                    fromOption.textContent = toOption.textContent = unit;
+                    fromUnitSelect.appendChild(fromOption);
+                    toUnitSelect.appendChild(toOption);
+                });
+                if (units.length > 2) { fromUnitSelect.value = units[2]; toUnitSelect.value = units[3];
+                } else if (units.length > 1) { toUnitSelect.value = units[1]; }
+                performConversion();
+            }
+
+            function performConversion() {
+                const value = parseFloat(inputValue.value);
+                const from = fromUnitSelect.value;
+                const to = toUnitSelect.value;
+                const category = categorySelect.value;
+                if (isNaN(value)) {
+                    resultDiv.textContent = '';
+                    return;
+                }
+                try {
+                    const result = localConvert(value, from, to, category);
+                    let formattedResult;
+                    if (Math.abs(result) >= 1e6 || (Math.abs(result) <= 1e-6 && result !== 0)) {
+                        formattedResult = result.toExponential(4);
+                    } else {
+                        formattedResult = result.toLocaleString('fr-FR', { maximumFractionDigits: 9 });
+                    }
+                    resultDiv.textContent = `${value.toLocaleString('fr-FR')} ${from} = ${formattedResult} ${to}`;
+                } catch (error) {
+                    resultDiv.textContent = 'Conversion non possible.';
+                    console.error(error);
+                }
+            }
+            
+            swapBtn.addEventListener('click', () => {
+                const tempUnit = fromUnitSelect.value;
+                fromUnitSelect.value = toUnitSelect.value;
+                toUnitSelect.value = tempUnit;
+                performConversion();
+            });
+
+            categorySelect.addEventListener('change', populateUnits);
+            inputValue.addEventListener('input', performConversion);
+            fromUnitSelect.addEventListener('change', performConversion);
+            toUnitSelect.addEventListener('change', performConversion);
+
+            populateCategories();
+            populateUnits();
+        });
+    </script>
+
+</body>
+</html>
