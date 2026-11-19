@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+<meta name="description" content="Simulation interactive du contrôle de pureté d’un pic en HPLC avec détecteur à barrette de diodes (DAD) : comparaison des spectres UV d’un pic pur et d’un pic impur. Outil du BTSa ANABIOTEC, lycée Le Gros Chêne, Pontivy.">
+<link rel="canonical" href="https://philrob56.github.io/anabiotec-commun/outils/purete-pic.html">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pureté d’un pic en HPLC-DAD : simulation | BTSa ANABIOTEC</title>
+    <!-- Inclusion de la bibliothèque de graphiques Plotly.js -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        h1, h2 {
+            text-align: center;
+            color: #0a5c5b;
+        }
+        .container {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .simulation-card {
+            flex: 1;
+            min-width: 450px;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            background-color: #fff;
+        }
+        .plot-container {
+            width: 100%;
+            height: 300px;
+        }
+        .explanation {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #e7f3f2;
+            border-left: 4px solid #0a5c5b;
+            font-size: 0.9em;
+        }
+        .instructions {
+            text-align: center;
+            font-weight: bold;
+            color: #d9534f;
+            margin: 10px 0 25px 0;
+            font-size: 1.1em;
+        }
+    </style>
+<style id="responsive-patch">
+@media (max-width: 700px) {
+*,*::before,*::after{box-sizing:border-box}
+img,svg,video{max-width:100%}
+body{padding:10px}
+.simulation-card{min-width:0 !important;width:100% !important;max-width:100%}
+.plot-container{width:100% !important;max-width:100%}
+}
+</style>
+<!-- anb-commun --><script src="https://philrob56.github.io/anabiotec-commun/anb-commun.js"></script><!-- /anb-commun -->
+</head>
+<body>
+<!-- anb-charte --><div class="anb-head"><div class="anb-crumb"><i></i><a href="https://sites.google.com/view/anabioteclegroschene/accueil" target="_top" style="color:inherit;text-decoration:none" title="Tous les outils du BTSa ANABIOTEC"><b>BTSa ANABIOTEC</b></a><span>›</span>Chromatographie</div><div class="anb-right"><div class="anb-tag">LEGTA Le Gros Chêne · Pontivy</div><button type="button" class="anb-print" onclick="anbPrint()" title="Ouvrir une version imprimable (PDF)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimer / PDF</button></div></div><!-- /anb-charte -->
+
+    <h1>Simulation Interactive : Pureté d'un Pic en HPLC-DAD</h1>
+    <p class="instructions">
+        Survolez les chromatogrammes. Pour le pic impur, observez comment le spectre (ligne pleine) se désaligne du spectre de référence (pointillés).
+    </p>
+
+    <div class="container">
+        <!-- Scénario 1: Pic Pur -->
+        <div class="simulation-card">
+            <h2>Cas 1 : Pic Pur</h2>
+            <div id="chromato-pur" class="plot-container"></div>
+            <div id="spectre-pur" class="plot-container"></div>
+            <div class="explanation">
+                <strong>Observation :</strong> Le spectre UV et la valeur du <strong>λmax restent constants</strong>. Le spectre se superpose toujours parfaitement à lui-même.
+                <br><strong>Conclusion :</strong> Le pic est spectralement pur.
+            </div>
+        </div>
+
+        <!-- Scénario 2: Pic Impur -->
+        <div class="simulation-card">
+            <h2>Cas 2 : Pic Impur (avec Co-élution)</h2>
+            <div id="chromato-impur" class="plot-container"></div>
+            <div id="spectre-impur" class="plot-container"></div>
+            <div class="explanation">
+                <strong>Observation :</strong> La ligne pleine <strong>se désaligne</strong> de la référence en pointillés sur les flancs du pic. Le <strong>λmax change</strong> également.
+                <br><strong>Conclusion :</strong> Le désalignement spectral est la preuve visuelle d'un pic impur.
+            </div>
+        </div>
+    </div>
+
+<script>
+    // --- Fonctions de génération de données ---
+    function generateGaussian(x, mean, stdDev, amplitude) { /* ... (inchangé) ... */ return x.map(val => amplitude * Math.exp(-0.5 * Math.pow((val - mean) / stdDev, 2))); }
+    function generateComplexSpectrum(wavelengths, peaks) { /* ... (inchangé) ... */ let spectrum = new Array(wavelengths.length).fill(0); for (const peak of peaks) { for (let i = 0; i < wavelengths.length; i++) { spectrum[i] += peak.amplitude * Math.exp(-0.5 * Math.pow((wavelengths[i] - peak.lambdaMax) / peak.width, 2)); } } return spectrum; }
+    function findLambdaMax(wavelengths, spectrum) { /* ... (inchangé) ... */ if (!spectrum || spectrum.length === 0) return { lambdaMax: 0, absorbance: 0 }; let maxAbs = -1; let maxIndex = -1; for (let i = 0; i < spectrum.length; i++) { if (spectrum[i] > maxAbs) { maxAbs = spectrum[i]; maxIndex = i; } } return { lambdaMax: wavelengths[maxIndex], absorbance: maxAbs }; }
+
+    // --- Paramètres de la simulation ---
+    const time = Array.from({ length: 201 }, (_, i) => 4 + i * 0.01);
+    const wavelengths = Array.from({ length: 401 }, (_, i) => 200 + i * 0.5);
+    const mainCompoundPeaks = [{ lambdaMax: 275, amplitude: 1.05, width: 15 }, { lambdaMax: 310, amplitude: 0.4, width: 30 }];
+    const impurityPeaks = [{ lambdaMax: 230, amplitude: 0.9, width: 12 }, { lambdaMax: 290, amplitude: 0.2, width: 25 }];
+
+    // --- Génération des données ---
+    const pureCompoundChromato = generateGaussian(time, 5.0, 0.1, 1.0);
+    const pureCompoundSpectrum = generateComplexSpectrum(wavelengths, mainCompoundPeaks);
+    const mainCompoundChromato = generateGaussian(time, 5.0, 0.1, 1.0);
+    const impurityChromato = generateGaussian(time, 5.1, 0.08, 0.5);
+    const impurePeakChromato = mainCompoundChromato.map((val, i) => val + impurityChromato[i]);
+    const mainCompoundSpectrum = generateComplexSpectrum(wavelengths, mainCompoundPeaks);
+    const impuritySpectrum = generateComplexSpectrum(wavelengths, impurityPeaks);
+    const pureMaxInfo = findLambdaMax(wavelengths, pureCompoundSpectrum);
+    const initialImpurMaxInfo = findLambdaMax(wavelengths, mainCompoundSpectrum);
+
+    // --- Configuration des graphiques ---
+    const chromatoLayout = { title: 'Chromatogramme', xaxis: { title: 'Temps de rétention (min)' }, yaxis: { title: 'Absorbance (UA)', range: [0, 1.6] }, margin: { t: 40, b: 40, l: 50, r: 20 }, hovermode: 'x unified' };
+    const baseSpectrumLayout = { title: 'Spectre UV', xaxis: { title: 'Longueur d\'onde (nm)', range: [200, 400] }, yaxis: { title: 'Absorbance (UA)', autorange: true }, margin: { t: 40, b: 40, l: 50, r: 20 }, legend: { x: 0.55, y: 0.95 } };
+
+    // --- Initialisation du Pic Pur ---
+    const pureSpectrumLayout = { ...baseSpectrumLayout, annotations: [{ x: 0.98, xref: 'paper', y: 0.95, yref: 'paper', text: `<b>λmax = ${pureMaxInfo.lambdaMax.toFixed(1)} nm</b>`, showarrow: false, font: { color: 'green', size: 14 }, xanchor: 'right' }] };
+    Plotly.newPlot('chromato-pur', [{ x: time, y: pureCompoundChromato, type: 'scatter', line: { color: 'royalblue' } }], chromatoLayout);
+    Plotly.newPlot('spectre-pur', [{ x: wavelengths, y: pureCompoundSpectrum, type: 'scatter', line: { color: 'green' }, name: 'Spectre' }], pureSpectrumLayout);
+
+    // --- Initialisation du Pic Impur ---
+    const initialImpurData = [
+        { x: wavelengths, y: mainCompoundSpectrum, type: 'scatter', name: 'Référence (sommet)', line: { color: 'lightgrey', dash: 'dash' } },
+        { x: wavelengths, y: mainCompoundSpectrum, type: 'scatter', name: 'Spectre survolé', line: { color: 'green' } }
+    ];
+    const initialImpurLayout = { ...baseSpectrumLayout, annotations: [{ x: 0.98, xref: 'paper', y: 0.95, yref: 'paper', text: `<b>λmax = ${initialImpurMaxInfo.lambdaMax.toFixed(1)} nm</b>`, showarrow: false, font: { color: 'green', size: 14 }, xanchor: 'right' }] };
+    Plotly.newPlot('chromato-impur', [{ x: time, y: impurePeakChromato, type: 'scatter', line: { color: 'darkorange' } }], chromatoLayout);
+    Plotly.newPlot('spectre-impur', initialImpurData, initialImpurLayout);
+
+    // --- Interactivité pour le pic impur ---
+    const chromatoImpurDiv = document.getElementById('chromato-impur');
+    chromatoImpurDiv.on('plotly_hover', function (data) {
+        const pointIndex = data.points[0].pointNumber;
+        const mainContribution = mainCompoundChromato[pointIndex];
+        const impurityContribution = impurityChromato[pointIndex];
+        const totalSignal = mainContribution + impurityContribution;
+
+        if (totalSignal > 0.01) {
+            const mixedSpectrum = wavelengths.map((_, i) => (mainCompoundSpectrum[i] * mainContribution + impuritySpectrum[i] * impurityContribution) / totalSignal);
+            const currentMaxInfo = findLambdaMax(wavelengths, mixedSpectrum);
+
+            const hoverData = [
+                { x: wavelengths, y: mainCompoundSpectrum, type: 'scatter', name: 'Référence (sommet)', line: { color: 'lightgrey', dash: 'dash' } },
+                { x: wavelengths, y: mixedSpectrum, type: 'scatter', name: 'Spectre survolé', line: { color: 'red' } }
+            ];
+            
+            const dynamicLayout = { ...baseSpectrumLayout, annotations: [{ x: 0.98, xref: 'paper', y: 0.95, yref: 'paper', text: `<b>λmax = ${currentMaxInfo.lambdaMax.toFixed(1)} nm</b>`, showarrow: false, font: { color: 'red', size: 14 }, xanchor: 'right' }] };
+
+            Plotly.react('spectre-impur', hoverData, dynamicLayout);
+        }
+    });
+
+    // Réinitialiser le graphique lorsque la souris quitte la zone
+    chromatoImpurDiv.on('plotly_unhover', function (data) {
+        Plotly.react('spectre-impur', initialImpurData, initialImpurLayout);
+    });
+</script>
+
+
+</body>
+</html>
