@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+<meta name="description" content="Calculateur de la concentration et de son incertitude élargie à partir d’une courbe d’étalonnage, en tenant compte de la dilution (tolérances de la pipette et de la fiole jaugée). Outil du BTSa ANABIOTEC, lycée Le Gros Chêne, Pontivy.">
+<link rel="canonical" href="https://philrob56.github.io/anabiotec-commun/outils/incertitude-dilution.html">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Incertitude élargie après dilution : calculateur | BTSa ANABIOTEC</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+            text-align: center;
+        }
+        .container {
+            max-width: 90%;
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            font-size: 1.5em;
+            color: #0e7c7b;
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .input-group label {
+            font-weight: bold;
+            color: #555;
+            margin-bottom: 5px;
+        }
+        .input-group input {
+            width: 80%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 14px;
+            background-color: #f0f0f0;
+        }
+        button {
+            margin-top: 15px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #0e7c7b;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0a5c5b;
+        }
+        .result {
+            margin-top: 20px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.2em;
+            color: teal;
+            border: 2px solid teal;
+            border-radius: 8px;
+            padding: 10px;
+            background-color: #f0fdfa;
+        }
+        @media (max-width: 600px) {
+            .input-group input {
+                width: 100%;
+            }
+        }
+    </style>
+<!-- anb-commun --><script src="https://philrob56.github.io/anabiotec-commun/anb-commun.js"></script><!-- /anb-commun -->
+</head>
+<body>
+<!-- anb-charte --><div class="anb-head"><div class="anb-crumb"><i></i><a href="https://sites.google.com/view/anabioteclegroschene/accueil" target="_top" style="color:inherit;text-decoration:none" title="Tous les outils du BTSa ANABIOTEC"><b>BTSa ANABIOTEC</b></a><span>›</span>Chimie</div><div class="anb-right"><div class="anb-tag">LEGTA Le Gros Chêne · Pontivy</div><button type="button" class="anb-print" onclick="anbPrint()" title="Ouvrir une version imprimable (PDF)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimer / PDF</button></div></div><!-- /anb-charte -->
+    <div class="container">
+        <h1>Concentration et Incertitude Élargie issues d'une courbe de calibration avec dilution</h1>
+
+        <div class="input-group">
+            <label for="C">Concentration C (mg/L) :</label>
+            <input type="number" id="C" value="30.12">
+        </div>
+        <div class="input-group">
+            <label for="u_C">Incertitude u(C) (mg/L) :</label>
+            <input type="number" id="u_C" value="0.52">
+        </div>
+        <div class="input-group">
+            <label for="V_pip">Volume Pipette (mL) :</label>
+            <input type="number" id="V_pip" value="5">
+        </div>
+        <div class="input-group">
+            <label for="t_pip">Tolérance Pipette (mL) :</label>
+            <input type="number" id="t_pip" value="0.15">
+        </div>
+        <div class="input-group">
+            <label for="V_fiole">Volume Fiole (mL) :</label>
+            <input type="number" id="V_fiole" value="100">
+        </div>
+        <div class="input-group">
+            <label for="t_fiole">Tolérance Fiole (mL) :</label>
+            <input type="number" id="t_fiole" value="0.3">
+        </div>
+        <div class="input-group">
+            <label for="temperature">Température (°C) :</label>
+            <input type="number" id="temperature" value="20">
+        </div>
+        <button onclick="calculerIncertitude()">Calculer</button>
+        
+        <div class="result" id="result">Cesp = (0 ± 0) mg/L</div>
+    </div>
+
+    <script>
+        function calculerIncertitude() {
+            const C = parseFloat(document.getElementById('C').value);
+            const u_C = parseFloat(document.getElementById('u_C').value);
+            const V_pip = parseFloat(document.getElementById('V_pip').value);
+            const t_pip = parseFloat(document.getElementById('t_pip').value);
+            const V_fiole = parseFloat(document.getElementById('V_fiole').value);
+            const t_fiole = parseFloat(document.getElementById('t_fiole').value);
+            const temperature = parseFloat(document.getElementById('temperature').value);
+            const reference_temperature = 20;
+            const delta_theta = Math.abs(temperature - reference_temperature);
+            const beta = 2.1e-4;
+            const k = 2;
+
+            const dilution_factor = V_fiole / V_pip;
+            const C_esp = C * dilution_factor;
+            
+            const u_temp_pip = (beta * V_pip * Math.abs(delta_theta)) / Math.sqrt(3);
+            const u_temp_fiole = (beta * V_fiole * Math.abs(delta_theta)) / Math.sqrt(3);
+            const u_tol_pip = t_pip / Math.sqrt(6);
+            const u_tol_fiole = t_fiole / Math.sqrt(6);
+            
+            const u_c = Math.sqrt(
+                Math.pow(u_C / C, 2) +
+                Math.pow(u_temp_pip / V_pip, 2) +
+                Math.pow(u_temp_fiole / V_fiole, 2) +
+                Math.pow(u_tol_pip / V_pip, 2) +
+                Math.pow(u_tol_fiole / V_fiole, 2)
+            ) * C_esp;
+            
+            const U = k * u_c;
+
+            document.getElementById('result').textContent = `Cesp = (${C_esp.toFixed(1)} ± ${U.toFixed(1)}) mg/L (95%)`;
+        }
+    </script>
+
+</body>
+</html>
