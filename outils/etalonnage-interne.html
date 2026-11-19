@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+<meta name="description" content="Calculateur du degré alcoolique d’une boisson par étalonnage interne en chromatographie, avec facteur de dilution et calcul de l’incertitude. Outil du BTSa ANABIOTEC, lycée Le Gros Chêne, Pontivy.">
+<link rel="canonical" href="https://philrob56.github.io/anabiotec-commun/outils/etalonnage-interne.html">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Étalonnage interne en chromatographie : degré alcoolique | BTSa ANABIOTEC</title>
+    <style>
+        /* --- Styles Généraux et Esthétique Améliorée --- */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        :root {
+            --primary-color: #2c3e50;
+            --accent-blue: #0e7c7b;
+            --accent-red: #c0392b;
+            --accent-green-start: #27ae60;
+            --accent-green-end: #229954;
+            --background-color: #f4f7f9;
+            --surface-color: #ffffff;
+            --text-color: #34495e;
+            --text-light: #7f8c8d;
+            --border-color: #e5e9f2;
+            --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 1rem;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* --- Conteneur Principal --- */
+        .container {
+            max-width: 700px;
+            margin: 1rem auto;
+            background-color: var(--surface-color);
+            padding: 1.75rem;
+            border-radius: 16px;
+            box-shadow: 0 12px 28px rgba(44, 62, 80, 0.08);
+            border: 1px solid var(--border-color);
+        }
+
+        /* --- En-tête --- */
+        header { text-align: center; margin-bottom: 2rem; }
+        h1 {
+            color: var(--primary-color);
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, var(--primary-color), var(--accent-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        header p { margin: 0.5rem 0 0; color: var(--text-light); font-size: 1rem; }
+        
+        /* --- Paramètres et Cartes --- */
+        .analysis-parameters, .card {
+            background-color: #fbfdff;
+            border: 1px solid var(--border-color);
+            padding: 1.1rem;
+            border-radius: 10px;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .analysis-parameters:hover, .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(44, 62, 80, 0.06);
+        }
+        .analysis-parameters { margin-bottom: 1.25rem; }
+        .form-row { display: flex; gap: 1rem; }
+        .form-row .form-group { flex: 1; }
+
+        h2, h3 { margin-top: 0; font-size: 1rem; font-weight: 600; margin-bottom: 1rem; }
+        .analysis-parameters h2 { color: var(--primary-color); }
+        .card h3 {
+            font-size: 1.05rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+        #standard-card h3 { color: var(--accent-blue); }
+        #sample-card h3 { color: var(--accent-red); }
+
+        /* --- Sections de Saisie --- */
+        .input-section { display: grid; grid-template-columns: 1fr; gap: 1.25rem; margin-bottom: 2rem; }
+        @media (min-width: 600px) { .input-section { grid-template-columns: 1fr 1fr; } }
+
+        /* --- Champs de Formulaire --- */
+        .form-group { margin-bottom: 0.6rem; }
+        .form-group:last-child { margin-bottom: 0; }
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.3rem;
+            font-size: 0.8rem;
+            color: var(--text-color);
+        }
+        .form-group input {
+            width: 100%;
+            padding: 0.5rem 0.7rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-family: inherit;
+            box-sizing: border-box;
+            background-color: var(--surface-color);
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
+        }
+
+        /* --- Masquer les flèches des champs numériques --- */
+        input[type=number]::-webkit-outer-spin-button,
+        input[type=number]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+        
+        /* --- Section des Résultats --- */
+        .results-section {
+            background: linear-gradient(135deg, var(--accent-green-start), var(--accent-green-end));
+            color: #ffffff;
+            padding: 1.5rem 2rem;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 8px 20px rgba(39, 174, 96, 0.25);
+        }
+        .results-section h2 { margin-top: 0; font-size: 1.1rem; font-weight: 500; color: rgba(255, 255, 255, 0.9); }
+        #result-display {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin: 0.5rem 0;
+            line-height: 1.3;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        #intermediate-calc-display { font-size: 0.9rem; color: rgba(255, 255, 255, 0.7); margin-top: 0.5rem; }
+        #error-message { color: #f8d7da; background-color: #721c24; border-radius: 6px; padding: 0.5rem; margin-top: 1rem; font-weight: 500; display: none; }
+
+        /* --- Pied de Page --- */
+        footer { text-align: center; margin-top: 2rem; font-size: 0.9rem; color: var(--text-light); }
+        footer p { margin: 0.3rem 0; }
+    </style>
+<!-- anb-commun --><script src="https://philrob56.github.io/anabiotec-commun/anb-commun.js"></script><!-- /anb-commun -->
+</head>
+<body>
+<!-- anb-charte --><div class="anb-head"><div class="anb-crumb"><i></i><a href="https://sites.google.com/view/anabioteclegroschene/accueil" target="_top" style="color:inherit;text-decoration:none" title="Tous les outils du BTSa ANABIOTEC"><b>BTSa ANABIOTEC</b></a><span>›</span>Chromatographie</div><div class="anb-right"><div class="anb-tag">LEGTA Le Gros Chêne · Pontivy</div><button type="button" class="anb-print" onclick="anbPrint()" title="Ouvrir une version imprimable (PDF)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimer / PDF</button></div></div><!-- /anb-charte -->
+
+    <div class="container">
+        <header>
+            <h1>Détermination du degré alcoolique d'une boisson</h1>
+            <p>Calcul basé sur un dosage par étalonnage interne avec incertitude.</p>
+        </header>
+
+        <main>
+            <div class="analysis-parameters">
+                <h2>Paramètres de l'Analyse</h2>
+                 <div class="form-row">
+                     <div class="form-group">
+                        <label for="dilution-factor">Facteur de Dilution</label>
+                        <input type="number" id="dilution-factor" placeholder="ex : 5 (20 mL dans 100 mL)">
+                    </div>
+                    <div class="form-group">
+                        <label for="method-std-dev">Écart-type de reproductibilité (s<sub>R</sub>, en %)</label>
+                        <input type="number" id="method-std-dev" placeholder="Optionnel (ex: 0.1)">
+                    </div>
+                 </div>
+            </div>
+
+            <div class="input-section">
+                <!-- Carte pour la Solution Étalon -->
+                <div class="card" id="standard-card">
+                    <h3>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent-blue);"><path d="M9 3l.17.65a2 2 0 0 0 1.66 1.35h2.34a2 2 0 0 0 1.66-1.35L15 3m-6 0v1.64c0 .56.24 1.11.66 1.48L12 8l2.34-1.88c.42-.37.66-.92.66-1.48V3m-6 0h6m-6 3.5V17a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2V6.5"></path></svg>
+                        Solution Étalon
+                    </h3>
+                    <div class="form-group">
+                        <label for="std-ethanol-conc">Concentration d'Éthanol (g/L)</label>
+                        <input type="number" id="std-ethanol-conc" placeholder="ex: 10">
+                    </div>
+                    <div class="form-group">
+                        <label for="std-ethanol-area">Aire du pic d'Éthanol</label>
+                        <input type="number" id="std-ethanol-area" placeholder="ex: 85000">
+                    </div>
+                    <div class="form-group">
+                        <label for="std-is-area">Aire du pic de l'Étalon Interne</label>
+                        <input type="number" id="std-is-area" placeholder="ex: 95000">
+                    </div>
+                </div>
+
+                <!-- Carte pour la Solution Échantillon -->
+                <div class="card" id="sample-card">
+                    <h3>
+                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent-red);"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"></path></svg>
+                        Échantillon (Boisson Diluée)
+                    </h3>
+                    <div class="form-group">
+                        <label for="sample-ethanol-area">Aire du pic d'Éthanol</label>
+                        <input type="number" id="sample-ethanol-area" placeholder="ex: 78000">
+                    </div>
+                    <div class="form-group">
+                        <label for="sample-is-area">Aire du pic de l'Étalon Interne</label>
+                        <input type="number" id="sample-is-area" placeholder="ex: 94500">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section des Résultats -->
+            <div class="results-section">
+                <h2>Degré alcoolique de la boisson</h2>
+                <div id="result-display">--</div>
+                <div id="intermediate-calc-display">Concentration dans l'échantillon dilué : --</div>
+                <p id="error-message">Veuillez remplir tous les champs requis.</p>
+            </div>
+        </main>
+        
+        <footer>
+            <p>Conversion basée sur une masse volumique de l'éthanol de 0.789 g/mL.</p>
+            <p>Incertitude (IC) calculée si s<sub>R</sub> est fourni (valeur critique Z=1.96).</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // --- DOM Elements ---
+            const allNumberInputs = document.querySelectorAll('input[type="number"]');
+            const resultDisplay = document.getElementById('result-display');
+            const intermediateDisplay = document.getElementById('intermediate-calc-display');
+            const errorMessage = document.getElementById('error-message');
+
+            const dilutionFactor = document.getElementById('dilution-factor');
+            const methodStdDevRelative = document.getElementById('method-std-dev');
+            const stdEthanolConc = document.getElementById('std-ethanol-conc');
+            const stdEthanolArea = document.getElementById('std-ethanol-area');
+            const stdIsArea = document.getElementById('std-is-area');
+            const sampleEthanolArea = document.getElementById('sample-ethanol-area');
+            const sampleIsArea = document.getElementById('sample-is-area');
+            
+            // --- Constants ---
+            const DENSITY_ETHANOL = 0.789; // g/mL
+            const CRITICAL_VALUE_95 = 1.96; // Z-score for 95% confidence
+
+            // --- Main Calculation Function ---
+            function calculate() {
+                const requiredValues = {
+                    dilution: parseFloat(dilutionFactor.value),
+                    std_conc: parseFloat(stdEthanolConc.value),
+                    std_area: parseFloat(stdEthanolArea.value),
+                    std_is_area: parseFloat(stdIsArea.value),
+                    smp_area: parseFloat(sampleEthanolArea.value),
+                    smp_is_area: parseFloat(sampleIsArea.value)
+                };
+                const s_relative_percent = parseFloat(methodStdDevRelative.value);
+
+                if (Object.values(requiredValues).some(v => isNaN(v))) {
+                    resultDisplay.textContent = '--';
+                    intermediateDisplay.textContent = 'Concentration dans l\'échantillon dilué : --';
+                    errorMessage.style.display = 'none';
+                    return;
+                }
+                
+                if (requiredValues.std_area === 0 || requiredValues.std_is_area === 0 || requiredValues.smp_is_area === 0 || requiredValues.dilution === 0 || requiredValues.std_conc === 0) {
+                    resultDisplay.textContent = 'Erreur';
+                    intermediateDisplay.textContent = 'Division par zéro impossible.';
+                    errorMessage.style.display = 'block';
+                    errorMessage.textContent = 'Les aires, la concentration et le facteur de dilution doivent être non nuls.';
+                    return;
+                }
+
+                errorMessage.style.display = 'none';
+
+                const responseRatioStd = requiredValues.std_area / requiredValues.std_is_area;
+                const responseRatioSample = requiredValues.smp_area / requiredValues.smp_is_area;
+                const concInDilutedSample = requiredValues.std_conc * (responseRatioSample / responseRatioStd);
+                intermediateDisplay.textContent = `Concentration dans l'échantillon dilué : ${concInDilutedSample.toFixed(3)} g/L`;
+
+                const concInOriginalBeverage = concInDilutedSample * requiredValues.dilution;
+                const alcoholicDegree = concInOriginalBeverage / (10 * DENSITY_ETHANOL);
+
+                if (!isNaN(s_relative_percent)) {
+                    const finalUncertainty_percent_vol = CRITICAL_VALUE_95 * s_relative_percent;
+                    resultDisplay.textContent = `(${alcoholicDegree.toFixed(2)} ± ${finalUncertainty_percent_vol.toFixed(2)}) % vol (95%)`;
+                } else {
+                    resultDisplay.textContent = `${alcoholicDegree.toFixed(2)} % vol`;
+                }
+            }
+
+            // --- Event Listeners ---
+            allNumberInputs.forEach(input => {
+                input.addEventListener('input', calculate);
+            });
+
+            // --- Navigation avec les flèches du clavier ---
+            allNumberInputs.forEach((input, index) => {
+                input.addEventListener('keydown', (event) => {
+                    let nextInput = null;
+                    switch (event.key) {
+                        case 'ArrowDown':
+                        case 'ArrowRight':
+                            if (index < allNumberInputs.length - 1) {
+                                nextInput = allNumberInputs[index + 1];
+                            }
+                            break;
+                        case 'ArrowUp':
+                        case 'ArrowLeft':
+                             if (index > 0) {
+                                nextInput = allNumberInputs[index - 1];
+                            }
+                            break;
+                    }
+                    if (nextInput) {
+                        event.preventDefault(); 
+                        nextInput.focus();
+                        nextInput.select();
+                    }
+                });
+            });
+            
+            // Initial calculation on page load
+            calculate();
+        });
+    </script>
+
+
+</body>
+</html>
