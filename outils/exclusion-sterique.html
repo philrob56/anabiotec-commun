@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+<meta name="description" content="Simulateur de chromatographie d’exclusion stérique (gel filtration) : choix du gel Sephadex, séparation des protéines selon leur taille et leur masse molaire, scénarios de TP. Outil du BTSa ANABIOTEC, lycée Le Gros Chêne, Pontivy.">
+<link rel="canonical" href="https://philrob56.github.io/anabiotec-commun/outils/exclusion-sterique.html">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chromatographie d’exclusion stérique (SEC) : simulateur | BTSa ANABIOTEC</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0e7c7b 0%, #0a4f4f 100%);
+            min-height: 100vh;
+            padding: 10px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #0e7c7b;
+            margin-bottom: 10px;
+            font-size: clamp(1.2em, 4vw, 1.6em);
+        }
+        
+        .config-area {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .config-panel {
+            background: #eef6f5;
+            padding: 12px;
+            border-radius: 10px;
+            border: 2px solid #0e7c7b;
+        }
+        
+        .config-panel h3 {
+            color: #0e7c7b;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+        
+        .gel-select, .scenario-select {
+            width: 100%;
+            padding: 8px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+        
+        .gel-info {
+            background: #e7f3f2;
+            padding: 8px;
+            border-radius: 5px;
+            font-size: 0.8em;
+            color: #0a5c5b;
+        }
+        
+        .protein-list {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 8px;
+        }
+        
+        .protein-item {
+            background: white;
+            padding: 6px;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            display: grid;
+            grid-template-columns: 20px 1fr 60px 50px 25px;
+            gap: 5px;
+            align-items: center;
+            border: 2px solid #ddd;
+            font-size: 0.85em;
+        }
+        
+        .protein-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .protein-item input[type="text"],
+        .protein-item input[type="number"] {
+            padding: 4px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.85em;
+            width: 100%;
+        }
+        
+        .btn-remove {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1.2em;
+            padding: 2px 5px;
+            line-height: 1;
+        }
+        
+        .btn-add {
+            background: #4caf50;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            width: 100%;
+            font-size: 0.9em;
+        }
+        
+        .btn-add:hover {
+            background: #45a049;
+        }
+        
+        .run-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            padding: 12px;
+        }
+        
+        .run-controls label {
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+        
+        .run-controls input {
+            padding: 8px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            width: 100px;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex: 1;
+            min-width: 250px;
+        }
+        
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9em;
+        }
+        
+        .btn-start {
+            background: linear-gradient(135deg, #0e7c7b 0%, #0a4f4f 100%);
+            color: white;
+            flex: 1;
+        }
+        
+        .btn-start:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn-reset {
+            background: #ff6b6b;
+            color: white;
+        }
+        
+        .main-view {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .panel {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 10px;
+            border: 2px solid #e0e0e0;
+        }
+        
+        .panel h2 {
+            color: #0e7c7b;
+            font-size: 1em;
+            margin-bottom: 10px;
+        }
+        
+        canvas {
+            width: 100%;
+            height: auto;
+            background: white;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+            display: block;
+        }
+        
+        .calibration-info {
+            background: #e8f5e9;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 8px;
+            font-size: 0.85em;
+        }
+        
+        .equation {
+            font-family: 'Courier New', monospace;
+            background: white;
+            padding: 5px;
+            border-radius: 3px;
+            margin-top: 5px;
+            font-weight: bold;
+            color: #2e7d32;
+            font-size: 0.9em;
+        }
+        
+        /* Tablettes et petits écrans */
+        @media (min-width: 600px) {
+            body {
+                padding: 15px;
+            }
+            
+            .container {
+                padding: 20px;
+            }
+            
+            .config-area {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .protein-list {
+                max-height: 240px;
+            }
+        }
+        
+        /* Écrans moyens */
+        @media (min-width: 900px) {
+            .config-area {
+                grid-template-columns: 250px 1fr 200px;
+            }
+            
+            .main-view {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        /* Grands écrans */
+        @media (min-width: 1200px) {
+            .container {
+                padding: 25px;
+            }
+            
+            h1 {
+                margin-bottom: 15px;
+            }
+            
+            .panel h2 {
+                font-size: 1.1em;
+            }
+        }
+    </style>
+<!-- anb-commun --><script src="https://philrob56.github.io/anabiotec-commun/anb-commun.js"></script><!-- /anb-commun -->
+<!-- anb-charte --><style>body{background:#f6f8f7!important;background-image:none!important}</style><!-- /anb-charte -->
+</head>
+<body>
+<!-- anb-charte --><div class="anb-head"><div class="anb-crumb"><i></i><a href="https://sites.google.com/view/anabioteclegroschene/accueil" target="_top" style="color:inherit;text-decoration:none" title="Tous les outils du BTSa ANABIOTEC"><b>BTSa ANABIOTEC</b></a><span>›</span>Chromatographie</div><div class="anb-right"><div class="anb-tag">LEGTA Le Gros Chêne · Pontivy</div><button type="button" class="anb-print" onclick="anbPrint()" title="Ouvrir une version imprimable (PDF)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimer / PDF</button></div></div><!-- /anb-charte -->
+    <div class="container">
+        <h1>🧪 Chromatographie d'Exclusion (SEC) - Version Avancée</h1>
+        
+        <div class="config-area">
+            <div class="config-panel">
+                <h3>Configuration du gel</h3>
+                <select id="gelType" class="gel-select" onchange="updateGel()">
+                    <option value="g25">Sephadex G-25 (1-5 kDa)</option>
+                    <option value="g50">Sephadex G-50 (1.5-30 kDa)</option>
+                    <option value="g75">Sephadex G-75 (3-80 kDa)</option>
+                    <option value="g100">Sephadex G-100 (4-150 kDa)</option>
+                    <option value="g200" selected>Sephadex G-200 (5-600 kDa)</option>
+                </select>
+                <div class="gel-info" id="gelInfo"></div>
+            </div>
+            
+            <div class="config-panel">
+                <h3>Protéines à séparer</h3>
+                <div class="protein-list" id="proteinList"></div>
+                <button class="btn-add" onclick="addProtein()">+ Ajouter</button>
+            </div>
+            
+            <div class="config-panel">
+                <h3>Scénarios TP</h3>
+                <select id="scenario" class="scenario-select" onchange="loadScenario()">
+                    <option value="">-- Choisir un scénario --</option>
+                    <option value="standard">Kit d'étalonnage standard</option>
+                    <option value="enzyme">Purification d'enzyme</option>
+                    <option value="serum">Sérum sanguin</option>
+                    <option value="aggregate">Protéines agrégées</option>
+                    <option value="determination">Détermination de MM inconnue</option>
+                </select>
+                <div class="gel-info" style="margin-top: 10px; font-size: 0.8em;">
+                    Charger un TP pré-configuré avec un mélange de protéines adapté
+                </div>
+            </div>
+        </div>
+        
+        <div class="config-panel run-controls">
+            <label>Débit (mL/min) :</label>
+            <input type="number" id="flowRate" value="1.5" min="0.5" max="3" step="0.5">
+            <div class="btn-group">
+                <button class="btn-start" onclick="startElution()">▶ Démarrer l'élution</button>
+                <button class="btn-reset" onclick="resetSimulation()">🔄 Réinitialiser</button>
+            </div>
+        </div>
+        
+        <div class="main-view">
+            <div class="panel">
+                <h2>Colonne de chromatographie</h2>
+                <canvas id="columnCanvas" width="350" height="400"></canvas>
+            </div>
+            
+            <div class="panel">
+                <h2>Chromatogramme</h2>
+                <canvas id="chromCanvas" width="350" height="400"></canvas>
+            </div>
+        </div>
+        
+        <div class="panel" style="margin-top: 15px;">
+            <h2>Courbe d'étalonnage : log(MM) vs Ve</h2>
+            <canvas id="logMMCanvas" width="1200" height="350"></canvas>
+            <div class="calibration-info" id="logMMInfo">
+                <strong>En attente de données...</strong>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const columnCanvas = document.getElementById('columnCanvas');
+        const chromCanvas = document.getElementById('chromCanvas');
+        const logMMCanvas = document.getElementById('logMMCanvas');
+        const columnCtx = columnCanvas.getContext('2d');
+        const chromCtx = chromCanvas.getContext('2d');
+        const logMMCtx = logMMCanvas.getContext('2d');
+        
+        let proteins = [];
+        let beads = [];
+        let detectionEvents = [];
+        let isRunning = false;
+        let timeElapsed = 0;
+        let animationId = null;
+        
+        const V0 = 3.0;  // Volume mort (mL)
+        const Vt = 13.0; // Volume total (mL)
+        
+        const config = {
+            columnWidth: 100,
+            columnHeight: 320,
+            columnX: 125,
+            columnY: 40
+        };
+        
+        const gels = {
+            g25: { name: 'Sephadex G-25', exclusion: 5, permeation: 1, bead: 12, pore: 3 },
+            g50: { name: 'Sephadex G-50', exclusion: 30, permeation: 1.5, bead: 12, pore: 4 },
+            g75: { name: 'Sephadex G-75', exclusion: 80, permeation: 3, bead: 12, pore: 5 },
+            g100: { name: 'Sephadex G-100', exclusion: 150, permeation: 4, bead: 12, pore: 6 },
+            g200: { name: 'Sephadex G-200', exclusion: 600, permeation: 5, bead: 12, pore: 7 }
+        };
+        
+        let currentGel = gels.g200;
+        
+        let proteinDatabase = [
+            { id: 1, name: 'IgG', mass: 150, count: 5, color: '#ff6b6b' },
+            { id: 2, name: 'Albumine', mass: 66, count: 5, color: '#4ecdc4' },
+            { id: 3, name: 'Myoglobine', mass: 17, count: 5, color: '#95e1d3' }
+        ];
+        
+        let nextProteinId = 4;
+        
+        // Base de données exhaustive de protéines
+        const proteinLibrary = [
+            { name: 'Thyroglobuline', mass: 669 },
+            { name: 'Ferritine', mass: 450 },
+            { name: 'IgM', mass: 970 },
+            { name: 'IgG', mass: 150 },
+            { name: 'IgA', mass: 160 },
+            { name: 'Albumine (BSA)', mass: 66 },
+            { name: 'Ovalbumine', mass: 43 },
+            { name: 'Hémoglobine', mass: 64 },
+            { name: 'Transferrine', mass: 80 },
+            { name: 'Lactate DH', mass: 140 },
+            { name: 'Phosphorylase b', mass: 97 },
+            { name: 'Aldolase', mass: 158 },
+            { name: 'Anhydrase carbonique', mass: 29 },
+            { name: 'Chymotrypsinogène', mass: 25 },
+            { name: 'Myoglobine', mass: 17 },
+            { name: 'Lysozyme', mass: 14 },
+            { name: 'Cytochrome c', mass: 12 },
+            { name: 'Ribonucléase A', mass: 13.7 },
+            { name: 'Insuline', mass: 5.8 },
+            { name: 'Vitamine B12', mass: 1.35 }
+        ];
+        
+        // Scénarios pré-configurés
+        const scenarios = {
+            standard: [
+                { name: 'Thyroglobuline', mass: 669, count: 3, color: '#e74c3c' },
+                { name: 'Ferritine', mass: 450, count: 4, color: '#e67e22' },
+                { name: 'Aldolase', mass: 158, count: 5, color: '#f39c12' },
+                { name: 'Albumine', mass: 66, count: 5, color: '#0e7c7b' },
+                { name: 'Ovalbumine', mass: 43, count: 5, color: '#9b59b6' },
+                { name: 'Myoglobine', mass: 17, count: 5, color: '#1abc9c' },
+                { name: 'Cytochrome c', mass: 12, count: 4, color: '#95a5a6' }
+            ],
+            enzyme: [
+                { name: 'Catalase (tétramère)', mass: 232, count: 3, color: '#e74c3c' },
+                { name: 'Catalase (dimère)', mass: 116, count: 4, color: '#e67e22' },
+                { name: 'Catalase (monomère)', mass: 58, count: 6, color: '#0e7c7b' },
+                { name: 'Contaminants', mass: 25, count: 8, color: '#95a5a6' }
+            ],
+            serum: [
+                { name: 'IgM', mass: 970, count: 2, color: '#8e44ad' },
+                { name: 'IgG', mass: 150, count: 6, color: '#e74c3c' },
+                { name: 'Albumine', mass: 66, count: 10, color: '#0e7c7b' },
+                { name: 'Transferrine', mass: 80, count: 4, color: '#f39c12' }
+            ],
+            aggregate: [
+                { name: 'Agrégats (>600 kDa)', mass: 800, count: 4, color: '#2c3e50' },
+                { name: 'Protéine native', mass: 150, count: 8, color: '#0e7c7b' },
+                { name: 'Fragments', mass: 35, count: 6, color: '#95a5a6' }
+            ],
+            determination: [
+                { name: 'Standard 1', mass: 669, count: 3, color: '#e74c3c' },
+                { name: 'Standard 2', mass: 158, count: 4, color: '#e67e22' },
+                { name: 'Standard 3', mass: 43, count: 4, color: '#f39c12' },
+                { name: 'Standard 4', mass: 17, count: 4, color: '#9b59b6' },
+                { name: 'Protéine X', mass: 95, count: 5, color: '#000000' }
+            ]
+        };
+        
+        function loadScenario() {
+            const scenario = document.getElementById('scenario').value;
+            if (!scenario) return;
+            
+            proteinDatabase = scenarios[scenario].map((p, idx) => ({
+                id: idx + 1,
+                ...p
+            }));
+            nextProteinId = proteinDatabase.length + 1;
+            renderProteinList();
+            resetSimulation();
+        }
+        
+        function updateGel() {
+            currentGel = gels[document.getElementById('gelType').value];
+            document.getElementById('gelInfo').innerHTML = 
+                `<strong>${currentGel.name}</strong><br>Exclusion : ${currentGel.exclusion} kDa | Perméation : ${currentGel.permeation} kDa`;
+        }
+        
+        function renderProteinList() {
+            const list = document.getElementById('proteinList');
+            list.innerHTML = '';
+            
+            proteinDatabase.forEach(protein => {
+                const item = document.createElement('div');
+                item.className = 'protein-item';
+                item.innerHTML = `
+                    <input type="color" class="protein-color" value="${protein.color}" 
+                           onchange="updateProteinColor(${protein.id}, this.value)">
+                    <input type="text" value="${protein.name}" 
+                           onchange="updateProteinName(${protein.id}, this.value)" placeholder="Nom">
+                    <input type="number" value="${protein.mass}" min="1" max="2000" step="1"
+                           onchange="updateProteinMass(${protein.id}, this.value)" placeholder="kDa">
+                    <input type="number" value="${protein.count}" min="0" max="20" step="1"
+                           onchange="updateProteinCount(${protein.id}, this.value)" placeholder="Qté">
+                    <button class="btn-remove" onclick="removeProtein(${protein.id})">×</button>
+                `;
+                list.appendChild(item);
+            });
+        }
+        
+        function showProteinSelector() {
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(0,0,0,0.5); display: flex; align-items: center;
+                justify-content: center; z-index: 1000;
+            `;
+            
+            const content = document.createElement('div');
+            content.style.cssText = `
+                background: white; border-radius: 15px; padding: 25px;
+                max-width: 600px; max-height: 80vh; overflow-y: auto;
+                box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            `;
+            
+            content.innerHTML = `
+                <h2 style="color: #0e7c7b; margin-bottom: 15px;">Choisir une protéine</h2>
+                <div style="margin-bottom: 15px;">
+                    <input type="text" id="proteinSearch" placeholder="🔍 Rechercher..." 
+                           style="width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 8px; font-size: 1em;">
+                </div>
+                <div id="proteinOptions" style="max-height: 400px; overflow-y: auto;"></div>
+                <div style="margin-top: 20px; padding-top: 15px; border-top: 2px solid #eee;">
+                    <button id="customProtein" style="
+                        width: 100%; padding: 12px; background: #4caf50; color: white;
+                        border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-bottom: 10px;
+                    ">✨ Créer une protéine personnalisée</button>
+                    <button id="cancelBtn" style="
+                        width: 100%; padding: 12px; background: #ff6b6b; color: white;
+                        border: none; border-radius: 8px; font-weight: 600; cursor: pointer;
+                    ">❌ Annuler</button>
+                </div>
+            `;
+            
+            modal.appendChild(content);
+            document.body.appendChild(modal);
+            
+            function displayOptions(filter = '') {
+                const optionsDiv = document.getElementById('proteinOptions');
+                const filtered = filter ? 
+                    proteinLibrary.filter(p => p.name.toLowerCase().includes(filter.toLowerCase())) :
+                    proteinLibrary;
+                
+                optionsDiv.innerHTML = filtered.map(protein => `
+                    <div class="protein-option" data-name="${protein.name}" data-mass="${protein.mass}" style="
+                        padding: 12px; margin-bottom: 8px; background: #f8f9fa;
+                        border-radius: 8px; cursor: pointer; border: 2px solid #e0e0e0; transition: all 0.2s;
+                    " onmouseover="this.style.background='#e7f3f2'; this.style.borderColor='#0e7c7b';"
+                       onmouseout="this.style.background='#f8f9fa'; this.style.borderColor='#e0e0e0';">
+                        <strong>${protein.name}</strong> <span style="color: #666; float: right;">${protein.mass} kDa</span>
+                    </div>
+                `).join('');
+                
+                document.querySelectorAll('.protein-option').forEach(option => {
+                    option.addEventListener('click', function() {
+                        const name = this.dataset.name;
+                        const mass = parseFloat(this.dataset.mass);
+                        addProteinFromLibrary(name, mass);
+                        document.body.removeChild(modal);
+                    });
+                });
+            }
+            
+            displayOptions();
+            
+            document.getElementById('proteinSearch').addEventListener('input', function(e) {
+                displayOptions(e.target.value);
+            });
+            
+            document.getElementById('customProtein').addEventListener('click', function() {
+                addProteinCustom();
+                document.body.removeChild(modal);
+            });
+            
+            document.getElementById('cancelBtn').addEventListener('click', function() {
+                document.body.removeChild(modal);
+            });
+            
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) document.body.removeChild(modal);
+            });
+        }
+        
+        function addProteinFromLibrary(name, mass) {
+            proteinDatabase.push({
+                id: nextProteinId++,
+                name: name,
+                mass: mass,
+                count: 5,
+                color: '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0')
+            });
+            renderProteinList();
+        }
+        
+        function addProteinCustom() {
+            proteinDatabase.push({
+                id: nextProteinId++,
+                name: 'Protéine ' + (nextProteinId - 1),
+                mass: 50,
+                count: 5,
+                color: '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0')
+            });
+            renderProteinList();
+        }
+        
+        function addProtein() {
+            showProteinSelector();
+        }
+        
+        function removeProtein(id) {
+            if (proteinDatabase.length > 1) {
+                proteinDatabase = proteinDatabase.filter(p => p.id !== id);
+                renderProteinList();
+            }
+        }
+        
+        function updateProteinColor(id, color) {
+            const protein = proteinDatabase.find(p => p.id === id);
+            if (protein) protein.color = color;
+        }
+        
+        function updateProteinName(id, name) {
+            const protein = proteinDatabase.find(p => p.id === id);
+            if (protein) protein.name = name;
+        }
+        
+        function updateProteinMass(id, mass) {
+            const protein = proteinDatabase.find(p => p.id === id);
+            if (protein) protein.mass = parseFloat(mass);
+        }
+        
+        function updateProteinCount(id, count) {
+            const protein = proteinDatabase.find(p => p.id === id);
+            if (protein) protein.count = parseInt(count);
+        }
+        
+        function calculateElutionTime(mass) {
+            const { exclusion, permeation } = currentGel;
+            
+            if (mass >= exclusion) {
+                return V0 + Math.random() * 0.15;
+            } else if (mass <= permeation) {
+                return Vt + Math.random() * 0.15;
+            } else {
+                const logMass = Math.log10(mass);
+                const logExclusion = Math.log10(exclusion);
+                const logPermeation = Math.log10(permeation);
+                const kav = (logExclusion - logMass) / (logExclusion - logPermeation);
+                return V0 + kav * (Vt - V0) + Math.random() * 0.4;
+            }
+        }
+        
+        function getProteinSpeed(mass) {
+            const elutionTime = calculateElutionTime(mass);
+            const distance = config.columnHeight;
+            return distance / (elutionTime * 60);
+        }
+        
+        function getProteinSize(mass) {
+            const { exclusion, permeation } = currentGel;
+            
+            if (mass >= exclusion) {
+                return 10;
+            } else if (mass <= permeation) {
+                return 3;
+            } else {
+                const logMass = Math.log10(mass);
+                const logExclusion = Math.log10(exclusion);
+                const logPermeation = Math.log10(permeation);
+                const ratio = (logMass - logPermeation) / (logExclusion - logPermeation);
+                return 3 + ratio * 7;
+            }
+        }
+        
+        function initializeBeads() {
+            beads = [];
+            const size = currentGel.bead;
+            const cols = Math.floor(config.columnWidth / (size * 2));
+            const rows = Math.floor(config.columnHeight / (size * 2));
+            
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < cols; col++) {
+                    beads.push({
+                        x: config.columnX + col * size * 2 + size,
+                        y: config.columnY + row * size * 2 + size,
+                        radius: size
+                    });
+                }
+            }
+        }
+        
+        function initializeProteins() {
+            proteins = [];
+            detectionEvents = [];
+            
+            proteinDatabase.forEach(proteinDef => {
+                if (proteinDef.count > 0) {
+                    const speed = getProteinSpeed(proteinDef.mass);
+                    const size = getProteinSize(proteinDef.mass);
+                    
+                    for (let i = 0; i < proteinDef.count; i++) {
+                        proteins.push({
+                            x: config.columnX + 20 + Math.random() * (config.columnWidth - 40),
+                            y: config.columnY - 25 - Math.random() * 20,
+                            vx: (Math.random() - 0.5) * 0.4,
+                            vy: speed,
+                            size: size,
+                            color: proteinDef.color,
+                            mass: proteinDef.mass,
+                            name: proteinDef.name,
+                            proteinId: proteinDef.id,
+                            detected: false
+                        });
+                    }
+                }
+            });
+        }
+        
+        function drawColumn() {
+            columnCtx.clearRect(0, 0, columnCanvas.width, columnCanvas.height);
+            
+            columnCtx.fillStyle = '#f5f5f5';
+            columnCtx.fillRect(config.columnX, config.columnY, config.columnWidth, config.columnHeight);
+            columnCtx.strokeStyle = '#333';
+            columnCtx.lineWidth = 3;
+            columnCtx.strokeRect(config.columnX, config.columnY, config.columnWidth, config.columnHeight);
+            
+            columnCtx.fillStyle = '#0e7c7b';
+            columnCtx.fillRect(config.columnX + config.columnWidth/2 - 15, config.columnY - 20, 30, 20);
+            columnCtx.fillStyle = 'white';
+            columnCtx.font = 'bold 9px Arial';
+            columnCtx.textAlign = 'center';
+            columnCtx.fillText('Injection', config.columnX + config.columnWidth/2, config.columnY - 8);
+            
+            columnCtx.fillStyle = '#4caf50';
+            columnCtx.fillRect(config.columnX + config.columnWidth/2 - 15, config.columnY + config.columnHeight, 30, 20);
+            columnCtx.fillStyle = 'white';
+            columnCtx.fillText('Détecteur', config.columnX + config.columnWidth/2, config.columnY + config.columnHeight + 13);
+            
+            beads.forEach(bead => {
+                columnCtx.fillStyle = '#d0d0d0';
+                columnCtx.beginPath();
+                columnCtx.arc(bead.x, bead.y, bead.radius, 0, Math.PI * 2);
+                columnCtx.fill();
+                columnCtx.strokeStyle = '#aaa';
+                columnCtx.lineWidth = 1;
+                columnCtx.stroke();
+                
+                for (let i = 0; i < 3; i++) {
+                    const angle = (Math.PI * 2 / 3) * i;
+                    const px = bead.x + Math.cos(angle) * (bead.radius * 0.5);
+                    const py = bead.y + Math.sin(angle) * (bead.radius * 0.5);
+                    columnCtx.fillStyle = '#999';
+                    columnCtx.beginPath();
+                    columnCtx.arc(px, py, currentGel.pore * 0.45, 0, Math.PI * 2);
+                    columnCtx.fill();
+                }
+            });
+            
+            proteins.forEach(protein => {
+                if (protein.y <= config.columnY + config.columnHeight + 10) {
+                    columnCtx.fillStyle = protein.color;
+                    columnCtx.globalAlpha = 0.85;
+                    columnCtx.beginPath();
+                    columnCtx.arc(protein.x, protein.y, protein.size, 0, Math.PI * 2);
+                    columnCtx.fill();
+                    columnCtx.strokeStyle = 'rgba(0,0,0,0.3)';
+                    columnCtx.lineWidth = 1;
+                    columnCtx.stroke();
+                    columnCtx.globalAlpha = 1;
+                }
+            });
+            
+            columnCtx.fillStyle = '#333';
+            columnCtx.font = 'bold 11px Arial';
+            columnCtx.textAlign = 'left';
+            columnCtx.fillText(`${timeElapsed.toFixed(1)} min`, 10, 18);
+        }
+        
+        function drawChromatogram() {
+            chromCtx.clearRect(0, 0, chromCanvas.width, chromCanvas.height);
+            
+            const m = { top: 30, right: 25, bottom: 45, left: 45 };
+            const w = chromCanvas.width - m.left - m.right;
+            const h = chromCanvas.height - m.top - m.bottom;
+            const maxTime = 20;
+            
+            let maxSignal = 0;
+            if (detectionEvents.length > 0) {
+                for (let t = 0; t <= maxTime; t += 0.1) {
+                    let totalSignal = 0;
+                    proteinDatabase.forEach(proteinDef => {
+                        const events = detectionEvents.filter(e => e.proteinId === proteinDef.id);
+                        events.forEach(event => {
+                            const sigma = 0.3;
+                            const amplitude = 100;
+                            const gaussian = amplitude * Math.exp(-Math.pow(t - event.time, 2) / (2 * sigma * sigma));
+                            totalSignal += gaussian;
+                        });
+                    });
+                    if (totalSignal > maxSignal) maxSignal = totalSignal;
+                }
+            }
+            
+            const yScale = maxSignal > 0 ? maxSignal * 1.1 : 100;
+            const yMax = Math.ceil(yScale / 10) * 10;
+            
+            chromCtx.strokeStyle = '#333';
+            chromCtx.lineWidth = 2;
+            chromCtx.beginPath();
+            chromCtx.moveTo(m.left, m.top);
+            chromCtx.lineTo(m.left, m.top + h);
+            chromCtx.lineTo(m.left + w, m.top + h);
+            chromCtx.stroke();
+            
+            chromCtx.fillStyle = '#333';
+            chromCtx.font = 'bold 10px Arial';
+            chromCtx.textAlign = 'center';
+            chromCtx.fillText('Volume d\'élution (mL)', m.left + w/2, chromCanvas.height - 10);
+            
+            chromCtx.save();
+            chromCtx.translate(12, m.top + h/2);
+            chromCtx.rotate(-Math.PI/2);
+            chromCtx.fillText('Abs 280nm', 0, 0);
+            chromCtx.restore();
+            
+            chromCtx.font = 'bold 11px Arial';
+            chromCtx.fillText('Chromatogramme', m.left + w/2, 18);
+            
+            chromCtx.strokeStyle = '#e8e8e8';
+            chromCtx.lineWidth = 1;
+            for (let i = 0; i <= 10; i++) {
+                const x = m.left + (w / 10) * i;
+                chromCtx.beginPath();
+                chromCtx.moveTo(x, m.top);
+                chromCtx.lineTo(x, m.top + h);
+                chromCtx.stroke();
+                
+                chromCtx.fillStyle = '#666';
+                chromCtx.font = '9px Arial';
+                chromCtx.fillText((i * 2).toString(), x, m.top + h + 15);
+            }
+            
+            for (let i = 0; i <= 5; i++) {
+                const y = m.top + (h / 5) * i;
+                chromCtx.beginPath();
+                chromCtx.moveTo(m.left, y);
+                chromCtx.lineTo(m.left + w, y);
+                chromCtx.stroke();
+                
+                chromCtx.fillStyle = '#666';
+                chromCtx.font = '9px Arial';
+                chromCtx.textAlign = 'right';
+                const value = yMax - (i * yMax / 5);
+                chromCtx.fillText(value.toFixed(0), m.left - 5, y + 4);
+            }
+            
+            if (detectionEvents.length > 0) {
+                proteinDatabase.forEach(proteinDef => {
+                    if (proteinDef.count === 0) return;
+                    
+                    const events = detectionEvents.filter(e => e.proteinId === proteinDef.id);
+                    if (events.length === 0) return;
+                    
+                    chromCtx.strokeStyle = proteinDef.color;
+                    chromCtx.lineWidth = 2.5;
+                    chromCtx.beginPath();
+                    
+                    let started = false;
+                    
+                    for (let t = 0; t <= maxTime; t += 0.1) {
+                        let signal = 0;
+                        
+                        events.forEach(event => {
+                            const sigma = 0.3;
+                            const amplitude = 100;
+                            const gaussian = amplitude * Math.exp(-Math.pow(t - event.time, 2) / (2 * sigma * sigma));
+                            signal += gaussian;
+                        });
+                        
+                        if (signal > 0.5) {
+                            const x = m.left + (t / maxTime) * w;
+                            const y = m.top + h - (signal / yMax) * h;
+                            
+                            if (!started) {
+                                chromCtx.moveTo(x, y);
+                                started = true;
+                            } else {
+                                chromCtx.lineTo(x, y);
+                            }
+                        }
+                    }
+                    
+                    chromCtx.stroke();
+                });
+            }
+        }
+        
+        function drawLogMMCurve() {
+            logMMCtx.clearRect(0, 0, logMMCanvas.width, logMMCanvas.height);
+            
+            const m = { top: 35, right: 35, bottom: 55, left: 55 };
+            const w = logMMCanvas.width - m.left - m.right;
+            const h = logMMCanvas.height - m.top - m.bottom;
+            
+            // Calculer les données
+            const calibData = [];
+            const excludedProteins = []; // Protéines > limite exclusion
+            const permeatedProteins = []; // Protéines < limite perméation
+            const fractionatedProteins = []; // Protéines dans la fenêtre de fractionnement
+            
+            const proteinStats = new Map();
+            
+            detectionEvents.forEach(event => {
+                if (!proteinStats.has(event.proteinId)) {
+                    const proteinDef = proteinDatabase.find(p => p.id === event.proteinId);
+                    proteinStats.set(event.proteinId, { 
+                        times: [], 
+                        mass: event.mass, 
+                        color: event.color,
+                        name: proteinDef ? proteinDef.name : 'Inconnue'
+                    });
+                }
+                proteinStats.get(event.proteinId).times.push(event.time);
+            });
+            
+            proteinStats.forEach((stats, proteinId) => {
+                const avgVe = stats.times.reduce((a, b) => a + b, 0) / stats.times.length;
+                const logMM = Math.log10(stats.mass);
+                
+                const dataPoint = {
+                    proteinId: proteinId,
+                    mass: stats.mass,
+                    logMM: logMM,
+                    Ve: avgVe,
+                    color: stats.color,
+                    name: stats.name
+                };
+                
+                // Classer selon la fenêtre de fractionnement
+                if (stats.mass >= currentGel.exclusion) {
+                    excludedProteins.push(dataPoint);
+                } else if (stats.mass <= currentGel.permeation) {
+                    permeatedProteins.push(dataPoint);
+                } else {
+                    fractionatedProteins.push(dataPoint);
+                }
+                
+                calibData.push(dataPoint);
+            });
+            
+            // Axes
+            logMMCtx.strokeStyle = '#333';
+            logMMCtx.lineWidth = 3;
+            logMMCtx.beginPath();
+            logMMCtx.moveTo(m.left, m.top);
+            logMMCtx.lineTo(m.left, m.top + h);
+            logMMCtx.lineTo(m.left + w, m.top + h);
+            logMMCtx.stroke();
+            
+            // Labels
+            logMMCtx.fillStyle = '#333';
+            logMMCtx.font = 'bold 12px Arial';
+            logMMCtx.textAlign = 'center';
+            logMMCtx.fillText('Volume d\'élution Ve (mL)', m.left + w/2, logMMCanvas.height - 12);
+            
+            logMMCtx.save();
+            logMMCtx.translate(13, m.top + h/2);
+            logMMCtx.rotate(-Math.PI/2);
+            logMMCtx.fillText('log(Masse Moléculaire)', 0, 0);
+            logMMCtx.restore();
+            
+            // Titre
+            logMMCtx.font = 'bold 14px Arial';
+            logMMCtx.fillText('Courbe d\'étalonnage : log(MM) = f(Ve)', m.left + w/2, 22);
+            
+            if (calibData.length >= 1) {
+                const allLogMMs = calibData.map(d => d.logMM);
+                const allVes = calibData.map(d => d.Ve);
+                
+                const minVe = Math.max(V0 - 1, Math.min(...allVes) - 1);
+                const maxVe = Math.min(Vt + 1, Math.max(...allVes) + 1);
+                const minLogMM = Math.min(...allLogMMs) - 0.2;
+                const maxLogMM = Math.max(...allLogMMs) + 0.2;
+                
+                // Grille horizontale (Ve)
+                logMMCtx.strokeStyle = '#e8e8e8';
+                logMMCtx.lineWidth = 1;
+                for (let i = 0; i <= 10; i++) {
+                    const x = m.left + (w / 10) * i;
+                    logMMCtx.beginPath();
+                    logMMCtx.moveTo(x, m.top);
+                    logMMCtx.lineTo(x, m.top + h);
+                    logMMCtx.stroke();
+                    
+                    logMMCtx.fillStyle = '#666';
+                    logMMCtx.font = '10px Arial';
+                    logMMCtx.textAlign = 'center';
+                    const value = minVe + (i / 10) * (maxVe - minVe);
+                    logMMCtx.fillText(value.toFixed(1), x, m.top + h + 16);
+                }
+                
+                // Grille verticale (log MM)
+                for (let i = 0; i <= 5; i++) {
+                    const y = m.top + (h / 5) * i;
+                    logMMCtx.beginPath();
+                    logMMCtx.moveTo(m.left, y);
+                    logMMCtx.lineTo(m.left + w, y);
+                    logMMCtx.stroke();
+                    
+                    logMMCtx.fillStyle = '#666';
+                    logMMCtx.font = '10px Arial';
+                    logMMCtx.textAlign = 'right';
+                    const value = maxLogMM - (i / 5) * (maxLogMM - minLogMM);
+                    logMMCtx.fillText(value.toFixed(2), m.left - 7, y + 4);
+                }
+                
+                // Marquer V0 et Vt avec zones colorées
+                logMMCtx.strokeStyle = '#e74c3c';
+                logMMCtx.lineWidth = 2;
+                logMMCtx.setLineDash([5, 5]);
+                
+                const v0X = m.left + ((V0 - minVe) / (maxVe - minVe)) * w;
+                logMMCtx.beginPath();
+                logMMCtx.moveTo(v0X, m.top);
+                logMMCtx.lineTo(v0X, m.top + h);
+                logMMCtx.stroke();
+                
+                // Zone d'exclusion (avant V0)
+                logMMCtx.fillStyle = 'rgba(231, 76, 60, 0.1)';
+                logMMCtx.fillRect(m.left, m.top, v0X - m.left, h);
+                
+                logMMCtx.fillStyle = '#e74c3c';
+                logMMCtx.font = 'bold 10px Arial';
+                logMMCtx.textAlign = 'center';
+                logMMCtx.fillText('V₀', v0X, m.top - 5);
+                logMMCtx.font = '8px Arial';
+                logMMCtx.fillText('Exclusion', v0X - 30, m.top + 15);
+                
+                const vtX = m.left + ((Vt - minVe) / (maxVe - minVe)) * w;
+                logMMCtx.strokeStyle = '#e74c3c';
+                logMMCtx.lineWidth = 2;
+                logMMCtx.setLineDash([5, 5]);
+                logMMCtx.beginPath();
+                logMMCtx.moveTo(vtX, m.top);
+                logMMCtx.lineTo(vtX, m.top + h);
+                logMMCtx.stroke();
+                
+                // Zone de perméation (après Vt)
+                logMMCtx.fillStyle = 'rgba(231, 76, 60, 0.1)';
+                logMMCtx.fillRect(vtX, m.top, m.left + w - vtX, h);
+                
+                logMMCtx.fillStyle = '#e74c3c';
+                logMMCtx.font = 'bold 10px Arial';
+                logMMCtx.fillText('Vt', vtX, m.top - 5);
+                logMMCtx.font = '8px Arial';
+                logMMCtx.fillText('Perméation', vtX + 35, m.top + 15);
+                
+                // Zone de fractionnement
+                logMMCtx.fillStyle = 'rgba(76, 175, 80, 0.08)';
+                logMMCtx.fillRect(v0X, m.top, vtX - v0X, h);
+                logMMCtx.fillStyle = '#4caf50';
+                logMMCtx.font = 'bold 9px Arial';
+                logMMCtx.fillText('Zone de fractionnement', (v0X + vtX) / 2, m.top + h / 2);
+                
+                logMMCtx.setLineDash([]);
+                
+                // Régression linéaire UNIQUEMENT sur les protéines fractionnées
+                if (fractionatedProteins.length >= 2) {
+                    const Ves = fractionatedProteins.map(d => d.Ve);
+                    const logMMs = fractionatedProteins.map(d => d.logMM);
+                    
+                    const n = fractionatedProteins.length;
+                    const sumX = Ves.reduce((a, b) => a + b, 0);
+                    const sumY = logMMs.reduce((a, b) => a + b, 0);
+                    const sumXY = Ves.reduce((sum, x, i) => sum + x * logMMs[i], 0);
+                    const sumX2 = Ves.reduce((sum, x) => sum + x * x, 0);
+                    
+                    const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+                    const intercept = (sumY - slope * sumX) / n;
+                    const r2 = Math.pow(
+                        (n * sumXY - sumX * sumY) / 
+                        Math.sqrt((n * sumX2 - sumX * sumX) * (n * logMMs.reduce((sum, y) => sum + y * y, 0) - sumY * sumY)),
+                        2
+                    );
+                    
+                    // Tracer la droite UNIQUEMENT dans la zone de fractionnement
+                    logMMCtx.strokeStyle = '#0e7c7b';
+                    logMMCtx.lineWidth = 3;
+                    logMMCtx.beginPath();
+                    
+                    const x1 = v0X;
+                    const y1Pred = slope * V0 + intercept;
+                    const y1 = m.top + h - ((y1Pred - minLogMM) / (maxLogMM - minLogMM)) * h;
+                    
+                    const x2 = vtX;
+                    const y2Pred = slope * Vt + intercept;
+                    const y2 = m.top + h - ((y2Pred - minLogMM) / (maxLogMM - minLogMM)) * h;
+                    
+                    logMMCtx.moveTo(x1, y1);
+                    logMMCtx.lineTo(x2, y2);
+                    logMMCtx.stroke();
+                    
+                    // Afficher l'équation
+                    document.getElementById('logMMInfo').innerHTML = `
+                        <strong>Équation de calibration (fenêtre de fractionnement) :</strong>
+                        <div class="equation">log(MM) = ${slope.toFixed(4)} × Ve + ${intercept.toFixed(4)}</div>
+                        <div style="margin-top: 5px;">R² = ${r2.toFixed(4)} | ${fractionatedProteins.length} protéine(s) dans la zone de fractionnement</div>
+                        ${excludedProteins.length > 0 ? `<div style="margin-top: 5px; color: #e74c3c; font-size: 0.9em;">⚠️ ${excludedProteins.length} protéine(s) exclue(s) (>${currentGel.exclusion} kDa)</div>` : ''}
+                        ${permeatedProteins.length > 0 ? `<div style="color: #e74c3c; font-size: 0.9em;">⚠️ ${permeatedProteins.length} protéine(s) perméée(s) (<${currentGel.permeation} kDa)</div>` : ''}
+                        <div style="margin-top: 8px; font-size: 0.9em; color: #666;">
+                            <strong>Utilisation :</strong> Pour déterminer la MM d'une protéine inconnue dans la fenêtre de fractionnement (${currentGel.permeation}-${currentGel.exclusion} kDa), 
+                            mesurez son Ve sur le chromatogramme et utilisez l'équation ci-dessus.
+                        </div>
+                    `;
+                } else if (fractionatedProteins.length === 1) {
+                    document.getElementById('logMMInfo').innerHTML = `
+                        <strong>⚠️ Calibration impossible</strong><br>
+                        <span style="font-size: 0.9em;">Il faut au moins 2 protéines dans la fenêtre de fractionnement (${currentGel.permeation}-${currentGel.exclusion} kDa) pour tracer la droite de calibration.</span><br>
+                        ${excludedProteins.length > 0 ? `<div style="margin-top: 5px; color: #e74c3c; font-size: 0.9em;">${excludedProteins.length} protéine(s) exclue(s)</div>` : ''}
+                        ${permeatedProteins.length > 0 ? `<div style="color: #e74c3c; font-size: 0.9em;">${permeatedProteins.length} protéine(s) perméée(s)</div>` : ''}
+                    `;
+                } else {
+                    document.getElementById('logMMInfo').innerHTML = `
+                        <strong>⚠️ Aucune protéine dans la fenêtre de fractionnement</strong><br>
+                        <span style="font-size: 0.9em;">Zone de fractionnement : ${currentGel.permeation}-${currentGel.exclusion} kDa</span><br>
+                        ${excludedProteins.length > 0 ? `<div style="margin-top: 5px; color: #e74c3c; font-size: 0.9em;">${excludedProteins.length} protéine(s) trop grosse(s) (exclues)</div>` : ''}
+                        ${permeatedProteins.length > 0 ? `<div style="color: #e74c3c; font-size: 0.9em;">${permeatedProteins.length} protéine(s) trop petite(s) (perméées)</div>` : ''}
+                    `;
+                }
+                
+                // Dessiner les protéines fractionnées (points normaux)
+                fractionatedProteins.forEach(point => {
+                    const x = m.left + ((point.Ve - minVe) / (maxVe - minVe)) * w;
+                    const y = m.top + h - ((point.logMM - minLogMM) / (maxLogMM - minLogMM)) * h;
+                    
+                    logMMCtx.fillStyle = point.color;
+                    logMMCtx.beginPath();
+                    logMMCtx.arc(x, y, 7, 0, Math.PI * 2);
+                    logMMCtx.fill();
+                    logMMCtx.strokeStyle = '#333';
+                    logMMCtx.lineWidth = 2;
+                    logMMCtx.stroke();
+                    
+                    logMMCtx.fillStyle = '#333';
+                    logMMCtx.font = '9px Arial';
+                    logMMCtx.textAlign = 'left';
+                    logMMCtx.fillText(point.name, x + 10, y - 5);
+                    logMMCtx.fillText(`${point.mass} kDa`, x + 10, y + 7);
+                });
+                
+                // Dessiner les protéines exclues (traits verticaux à V0)
+                excludedProteins.forEach((point, idx) => {
+                    const y = m.top + h - ((point.logMM - minLogMM) / (maxLogMM - minLogMM)) * h;
+                    
+                    // Trait vertical
+                    logMMCtx.strokeStyle = point.color;
+                    logMMCtx.lineWidth = 3;
+                    logMMCtx.setLineDash([]);
+                    logMMCtx.beginPath();
+                    logMMCtx.moveTo(v0X, y - 15);
+                    logMMCtx.lineTo(v0X, y + 15);
+                    logMMCtx.stroke();
+                    
+                    // Flèche vers la gauche
+                    logMMCtx.fillStyle = point.color;
+                    logMMCtx.beginPath();
+                    logMMCtx.moveTo(v0X - 8, y);
+                    logMMCtx.lineTo(v0X - 2, y - 4);
+                    logMMCtx.lineTo(v0X - 2, y + 4);
+                    logMMCtx.fill();
+                    
+                    // Nom
+                    logMMCtx.fillStyle = '#333';
+                    logMMCtx.font = '9px Arial';
+                    logMMCtx.textAlign = 'right';
+                    logMMCtx.fillText(point.name, v0X - 12, y - 8);
+                    logMMCtx.fillText(`${point.mass} kDa`, v0X - 12, y + 2);
+                });
+                
+                // Dessiner les protéines perméées (traits verticaux à Vt)
+                permeatedProteins.forEach((point, idx) => {
+                    const y = m.top + h - ((point.logMM - minLogMM) / (maxLogMM - minLogMM)) * h;
+                    
+                    // Trait vertical
+                    logMMCtx.strokeStyle = point.color;
+                    logMMCtx.lineWidth = 3;
+                    logMMCtx.setLineDash([]);
+                    logMMCtx.beginPath();
+                    logMMCtx.moveTo(vtX, y - 15);
+                    logMMCtx.lineTo(vtX, y + 15);
+                    logMMCtx.stroke();
+                    
+                    // Flèche vers la droite
+                    logMMCtx.fillStyle = point.color;
+                    logMMCtx.beginPath();
+                    logMMCtx.moveTo(vtX + 8, y);
+                    logMMCtx.lineTo(vtX + 2, y - 4);
+                    logMMCtx.lineTo(vtX + 2, y + 4);
+                    logMMCtx.fill();
+                    
+                    // Nom
+                    logMMCtx.fillStyle = '#333';
+                    logMMCtx.font = '9px Arial';
+                    logMMCtx.textAlign = 'left';
+                    logMMCtx.fillText(point.name, vtX + 12, y - 8);
+                    logMMCtx.fillText(`${point.mass} kDa`, vtX + 12, y + 2);
+                });
+                
+            } else {
+                document.getElementById('logMMInfo').innerHTML = `
+                    <strong>En attente de données...</strong><br>
+                    <span style="font-size: 0.9em;">Détectez au moins 2 protéines dans la fenêtre de fractionnement pour générer la courbe</span>
+                `;
+            }
+        }
+        
+        function updateProteins() {
+            const flowRate = parseFloat(document.getElementById('flowRate').value);
+            const speedMult = flowRate / 1.5;
+            
+            proteins.forEach(protein => {
+                protein.x += protein.vx;
+                protein.y += protein.vy * speedMult;
+                
+                if (protein.x < config.columnX + protein.size) {
+                    protein.x = config.columnX + protein.size;
+                    protein.vx *= -1;
+                } else if (protein.x > config.columnX + config.columnWidth - protein.size) {
+                    protein.x = config.columnX + config.columnWidth - protein.size;
+                    protein.vx *= -1;
+                }
+                
+                if (protein.y >= config.columnY + config.columnHeight && !protein.detected) {
+                    protein.detected = true;
+                    detectionEvents.push({
+                        time: timeElapsed,
+                        proteinId: protein.proteinId,
+                        mass: protein.mass,
+                        color: protein.color
+                    });
+                }
+            });
+        }
+        
+        function animate() {
+            if (!isRunning) return;
+            
+            timeElapsed += 1/60;
+            
+            updateProteins();
+            drawColumn();
+            drawChromatogram();
+            drawLogMMCurve();
+            
+            if (timeElapsed < 25) {
+                animationId = requestAnimationFrame(animate);
+            } else {
+                isRunning = false;
+            }
+        }
+        
+        function startElution() {
+            if (!isRunning) {
+                if (proteins.length === 0 || proteins.every(p => p.detected)) {
+                    initializeBeads();
+                    initializeProteins();
+                }
+                isRunning = true;
+                animate();
+            }
+        }
+        
+        function resetSimulation() {
+            isRunning = false;
+            if (animationId) cancelAnimationFrame(animationId);
+            proteins = [];
+            detectionEvents = [];
+            timeElapsed = 0;
+            initializeBeads();
+            initializeProteins();
+            drawColumn();
+            drawChromatogram();
+            drawLogMMCurve();
+        }
+        
+        // Initialisation
+        updateGel();
+        renderProteinList();
+        initializeBeads();
+        initializeProteins();
+        drawColumn();
+        drawChromatogram();
+        drawLogMMCurve();
+    </script>
+
+</body>
+</html>
