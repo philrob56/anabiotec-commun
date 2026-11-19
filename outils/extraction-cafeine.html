@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+<meta name="description" content="Calculateur de TP d’extraction liquide-liquide de la caféine : coefficient de partage K, rendement d’une extraction simple et d’extractions successives. Outil du BTSa ANABIOTEC, lycée Le Gros Chêne, Pontivy.">
+<link rel="canonical" href="https://philrob56.github.io/anabiotec-commun/outils/extraction-cafeine.html">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extraction liquide-liquide de la caféine : coefficient de partage | BTSa ANABIOTEC</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0e7c7b 0%, #0a4f4f 100%);
+            min-height: 100vh;
+            padding: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+            max-width: 750px;
+            width: 100%;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #0e7c7b 0%, #0a4f4f 100%);
+            color: white;
+            padding: 10px 12px;
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+        }
+
+        .header h1 {
+            font-size: 1.15rem;
+            font-weight: 600;
+        }
+
+        .header p {
+            font-size: 0.7rem;
+            opacity: 0.85;
+            margin-top: 2px;
+        }
+
+        .content {
+            padding: 12px;
+        }
+
+        .info-box {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 6px;
+            padding: 8px 10px;
+            margin-bottom: 10px;
+            font-size: 0.75rem;
+            color: #856404;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .input-group {
+            background: #f8f9fa;
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+        }
+
+        .input-group label {
+            display: block;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 4px;
+            font-size: 0.7rem;
+        }
+
+        .input-wrapper {
+            display: flex;
+            background: white;
+            border-radius: 4px;
+            border: 1px solid #dee2e6;
+            overflow: hidden;
+        }
+
+        .input-wrapper:focus-within {
+            border-color: #0e7c7b;
+        }
+
+        .input-wrapper input {
+            flex: 1;
+            border: none;
+            padding: 5px 6px;
+            font-size: 0.85rem;
+            outline: none;
+            -moz-appearance: textfield;
+        }
+
+        .input-wrapper input::-webkit-outer-spin-button,
+        .input-wrapper input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .input-wrapper .unit {
+            background: #e9ecef;
+            padding: 5px 8px;
+            font-size: 0.7rem;
+            color: #6c757d;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 8px;
+            background: linear-gradient(135deg, #0e7c7b 0%, #0a4f4f 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .results {
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 10px;
+        }
+
+        .results h2 {
+            color: #495057;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .results h2::before {
+            content: '📊';
+        }
+
+        .result-item {
+            background: white;
+            padding: 8px 10px;
+            border-radius: 5px;
+            margin-bottom: 6px;
+            border-left: 3px solid #0e7c7b;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .result-label {
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.75rem;
+        }
+
+        .result-value {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #0e7c7b;
+        }
+
+        .result-description {
+            font-size: 0.65rem;
+            color: #6c757d;
+            margin-top: 2px;
+        }
+
+        .result-highlight {
+            background: #e7f3ff;
+            border-left-color: #0066cc;
+        }
+
+        .result-highlight .result-label {
+            color: #0066cc;
+        }
+
+        .result-highlight .result-value {
+            color: #0066cc;
+            font-size: 1.2rem;
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .detail-card {
+            background: white;
+            padding: 6px 8px;
+            border-radius: 5px;
+            border: 1px solid #e9ecef;
+        }
+
+        .detail-card h3 {
+            font-size: 0.65rem;
+            color: #6c757d;
+            margin-bottom: 3px;
+        }
+
+        .detail-card .value {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #495057;
+        }
+
+        .formula {
+            background: #e7f3ff;
+            padding: 8px 10px;
+            border-radius: 5px;
+            margin-top: 8px;
+            border-left: 3px solid #0066cc;
+        }
+
+        .formula-title {
+            font-weight: 600;
+            color: #0066cc;
+            margin-bottom: 5px;
+            font-size: 0.75rem;
+        }
+
+        .formula-content {
+            font-family: 'Courier New', monospace;
+            color: #495057;
+            line-height: 1.4;
+            font-size: 0.7rem;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 650px) {
+            .grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .details-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 450px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .result-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 4px;
+            }
+        }
+    </style>
+<!-- anb-commun --><script src="https://philrob56.github.io/anabiotec-commun/anb-commun.js"></script><!-- /anb-commun -->
+<!-- anb-charte --><style>body{background:#f6f8f7!important;background-image:none!important}body{flex-direction:column!important;justify-content:flex-start!important;align-items:center!important}@media (max-width:700px){body>*{max-width:100%;box-sizing:border-box}}</style><!-- /anb-charte -->
+</head>
+<body>
+<!-- anb-charte --><div class="anb-head"><div class="anb-crumb"><i></i><a href="https://sites.google.com/view/anabioteclegroschene/accueil" target="_top" style="color:inherit;text-decoration:none" title="Tous les outils du BTSa ANABIOTEC"><b>BTSa ANABIOTEC</b></a><span>›</span>TP <span>›</span> Semestre 1</div><div class="anb-right"><div class="anb-tag">LEGTA Le Gros Chêne · Pontivy</div><button type="button" class="anb-print" onclick="anbPrint()" title="Ouvrir une version imprimable (PDF)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimer / PDF</button></div></div><!-- /anb-charte -->
+    <div class="container">
+        <div class="header">
+            <h1>🧪 Extraction Liquide-Liquide</h1>
+            <p>Calcul coefficient de partage et rendement - Caféine</p>
+        </div>
+
+        <div class="content">
+            <div class="info-box">
+                <strong>K = C<sub>aq</sub> / C<sub>org</sub></strong> (concentration aqueuse / concentration organique)
+            </div>
+
+            <div class="grid">
+                <div class="input-group">
+                    <label>Volume phase aqueuse</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="vaq" value="10" step="0.1">
+                        <span class="unit">mL</span>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Conc. initiale caféine</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="c0" value="100" step="1">
+                        <span class="unit">mg/L</span>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Volume phase organique</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="vorg" value="20" step="0.1">
+                        <span class="unit">mL</span>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Conc. finale aqueuse</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="caq" value="5.5" step="0.1">
+                        <span class="unit">mg/L</span>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Rendement cible</label>
+                    <div class="input-wrapper">
+                        <input type="number" id="etaTarget" value="99.5" step="0.1" min="0" max="100">
+                        <span class="unit">%</span>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn" onclick="calculer()">Calculer</button>
+
+            <div id="results" class="results hidden">
+                <h2>Résultats</h2>
+                
+                <div class="result-item">
+                    <div>
+                        <div class="result-label">Coefficient de partage K</div>
+                        <div class="result-description">K = C<sub>aq</sub> / C<sub>org</sub></div>
+                    </div>
+                    <div class="result-value" id="kValue">-</div>
+                </div>
+
+                <div class="result-item">
+                    <div>
+                        <div class="result-label">Rendement 1ère extraction</div>
+                        <div class="result-description">% extrait phase organique</div>
+                    </div>
+                    <div class="result-value" id="etaValue">-</div>
+                </div>
+
+                <div class="result-item result-highlight">
+                    <div style="width: 100%;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <div class="result-label">Nombre d'extractions nécessaires</div>
+                                <div class="result-description">Pour η ≥ <span id="targetDisplay">99.5</span>%</div>
+                            </div>
+                            <div class="result-value" id="nValue">-</div>
+                        </div>
+                        <div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid #b8daff;">
+                            <div class="result-label" style="font-size: 0.7rem;">Calcul mathématique : n = <span id="nMathValue">-</span> → arrondi à <span id="nRoundedValue">-</span></div>
+                            <div style="margin-top: 4px;">
+                                <div class="result-label" style="font-size: 0.7rem;">Rendement obtenu avec <span id="nExtractDisplay">-</span> extraction(s)</div>
+                                <div class="result-value" style="font-size: 1rem; margin-top: 2px;" id="etaNValue">-</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="details-grid">
+                    <div class="detail-card">
+                        <h3>Quantité initiale</h3>
+                        <div class="value" id="n0Value">-</div>
+                    </div>
+                    <div class="detail-card">
+                        <h3>Qté phase aqueuse</h3>
+                        <div class="value" id="naqValue">-</div>
+                    </div>
+                    <div class="detail-card">
+                        <h3>Qté phase org.</h3>
+                        <div class="value" id="norgValue">-</div>
+                    </div>
+                    <div class="detail-card">
+                        <h3>Conc. organique</h3>
+                        <div class="value" id="corgValue">-</div>
+                    </div>
+                </div>
+
+                <div class="formula">
+                    <div class="formula-title">📐 Formules</div>
+                    <div class="formula-content">
+                        K = C<sub>aq</sub> / C<sub>org</sub> • η = (n<sub>org</sub> / n<sub>0</sub>) × 100<br>
+                        η = [1 - (KV / (V<sub>s</sub> + KV))<sup>n</sup>]
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function calculer() {
+            const vaq = parseFloat(document.getElementById('vaq').value);
+            const c0 = parseFloat(document.getElementById('c0').value);
+            const vorg = parseFloat(document.getElementById('vorg').value);
+            const caq = parseFloat(document.getElementById('caq').value);
+            const etaTarget = parseFloat(document.getElementById('etaTarget').value);
+
+            if (isNaN(vaq) || isNaN(c0) || isNaN(vorg) || isNaN(caq) || isNaN(etaTarget) ||
+                vaq <= 0 || c0 <= 0 || vorg <= 0 || caq < 0 || etaTarget <= 0 || etaTarget > 100) {
+                alert('Valeurs invalides');
+                return;
+            }
+
+            const n0 = c0 * vaq;
+            const naq = caq * vaq;
+            const norg = n0 - naq;
+            const corg = norg / vorg;
+            const K = caq / corg;
+            const eta = (norg / n0) * 100;
+
+            const ratio = (1 / K) * (vorg / vaq);
+            let n = 1;
+            let etaN = 0;
+            
+            // Calcul mathématique exact de n
+            // η_n = [1 - 1/(1 + ratio)^n] × 100 >= etaTarget
+            // 1 - 1/(1 + ratio)^n >= etaTarget/100
+            // 1/(1 + ratio)^n <= 1 - etaTarget/100
+            // (1 + ratio)^n >= 1/(1 - etaTarget/100)
+            // n >= ln(1/(1 - etaTarget/100)) / ln(1 + ratio)
+            const nExact = Math.log(1 / (1 - etaTarget / 100)) / Math.log(1 + ratio);
+            const nRounded = Math.ceil(nExact);
+            
+            while (etaN < etaTarget && n < 100) {
+                etaN = (1 - 1 / Math.pow(1 + ratio, n)) * 100;
+                if (etaN < etaTarget) n++;
+            }
+
+            const etaNFinal = (1 - 1 / Math.pow(1 + ratio, n)) * 100;
+
+            document.getElementById('kValue').textContent = K.toFixed(4);
+            document.getElementById('etaValue').textContent = eta.toFixed(2) + ' %';
+            document.getElementById('nValue').textContent = n;
+            document.getElementById('nMathValue').textContent = nExact.toFixed(4);
+            document.getElementById('nRoundedValue').textContent = nRounded;
+            document.getElementById('targetDisplay').textContent = etaTarget.toFixed(1);
+            document.getElementById('nExtractDisplay').textContent = n;
+            document.getElementById('etaNValue').textContent = etaNFinal.toFixed(2) + ' %';
+            document.getElementById('n0Value').textContent = n0.toFixed(1) + ' μg';
+            document.getElementById('naqValue').textContent = naq.toFixed(1) + ' μg';
+            document.getElementById('norgValue').textContent = norg.toFixed(1) + ' μg';
+            document.getElementById('corgValue').textContent = corg.toFixed(2) + ' mg/L';
+            document.getElementById('results').classList.remove('hidden');
+        }
+
+        window.addEventListener('load', calculer);
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('input', calculer);
+        });
+    </script>
+
+</body>
+</html>
