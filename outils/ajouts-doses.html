@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+<meta name="description" content="Simulateur pas à pas de la méthode des ajouts dosés en chromatographie : comparaison avec l’étalonnage externe, effet de matrice, droite d’ajouts et extrapolation. Outil du BTSa ANABIOTEC, lycée Le Gros Chêne, Pontivy.">
+<link rel="canonical" href="https://philrob56.github.io/anabiotec-commun/outils/ajouts-doses.html">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Méthode des ajouts dosés en chromatographie : simulateur | BTSa ANABIOTEC</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f7f9;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: auto;
+            background: #fff;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            color: #0a5c5b;
+            border-bottom: 2px solid #0a5c5b;
+            padding-bottom: 10px;
+            margin-top: 30px;
+        }
+        h1 {
+            text-align: center;
+            font-size: 2em;
+        }
+        .step {
+            margin-bottom: 40px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background-color: #fdfdfd;
+        }
+        .explanation {
+            margin-bottom: 20px;
+        }
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+        }
+        .button {
+            display: inline-block;
+            background-color: #0e7c7b;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            font-size: 1em;
+            margin-top: 10px;
+        }
+        .button:hover:not(:disabled) {
+            background-color: #0a5c5b;
+        }
+        .button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        .highlight {
+            background-color: #e7f3ff;
+            padding: 15px;
+            border-left: 5px solid #0e7c7b;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .highlight.invalid {
+            background-color: #f8d7da;
+            border-left-color: #dc3545;
+        }
+        .result {
+            font-weight: bold;
+            color: #d63384;
+        }
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .slider-container {
+            display: flex; align-items: center; justify-content: center; gap: 15px; margin: 20px 0;
+        }
+        input[type="range"] {
+            width: 50%;
+            cursor: pointer;
+        }
+        .verdict-faux { color: #dc3545; }
+        .verdict-juste { color: #28a745; }
+        
+        /* Styles for interactive step 3 */
+        .interactive-addition-container {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+            align-items: center;
+        }
+        .lab-bench {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        .flask-setup {
+            text-align: center;
+        }
+        .flask-setup svg {
+            width: 40px;
+            height: 60px;
+        }
+        .extrapolate-controls {
+            text-align: center;
+            margin-top: 20px;
+        }
+        #additionMessage {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #fffbe6;
+            border: 1px solid #ffe58f;
+            border-radius: 5px;
+            text-align: center;
+        }
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 0.9em;
+            color: #777;
+        }
+    </style>
+<style id="responsive-patch">
+@media (max-width: 700px) {
+*,*::before,*::after{box-sizing:border-box}
+img,svg,video{max-width:100%}
+body{padding:10px}
+.container{padding:14px}
+.interactive-addition-container{grid-template-columns:1fr !important}
+.chart-container{width:100% !important;max-width:100%;height:300px}
+.slider-container{flex-wrap:wrap}
+}
+</style>
+<!-- anb-commun --><script src="https://philrob56.github.io/anabiotec-commun/anb-commun.js"></script><!-- /anb-commun -->
+</head>
+<body>
+<!-- anb-charte --><div class="anb-head"><div class="anb-crumb"><i></i><a href="https://sites.google.com/view/anabioteclegroschene/accueil" target="_top" style="color:inherit;text-decoration:none" title="Tous les outils du BTSa ANABIOTEC"><b>BTSa ANABIOTEC</b></a><span>›</span>Chromatographie</div><div class="anb-right"><div class="anb-tag">LEGTA Le Gros Chêne · Pontivy</div><button type="button" class="anb-print" onclick="anbPrint()" title="Ouvrir une version imprimable (PDF)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimer / PDF</button></div></div><!-- /anb-charte -->
+
+    <div class="container">
+        <h1>La Méthode des Ajouts Dosés en Chromatographie</h1>
+
+        <!-- Étape 1: Courbe de Calibration -->
+        <div class="step">
+            <h2>Étape 1 : La Courbe de Calibration Externe</h2>
+            <div class="explanation">
+                <p>Construisez une <strong>courbe de calibration</strong>. Une courbe valide est précise (points alignés) et possède un R² > 0.99. Testez l'effet du "Bruit de Mesure" sur la qualité de la courbe.</p>
+            </div>
+             <div class="controls">
+                <div>
+                    <label for="standardsCount">Nombre de standards :</label>
+                    <input type="number" id="standardsCount" value="6" min="3" max="10">
+                </div>
+                <fieldset>
+                    <legend>Modèle de régression :</legend>
+                    <input type="radio" id="modelLinear" name="modelType" value="linear">
+                    <label for="modelLinear">Linéaire (y = ax)</label>
+                    <input type="radio" id="modelAffine" name="modelType" value="affine" checked>
+                    <label for="modelAffine">Affine (y = ax + b)</label>
+                </fieldset>
+                <div>
+                     <label for="noiseSlider">Bruit de Mesure :</label>
+                     <input type="range" id="noiseSlider" min="0" max="4000" value="100" step="10">
+                </div>
+                <button id="generateCurveBtn" class="button">Générer la courbe</button>
+            </div>
+            <div class="chart-container">
+                <canvas id="calibrationCurveChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Étape 2: Effet de Matrice Interactif -->
+        <div class="step">
+            <h2>Étape 2 : Le Problème de l'Effet de Matrice (Interactif)</h2>
+            <div class="explanation">
+                 <p>La <strong>matrice</strong> peut modifier le signal. Utilisez le slider pour simuler un effet. La concentration <strong>réelle</strong> de l'analyte est toujours de <span class="result">4.0 mg/L</span>.</p>
+            </div>
+            <div class="slider-container">
+                <label for="matrixSlider">Suppression</label>
+                <input type="range" id="matrixSlider" min="-50" max="50" value="33" step="1">
+                <label for="matrixSlider">Exaltation</label>
+                <strong>Effet : <span id="matrixEffectValue" class="result">+33%</span></strong>
+            </div>
+            <div class="chart-container" style="height:350px;">
+                <canvas id="chromatogramComparisonChart"></canvas>
+            </div>
+            <div class="highlight" id="step2-highlight">
+                 <p id="matrixExplanation">Avec un effet d'<strong>exaltation de +33%</strong>, le signal est augmenté.</p>
+                 <p>En utilisant la calibration externe, on obtient une concentration calculée de <span class="result" id="erroneousConcentrationValue">...</span>. Ce résultat est <strong id="verdictText" class="verdict-faux">complètement faux</strong>.</p>
+            </div>
+        </div>
+
+        <!-- Étape 3: Atelier Interactif des Ajouts Dosés -->
+        <div class="step">
+            <h2>Étape 3 : L'Atelier Interactif des Ajouts Dosés</h2>
+            <div class="explanation">
+                <p>Construisez la courbe point par point. Analysez chaque fiole pour voir comment elle corrige l'effet de matrice de l'étape 2.</p>
+            </div>
+            <div class="interactive-addition-container">
+                <div id="labBench" class="lab-bench">
+                    <!-- Les fioles seront générées par JavaScript -->
+                </div>
+                <div class="chart-container">
+                    <canvas id="standardAdditionChart"></canvas>
+                </div>
+            </div>
+            <div id="additionMessage" style="display: none;"></div>
+             <div id="extrapolateControls" class="extrapolate-controls" style="display: none;">
+                <button id="extrapolateBtn" class="button">Calculer & Extrapoler</button>
+                 <button id="resetAdditionBtn" class="button" style="background-color: #6c757d;">Réinitialiser</button>
+            </div>
+            <div class="highlight">
+                <p>Après extrapolation, la concentration réelle trouvée est : <span class="result" id="finalResult">...</span>.</p>
+            </div>
+        </div>
+
+        <footer>
+            <p>Application HTML5 réalisée pour un usage pédagogique.</p>
+        </footer>
+    </div>
+
+    <script>
+        // --- CONSTANTES ET VARIABLES GLOBALES ---
+        const TRUE_CONCENTRATION = 4.0;
+        let CALIB_SLOPE = 1500;
+        let CALIB_INTERCEPT = 0;
+        const BASE_SLOPE_TRUE = 1500;
+        const TRUE_AREA = TRUE_CONCENTRATION * BASE_SLOPE_TRUE;
+        let allAdditionPointsData = [];
+        let currentAdditionIndex = 0;
+        let isCurveValid = true;
+
+        // --- REFERENCES HTML ---
+        const generateCurveBtn = document.getElementById('generateCurveBtn');
+        const noiseSlider = document.getElementById('noiseSlider');
+        const slider = document.getElementById('matrixSlider');
+        const effectValueSpan = document.getElementById('matrixEffectValue');
+        const erroneousConcSpan = document.getElementById('erroneousConcentrationValue');
+        const explanationSpan = document.getElementById('matrixExplanation');
+        const verdictSpan = document.getElementById('verdictText');
+        const step2Highlight = document.getElementById('step2-highlight');
+        const labBench = document.getElementById('labBench');
+        const extrapolateControls = document.getElementById('extrapolateControls');
+        const extrapolateBtn = document.getElementById('extrapolateBtn');
+        const resetAdditionBtn = document.getElementById('resetAdditionBtn');
+        const additionMessage = document.getElementById('additionMessage');
+        
+        // --- FONCTION DE RÉGRESSION LINÉAIRE ---
+        function linearRegression(data, options = { forceOrigin: false }) {
+            let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0, sumY2 = 0; const n = data.length;
+            for (const point of data) { sumX += point.x; sumY += point.y; sumXY += point.x * point.y; sumX2 += point.x * point.x; sumY2 += point.y * point.y; }
+            let slope, intercept;
+            if (options.forceOrigin) { slope = sumXY / sumX2; intercept = 0; } else { slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX) || 0; intercept = (sumY - slope * sumX) / n; }
+            let ssRes = 0, ssTot = 0; const yMean = sumY / n;
+            for (const point of data) { const predictedY = slope * point.x + intercept; ssRes += (point.y - predictedY) ** 2; ssTot += (point.y - yMean) ** 2; }
+            const r2 = ssTot === 0 ? 1 : 1 - (ssRes / ssTot);
+            return { slope, intercept, r2 };
+        }
+
+        // --- GRAPHIQUE 1: COURBE DE CALIBRATION ---
+        const calibCtx = document.getElementById('calibrationCurveChart').getContext('2d');
+        const calibrationCurveChart = new Chart(calibCtx, {
+            type: 'scatter',
+            data: { datasets: [ { label: 'Standards Purs', data: [], backgroundColor: 'rgba(14,124,123, 0.6)', pointRadius: 6 }, { label: 'Droite de régression', data: [], borderColor: 'rgba(14,124,123, 1)', borderWidth: 2, type: 'line', fill: false, pointRadius: 0 } ] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: 'Courbe de Calibration Externe', font: { size: 16 } }, legend: { position: 'bottom' }, annotation: { annotations: { equation: { type: 'label', xValue: 1, yValue: 14000, content: [], font: { size: 14, weight: 'bold' }, color: 'rgba(0,0,0,0.7)', backgroundColor: 'rgba(255,255,255,0.8)', padding: 6, borderRadius: 4 }, r2Verdict: { type: 'label', xValue: 1, yValue: 12000, content: '', font: { size: 14, weight: 'bold' }, backgroundColor: 'rgba(255,255,255,0.8)', padding: 6, borderRadius: 4 } } } }, scales: { x: { type: 'linear', position: 'bottom', title: { display: true, text: 'Concentration (mg/L)' }, min: 0, max: 10 }, y: { type: 'linear', title: { display: true, text: 'Aire du Pic (Unités Arbitraires)' }, beginAtZero: true } } }
+        });
+
+        function generateCalibrationCurve() {
+            const standardsCount = parseInt(document.getElementById('standardsCount').value);
+            const modelType = document.querySelector('input[name="modelType"]:checked').value;
+            const noiseValue = parseInt(noiseSlider.value);
+            const concentrations = Array.from({ length: standardsCount }, (_, i) => 1 + i * (9 / (standardsCount - 1)));
+            const scatterData = concentrations.map(c => ({ x: c, y: BASE_SLOPE_TRUE * c + (modelType === 'affine' ? 500 : 0) + (Math.random() - 0.5) * noiseValue }));
+            const regression = linearRegression(scatterData, { forceOrigin: modelType === 'linear' });
+            CALIB_SLOPE = regression.slope; CALIB_INTERCEPT = regression.intercept;
+            calibrationCurveChart.data.datasets[0].data = scatterData;
+            const minX = 0, maxX = 10;
+            calibrationCurveChart.data.datasets[1].data = [ {x: minX, y: CALIB_SLOPE * minX + CALIB_INTERCEPT}, {x: maxX, y: CALIB_SLOPE * maxX + CALIB_INTERCEPT} ];
+            const equationString = `y = ${CALIB_SLOPE.toFixed(1)}x + ${CALIB_INTERCEPT.toFixed(1)}`;
+            const r2String = `R² = ${regression.r2.toFixed(4)}`;
+            let verdict, color;
+            if (regression.r2 > 0.995) { verdict = 'Excellente linéarité'; color = '#28a745'; isCurveValid = true; } 
+            else if (regression.r2 > 0.990) { verdict = 'Linéarité acceptable'; color = '#ffc107'; isCurveValid = true; } 
+            else { verdict = 'Linéarité invalide !'; color = '#dc3545'; isCurveValid = false; }
+            
+            const annotations = calibrationCurveChart.options.plugins.annotation.annotations;
+            annotations.equation.content = [equationString, r2String];
+            annotations.r2Verdict.content = verdict;
+            annotations.r2Verdict.color = color;
+            const yMax = Math.max(...scatterData.map(p=>p.y));
+            annotations.equation.yValue = yMax * 0.95;
+            annotations.r2Verdict.yValue = yMax * 0.80;
+            calibrationCurveChart.update();
+            updateMatrixEffect();
+        }
+
+        // --- GRAPHIQUE 2: EFFET DE MATRICE INTERACTIF ---
+        const peakData = (peakHeight) => Array.from({length: 40}, (_, i) => { const x = i - 15; return (x > -5 && x < 5) ? peakHeight * Math.exp(-0.2 * x * x) : 50; });
+        const comparisonCtx = document.getElementById('chromatogramComparisonChart').getContext('2d');
+        const chromatogramComparisonChart = new Chart(comparisonCtx, {
+            type: 'line',
+            data: { labels: Array.from({length: 40}, (_, i) => (i / 10 + 1).toFixed(1)), datasets: [ { label: 'Signal SANS effet de matrice (Attendu)', data: peakData(TRUE_AREA), borderColor: '#28a745', backgroundColor: 'rgba(40, 167, 69, 0.2)', fill: true, tension: 0.4, pointRadius: 0 }, { label: 'Signal AVEC effet de matrice (Mesuré)', data: [], borderColor: '#dc3545', backgroundColor: 'rgba(220, 53, 69, 0.2)', fill: true, tension: 0.4, pointRadius: 0 } ] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: 'Impact de l\'Effet de Matrice sur le Signal', font: { size: 16 } }, legend: { display: true, position: 'bottom' } }, scales: { x: { title: { display: true, text: 'Temps de rétention (min)' } }, y: { title: { display: true, text: 'Intensité du signal' }, beginAtZero: true, max: 12000 } } }
+        });
+
+        function updateMatrixEffect() {
+            if (!isCurveValid) {
+                slider.disabled = true;
+                step2Highlight.classList.add('invalid');
+                explanationSpan.innerHTML = `<strong>Impossible de quantifier !</strong> La courbe de calibration de l'étape 1 est invalide (R² trop faible). Veuillez la corriger avant de continuer.`;
+                erroneousConcSpan.textContent = 'N/A';
+                verdictSpan.textContent = '';
+                return;
+            }
+            slider.disabled = false;
+            step2Highlight.classList.remove('invalid');
+            const matrixEffectPercent = parseInt(slider.value);
+            const factor = 1 + (matrixEffectPercent / 100);
+            const affectedArea = TRUE_AREA * factor;
+            const erroneousConcentration = (affectedArea - CALIB_INTERCEPT) / CALIB_SLOPE;
+            chromatogramComparisonChart.data.datasets[1].data = peakData(affectedArea);
+            chromatogramComparisonChart.update('none');
+            effectValueSpan.textContent = (matrixEffectPercent >= 0 ? '+' : '') + matrixEffectPercent + '%';
+            erroneousConcSpan.textContent = erroneousConcentration.toFixed(2) + ' mg/L';
+            if (Math.abs(erroneousConcentration - TRUE_CONCENTRATION) > 0.1) { verdictSpan.textContent = 'complètement faux'; verdictSpan.className = 'verdict-faux'; } else { verdictSpan.textContent = 'correct'; verdictSpan.className = 'verdict-juste'; }
+            if (matrixEffectPercent > 0) { explanationSpan.innerHTML = `Avec un effet d'<strong>exaltation de +${matrixEffectPercent}%</strong>, le signal est augmenté.`; } else if (matrixEffectPercent < 0) { explanationSpan.innerHTML = `Avec un effet de <strong>suppression de ${matrixEffectPercent}%</strong>, le signal est diminué.`; } else { explanationSpan.innerHTML = `Avec <strong>aucun effet de matrice</strong>, le signal est correct.`; }
+            setupAdditionStep();
+        }
+        
+        // --- ÉTAPE 3: ATELIER INTERACTIF ---
+        const addCtx = document.getElementById('standardAdditionChart').getContext('2d');
+        const standardAdditionChart = new Chart(addCtx, {
+            type: 'scatter',
+            data: { datasets: [ { label: 'Échantillon + Ajouts', data: [], backgroundColor: 'rgba(255, 159, 64, 0.8)', pointRadius: 7 }, { label: 'Droite de régression', data: [], borderColor: '#0a5c5b', borderWidth: 2, type: 'line', fill: false, pointRadius: 0 }, { label: 'Extrapolation', data: [], borderColor: 'rgb(214, 51, 132)', borderWidth: 3, borderDash: [5, 5], type: 'line', fill: false, pointRadius: 0 }, { label: 'Concentration Réelle', data: [], backgroundColor: 'rgb(214, 51, 132)', type: 'scatter', pointRadius: 8, pointStyle: 'star' } ] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: "Droite d'Ajouts Dosés", font: { size: 16 } }, legend: { position: 'bottom' } }, scales: { x: { type: 'linear', position: 'bottom', title: { display: true, text: 'Concentration Ajoutée (mg/L)' }, min: -6, max: 8 }, y: { type: 'linear', title: { display: true, text: 'Aire du Pic (Unités Arbitraires)' }, beginAtZero: true, max: 22000 } } }
+        });
+        
+        function setupAdditionStep() {
+            currentAdditionIndex = 0;
+            const matrixFactor = 1 + (parseInt(slider.value) / 100);
+            const additionSlope = BASE_SLOPE_TRUE * matrixFactor;
+            const additionIntercept = TRUE_AREA * matrixFactor;
+            allAdditionPointsData = [ {x: 0, y: additionIntercept}, {x: 2, y: 2 * additionSlope + additionIntercept}, {x: 4, y: 4 * additionSlope + additionIntercept}, {x: 6, y: 6 * additionSlope + additionIntercept} ];
+            labBench.innerHTML = '';
+            allAdditionPointsData.forEach((point, index) => {
+                labBench.innerHTML += `<div class="flask-setup"><svg viewBox="0 0 100 150"><path d="M50 145 c-15 0 -25 -10 -25 -25 l0 -50 l-15 0 c-5 0 -5 -5 -5 -5 l0 -10 c0 -5 5 -5 5 -5 l15 0 l0 -25 l-15 0 c-5 0 -5 -5 -5 -5 l0 -10 c0 -5 5 -5 5 -5 l70 0 c5 0 5 5 5 5 l0 10 c0 5 -5 5 -5 5 l-15 0 l0 25 l15 0 c5 0 5 5 5 5 l0 10 c0 5 -5 5 -5 5 l-15 0 l0 50 c0 15 -10 25 -25 25 z" fill="#e7f3ff" stroke="#0a5c5b" stroke-width="2"></path></svg><div>Fiole ${index + 1}: +${point.x.toFixed(1)} mg/L</div><button class="button add-point-btn" data-index="${index}" ${index > 0 ? 'disabled' : ''}>Analyser la Fiole</button></div>`;
+            });
+            standardAdditionChart.data.datasets.forEach(ds => ds.data = []);
+            standardAdditionChart.update();
+            extrapolateControls.style.display = 'none';
+            additionMessage.style.display = 'none';
+            document.getElementById('finalResult').textContent = '...';
+        }
+
+        labBench.addEventListener('click', function(e) {
+            if (e.target.matches('.add-point-btn')) {
+                const index = parseInt(e.target.dataset.index);
+                if (index !== currentAdditionIndex) return;
+                
+                if (index === 0) {
+                    const matrixEffectPercent = parseInt(slider.value);
+                    const effectText = (matrixEffectPercent >= 0 ? '+' : '') + matrixEffectPercent + '%';
+                    const areaText = allAdditionPointsData[0].y.toFixed(0);
+                    additionMessage.innerHTML = `Analyse de la Fiole 1... <strong>Aire mesurée : ${areaText}</strong>.<br><em>C'est le signal affecté par la matrice (${effectText}) de l'étape 2 !</em>`;
+                    additionMessage.style.display = 'block';
+                }
+
+                standardAdditionChart.data.datasets[0].data.push(allAdditionPointsData[index]);
+                standardAdditionChart.update();
+                e.target.disabled = true;
+                currentAdditionIndex++;
+                const nextButton = labBench.querySelector(`.add-point-btn[data-index="${currentAdditionIndex}"]`);
+                if (nextButton) { nextButton.disabled = false; } else { extrapolateControls.style.display = 'block'; }
+            }
+        });
+        
+        extrapolateBtn.addEventListener('click', function() {
+            const regression = linearRegression(allAdditionPointsData);
+            const unknownConcentration = -regression.intercept / regression.slope;
+            standardAdditionChart.data.datasets[1].data = [{x:0, y:regression.intercept}, {x:6, y: regression.slope*6 + regression.intercept}];
+            standardAdditionChart.data.datasets[2].data = [{x: unknownConcentration, y: 0}, {x: 0, y: regression.intercept}];
+            standardAdditionChart.data.datasets[3].data = [{x: unknownConcentration, y: 0}];
+            standardAdditionChart.update();
+            document.getElementById('finalResult').textContent = `${Math.abs(unknownConcentration).toFixed(2)} mg/L`;
+        });
+        
+        resetAdditionBtn.addEventListener('click', setupAdditionStep);
+
+        // --- INITIALISATION ---
+        generateCurveBtn.addEventListener('click', generateCalibrationCurve);
+        noiseSlider.addEventListener('input', generateCalibrationCurve);
+        slider.addEventListener('input', updateMatrixEffect);
+        generateCalibrationCurve();
+    </script>
+
+</body>
+</html>
