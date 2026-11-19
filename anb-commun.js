@@ -9,6 +9,7 @@
    v5 : sauvegarde des saisies étendue à toutes les pages (sauf ANB_SANS_SAUVEGARDE).
    v6 : référence = état de la page après chargement (et non les valeurs du HTML).
    v7 : listes de valeurs (Grubbs, Dixon, Normalité) + mesure de hauteur pour la maintenance.
+   v8 : mesure d'audience GoatCounter (sans cookies), tableau de bord anabiotec.goatcounter.com.
    ========================================================================== */
 
 /* 1. Charte graphique : polices et style du bandeau */
@@ -317,3 +318,28 @@ window.addEventListener("message", function(ev){
   ev.source.postMessage({ anbMesure: 2, titre: document.title, contenu: Math.ceil(bas + (mb || 0)),
     defilement: document.documentElement.scrollHeight, cadre: window.innerHeight }, "*");
 });
+
+/* 7. Mesure d'audience — GoatCounter (sans cookies ni données personnelles)
+   Tableau de bord : https://anabiotec.goatcounter.com
+   - outils hébergés sur GitHub Pages : chemin = /outils/nom-de-l-outil.html
+   - outils encore collés dans Google Sites : chemin = /sites/<titre de la page>
+   allow_frame : nécessaire car les outils s'affichent dans des cadres intégrés. */
+(function(){
+  try {
+    if (window.__anbGC) return;
+    window.__anbGC = 1;
+    var surGitHub = location.hostname === "philrob56.github.io";
+    window.goatcounter = {
+      allow_frame: true,
+      path: function(p){
+        if (surGitHub) return location.pathname.replace(/^\/anabiotec-commun/, "") || "/";
+        return "/sites/" + (document.title || "sans-titre");
+      }
+    };
+    var s = document.createElement("script");
+    s.async = true;
+    s.src = "https://gc.zgo.at/count.js";
+    s.setAttribute("data-goatcounter", "https://anabiotec.goatcounter.com/count");
+    (document.head || document.documentElement).appendChild(s);
+  } catch (e) {}
+})();
