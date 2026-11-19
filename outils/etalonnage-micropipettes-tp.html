@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+<meta name="description" content="TP d’étalonnage des micropipettes (P100 à P10000) par pesée : saisie des mesures, calcul du volume délivré, de la justesse et de la fidélité, compte rendu imprimable. Outil du BTSa ANABIOTEC, lycée Le Gros Chêne, Pontivy.">
+<link rel="canonical" href="https://philrob56.github.io/anabiotec-commun/outils/etalonnage-micropipettes-tp.html">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Étalonnage des micropipettes — TP</title>
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --primary-soft: #eef2ff;
+      --bg: #f3f4f6;
+      --surface: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #e2e8f0;
+      --valid: #059669;
+      --valid-soft: #ecfdf5;
+      --invalid: #dc2626;
+      --invalid-soft: #fef2f2;
+      --radius: 8px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      padding: 12px;
+    }
+
+    .container {
+      background: var(--surface);
+      max-width: 860px;
+      margin: 0 auto;
+      border-radius: 12px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+      padding: 14px 16px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    h1 { font-size: 1.15rem; color: var(--primary); }
+
+    .grid { display: grid; gap: 8px; margin-bottom: 10px; }
+    .g-student { grid-template-columns: 2fr 1fr 1fr; }
+    .g-params  { grid-template-columns: repeat(4, 1fr); }
+
+    .field label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 2px;
+    }
+
+    input[type="text"], input[type="date"] {
+      width: 100%;
+      padding: 6px 8px;
+      border: 1.5px solid var(--line);
+      border-radius: var(--radius);
+      font-size: 0.95rem;
+      text-align: center;
+      background: #fff;
+    }
+    input:focus { border-color: var(--primary); outline: none; }
+    input.missing { border-color: var(--invalid); background: var(--invalid-soft); }
+
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type="number"] { -moz-appearance: textfield; }
+
+    button {
+      padding: 6px 12px;
+      background: var(--primary);
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.85rem;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+    }
+    button:hover { background: var(--primary-hover); }
+    .btn-grey { background: #6b7280; }
+    .btn-grey:hover { background: #4b5563; }
+    .btn-print { background: var(--valid); }
+    .btn-print:hover { background: #047857; }
+    .btn-check { background: #f59e0b; margin-left: auto; padding: 6px 20px; }
+    .btn-check:hover { background: #d97706; }
+    .stats.pending .stat { opacity: 0.55; }
+
+    .step-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin: 4px 0 4px;
+    }
+    .pick-hint {
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-style: italic;
+      padding: 8px 0 4px;
+    }
+    #dataSection[hidden], .pick-hint[hidden], #paramsGrid[hidden] { display: none; }
+
+    /* Choix avant / après étalonnage */
+    .phase {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+    .phase-btn {
+      flex: 1;
+      position: relative;
+      background: #fff;
+      color: var(--text);
+      border: 1.5px solid var(--line);
+    }
+    .phase-btn:hover { background: var(--primary-soft); }
+    .phase-btn.active[data-phase="avant"] { background: #f59e0b; border-color: #f59e0b; color: #fff; }
+    .phase-btn.active[data-phase="apres"] { background: var(--valid); border-color: var(--valid); color: #fff; }
+    .phase-btn.has-data::after {
+      content: "";
+      position: absolute;
+      top: 5px; right: 6px;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--valid);
+    }
+    .phase-btn.active.has-data::after { background: #fff; }
+    .vol-sel .phase-btn.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+    /* Rappel des résultats avant étalonnage (lecture seule) */
+    .recap {
+      border: 1.5px solid #f59e0b;
+      background: #fffbeb;
+      border-radius: var(--radius);
+      padding: 8px 10px;
+      margin-bottom: 10px;
+    }
+    .recap[hidden] { display: none; }
+    .recap-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 6px;
+    }
+    .recap-head b { font-size: 0.85rem; color: #b45309; }
+    .recap-head span { font-size: 0.75rem; color: var(--muted); }
+    .recap-masses {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-bottom: 6px;
+    }
+    .recap-masses span {
+      font-size: 0.72rem;
+      background: #fff;
+      border: 1px solid #fde68a;
+      border-radius: 4px;
+      padding: 1px 6px;
+    }
+    .recap .stat { padding: 3px 6px; background: #fff; }
+    .recap .stat .val { font-size: 0.9rem; }
+    .recap-empty { font-size: 0.8rem; font-style: italic; color: var(--muted); }
+
+    /* Onglets pipettes */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 10px;
+      background: var(--bg);
+      padding: 3px;
+      border-radius: var(--radius);
+    }
+    .tab {
+      flex: 1;
+      background: transparent;
+      color: var(--text);
+      position: relative;
+    }
+    .tab:hover { background: #e5e7eb; }
+    .tab.active { background: var(--primary); color: #fff; }
+    .tab.has-data::after {
+      content: "";
+      position: absolute;
+      top: 5px; right: 6px;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--valid);
+    }
+
+    /* Masses */
+    .section-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 4px;
+    }
+    .section-head b { font-size: 0.85rem; }
+    .hint { font-size: 0.72rem; color: var(--muted); }
+    kbd {
+      font-size: 0.68rem;
+      border: 1px solid #cbd5e1;
+      border-bottom-width: 2px;
+      border-radius: 3px;
+      padding: 0 3px;
+      background: #f8fafc;
+    }
+
+    .mass-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .mass-cell {
+      position: relative;
+      border: 1.5px solid var(--line);
+      border-radius: var(--radius);
+      padding: 3px 4px 2px;
+      background: #fafafa;
+    }
+    .mass-cell:focus-within { border-color: var(--primary); background: var(--primary-soft); }
+    .mass-cell .idx {
+      position: absolute;
+      top: 2px; left: 5px;
+      font-size: 0.65rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+    .mass-cell input {
+      border: none;
+      background: transparent;
+      padding: 8px 14px 0;
+      font-weight: 600;
+    }
+    .mass-cell .del {
+      position: absolute;
+      top: 2px; right: 2px;
+      width: 18px; height: 18px;
+      padding: 0;
+      line-height: 18px;
+      font-size: 0.8rem;
+      background: transparent;
+      color: var(--muted);
+      border-radius: 50%;
+    }
+    .mass-cell .del:hover { background: var(--invalid); color: #fff; }
+    .mass-cell .vol {
+      display: block;
+      text-align: center;
+      font-size: 0.72rem;
+      color: var(--muted);
+      min-height: 1em;
+    }
+
+    .z-info { font-size: 0.72rem; color: var(--muted); margin: -2px 0 8px; min-height: 1em; }
+
+    .actions { display: flex; gap: 6px; margin-bottom: 10px; }
+
+    /* Résultats */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr) 1.2fr;
+      gap: 6px;
+    }
+    .stat {
+      border: 1.5px solid var(--line);
+      border-radius: var(--radius);
+      padding: 5px 8px;
+      text-align: center;
+    }
+    .stat .lbl { font-size: 0.7rem; color: var(--muted); font-weight: 600; }
+    .stat .val { font-size: 1rem; font-weight: 700; }
+    .stat .sub { font-size: 0.7rem; font-weight: 600; }
+    .stat.ok  { border-color: var(--valid); background: var(--valid-soft); color: var(--valid); }
+    .stat.bad { border-color: var(--invalid); background: var(--invalid-soft); color: var(--invalid); }
+    .stat.ok .lbl, .stat.bad .lbl { color: inherit; }
+    .stat.verdict .val { font-size: 0.95rem; }
+
+    .conforme { color: var(--valid) !important; font-weight: 700; }
+    .non-conforme { color: var(--invalid) !important; font-weight: 700; }
+
+    @media (max-width: 640px) {
+      .g-student, .g-params { grid-template-columns: 1fr 1fr; }
+      .g-student .field:first-child { grid-column: 1 / -1; }
+      .stats { grid-template-columns: 1fr 1fr; }
+      .stat.verdict { grid-column: 1 / -1; }
+    }
+
+    /* ===== Compte rendu imprimable ===== */
+    #printReport { display: none; }
+
+    /* Marge de page nulle : le navigateur n'a plus de place pour imprimer
+       date, titre, adresse du fichier et numéro de page */
+    @page { size: A4 portrait; margin: 0; }
+
+    @media print {
+      * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      html, body { margin: 0; }
+      body { background: #fff; padding: 0; font-size: 10.5pt; color: #000; }
+      #printReport { padding: 14mm 15mm 12mm; }
+      .container { display: none; }
+      #printReport { display: block; }
+    }
+
+    .rp-header { border-bottom: 2px solid #000; padding-bottom: 6px; margin-bottom: 10px; }
+    .rp-header h1 { font-size: 15pt; color: #000; text-align: center; margin-bottom: 4px; }
+    .rp-header p { text-align: center; font-size: 9pt; }
+    .rp-student {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 6px;
+      border: 1px solid #000;
+      padding: 6px 8px;
+      margin-bottom: 12px;
+    }
+    .pip-block {
+      border: 1px solid #000;
+      padding: 8px 10px;
+      margin-bottom: 10px;
+    }
+    .rp-cond { font-size: 9.5pt; margin-bottom: 6px; }
+    .vol-block {
+      border-top: 1px dashed #777;
+      padding-top: 5px;
+      margin-top: 6px;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    .vol-title { font-size: 10pt; font-weight: 700; margin-bottom: 4px; }
+    .vol-title span { font-weight: 400; font-size: 9pt; margin-left: 8px; }
+    .pip-block h3 { font-size: 11.5pt; margin-bottom: 6px; background: #e5e7eb; padding: 3px 6px; }
+    .phase-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    .phase-grid.two { grid-template-columns: 1fr 1fr; }
+    .phase-grid.two .rp-params, .phase-grid.two .rp-results { grid-template-columns: 1fr 1fr; font-size: 9pt; }
+    .phase-block h4 { font-size: 10pt; margin-bottom: 3px; border-bottom: 1px solid #000; }
+    .rp-params {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2px 10px;
+      font-size: 9.5pt;
+      margin-bottom: 4px;
+    }
+    .pip-block table { width: 100%; border-collapse: collapse; margin-top: 4px; font-size: 9pt; }
+    .pip-block th, .pip-block td { border: 1px solid #555; padding: 2px 4px; text-align: center; }
+    .pip-block thead { background: #f3f4f6; }
+    .rp-results {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2px 10px;
+      margin-top: 5px;
+      font-size: 10pt;
+    }
+    .rp-verdict { margin-top: 5px; font-weight: 700; text-align: right; }
+    .rp-incomplete { font-style: italic; color: #555; }
+    .rp-footer {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 14px;
+      break-inside: avoid;
+    }
+    .rp-footer div {
+      border: 1px solid #000;
+      height: 28mm;
+      padding: 4px 6px;
+      font-size: 9pt;
+      font-weight: 700;
+    }
+  </style>
+<!-- anb-charte --><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><style id="anb-charte">
+body{font-family:Inter,system-ui,-apple-system,sans-serif!important}
+h1,h2,h3,h4{font-family:Outfit,Inter,sans-serif!important;letter-spacing:-.2px}
+.anb-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;box-sizing:border-box;width:100%;align-self:stretch;margin:0 0 16px;padding:10px 18px;border-radius:14px;background:linear-gradient(135deg,#0a4f4f 0%,#0e7c7b 60%,#2a9d8f 100%);color:#fff;font:500 13px/1.3 Inter,system-ui,sans-serif;box-shadow:0 4px 14px rgba(10,79,79,.18)}
+.anb-head b{font-family:Outfit,Inter,sans-serif;font-weight:600;font-size:14px;letter-spacing:.2px}
+.anb-crumb{display:flex;align-items:center;gap:8px;min-width:0}
+.anb-crumb i{display:block;width:7px;height:7px;border-radius:50%;background:#b8d63a;flex:0 0 7px}
+.anb-crumb span{opacity:.75}
+.anb-tag{opacity:.8;font-size:12px}
+@media (max-width:560px){.anb-head{padding:8px 12px;border-radius:12px;margin-bottom:12px}.anb-tag{display:none}}
+</style><!-- /anb-charte -->
+</head>
+<body>
+<!-- anb-charte --><div class="anb-head"><div class="anb-crumb"><i></i><a href="https://sites.google.com/view/anabioteclegroschene/accueil" target="_top" style="color:inherit;text-decoration:none" title="Tous les outils du BTSa ANABIOTEC"><b>BTSa ANABIOTEC</b></a><span>›</span>TP <span>›</span> Semestre 1</div><div class="anb-tag">LEGTA Le Gros Chêne · Pontivy</div></div><!-- /anb-charte -->
+
+<div class="container">
+  <div class="topbar">
+    <h1>Étalonnage des micropipettes — TP</h1>
+    <button type="button" id="printBtn" class="btn-print">🖨 Imprimer (A4)</button>
+  </div>
+
+  <div class="grid g-student">
+    <div class="field">
+      <label for="studentName">Nom et prénom</label>
+      <input type="text" id="studentName" placeholder="DUPONT Marie" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="studentClass">Classe / groupe</label>
+      <input type="text" id="studentClass" placeholder="ANAB 1 Gr 1" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="testDate">Date</label>
+      <input type="date" id="testDate">
+    </div>
+  </div>
+
+  <p class="step-title">Sélectionnez votre micropipette</p>
+  <div class="tabs" id="tabs">
+    <button type="button" class="tab" data-pip="P100">P100</button>
+    <button type="button" class="tab" data-pip="P1000">P1000</button>
+    <button type="button" class="tab" data-pip="P5000">P5000</button>
+    <button type="button" class="tab" data-pip="P10000">P10000</button>
+  </div>
+
+  <p class="pick-hint" id="pickHint">Cliquez sur une micropipette pour commencer.</p>
+
+  <div id="dataSection" hidden>
+  <p class="step-title">Volume testé</p>
+  <div class="phase vol-sel" id="volSel">
+    <button type="button" class="phase-btn" data-pct="10">10 %</button>
+    <button type="button" class="phase-btn" data-pct="50">50 %</button>
+    <button type="button" class="phase-btn active" data-pct="100">100 %</button>
+  </div>
+  <p class="step-title">Contrôle réalisé</p>
+  <div class="phase" id="phase">
+    <button type="button" class="phase-btn active" data-phase="avant">Avant étalonnage</button>
+    <button type="button" class="phase-btn" data-phase="apres">Après étalonnage</button>
+  </div>
+  <div class="recap" id="avantRecap" hidden></div>
+  <p class="step-title" id="dataTitle">Renseignez les données ci-dessous</p>
+  <div class="grid g-params" id="paramsGrid">
+    <div class="field">
+      <label for="temperature">Température (°C)</label>
+      <input type="text" inputmode="decimal" class="num" id="temperature" data-step="0.1" placeholder="20,5" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="pressure">Pression (hPa)</label>
+      <input type="text" inputmode="decimal" class="num" id="pressure" data-step="1" placeholder="1013" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="maxAccuracy">Justesse max. (%)</label>
+      <input type="text" inputmode="decimal" class="num" id="maxAccuracy" data-step="0.1" placeholder="0,8" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="maxCV">Fidélité max. (CV %)</label>
+      <input type="text" inputmode="decimal" class="num" id="maxCV" data-step="0.1" placeholder="0,3" autocomplete="off">
+    </div>
+  </div>
+
+  <div class="section-head">
+    <b>Masses mesurées (mg)</b>
+  </div>
+  <div id="massInputs" class="mass-grid"></div>
+  <p class="z-info" id="zInfo"></p>
+
+  <div class="actions">
+    <button type="button" id="addMassBtn">+ Ajouter une masse</button>
+    <button type="button" id="resetBtn" class="btn-grey">Réinitialiser la série</button>
+    <button type="button" id="checkBtn" class="btn-check">✔ Vérifier</button>
+  </div>
+
+  <div class="stats">
+    <div class="stat" id="statMean"><div class="lbl">Volume moyen</div><div class="val">—</div><div class="sub">&nbsp;</div></div>
+    <div class="stat" id="statSd"><div class="lbl">Écart-type</div><div class="val">—</div><div class="sub">&nbsp;</div></div>
+    <div class="stat" id="statAcc"><div class="lbl">Justesse</div><div class="val">—</div><div class="sub">&nbsp;</div></div>
+    <div class="stat" id="statCv"><div class="lbl">Fidélité (CV)</div><div class="val">—</div><div class="sub">&nbsp;</div></div>
+    <div class="stat verdict" id="statVerdict"><div class="lbl">Décision</div><div class="val">—</div><div class="sub">&nbsp;</div></div>
+  </div>
+  </div>
+</div>
+
+<div id="printReport"></div>
+
+<!-- anb-commun --><script src="https://philrob56.github.io/anabiotec-commun/anb-commun.js"></script><!-- /anb-commun -->
+<script>
+(function () {
+"use strict";
+
+/* ---------- Constantes ---------- */
+const PIPETTES = { "P100": 100, "P1000": 1000, "P5000": 5000, "P10000": 10000 };
+const PCTS = [10, 50, 100];
+const PHASES = { avant: "Avant étalonnage", apres: "Après étalonnage" };
+
+// ISO 8655-2 : erreurs maximales tolérées en µL au volume nominal,
+// applicables à tous les volumes réglables de la pipette
+const ISO_ABS = {
+  "P100":   { acc: 0.8, s: 0.3 },
+  "P1000":  { acc: 8,   s: 3 },
+  "P5000":  { acc: 40,  s: 15 },
+  "P10000": { acc: 60,  s: 30 }
+};
+
+const HR = 50;            // humidité relative supposée (%)
+const RHO_WEIGHTS = 8.0;  // masse volumique des masses étalons (g/mL)
+
+/* ---------- Données ---------- */
+// Conditions (T, P) communes à tous les volumes et phases d'une pipette
+const cond = {};
+// Une série par pipette, volume testé et phase : "P1000|50|avant"
+const series = {};
+Object.entries(PIPETTES).forEach(([pip, nominal]) => {
+  cond[pip] = { temperature: null, pressure: null };
+  PCTS.forEach(pct => {
+    Object.keys(PHASES).forEach(ph => {
+      series[`${pip}|${pct}|${ph}`] = {
+        pip, pct, phase: ph, nominal, testVol: nominal * pct / 100,
+        maxAccuracy: null, maxCV: null, masses: []
+      };
+    });
+  });
+});
+
+let currentPip = null;
+let currentPct = 100;
+let currentPhase = "avant";
+const keyOf = (pip, pct, ph) => `${pip}|${pct}|${ph}`;
+const curKey = () => keyOf(currentPip, currentPct, currentPhase);
+const verified = {};
+
+/* ---------- Éléments ---------- */
+const byId = id => document.getElementById(id);
+const tabsEl = byId('tabs');
+const volSelEl = byId('volSel');
+const phaseEl = byId('phase');
+const temperatureEl = byId('temperature');
+const pressureEl = byId('pressure');
+const maxAccuracyEl = byId('maxAccuracy');
+const maxCVEl = byId('maxCV');
+const massGrid = byId('massInputs');
+const studentNameEl = byId('studentName');
+const studentClassEl = byId('studentClass');
+const testDateEl = byId('testDate');
+const printReportEl = byId('printReport');
+
+(function () {
+  const d = new Date(), p = n => String(n).padStart(2, '0');
+  testDateEl.value = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+})();
+
+/* ---------- Utilitaires ---------- */
+const num = v => {
+  const x = parseFloat(String(v ?? '').trim().replace(/\s/g, '').replace(',', '.'));
+  return isNaN(x) ? null : x;
+};
+const fr = (v, d) => String(+v.toFixed(d)).replace('.', ',');
+const fmtEs = es => `${es >= 0 ? '+' : '−'}${Math.abs(es).toFixed(1)} µL`;
+const fmtVol = v => `${String(v).replace('.', ',')} µL`;
+const escapeHtml = s => String(s).replace(/[&<>"']/g, c =>
+  ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+
+/* ---------- Tolérances ---------- */
+// Tolérances ISO exprimées en % du volume testé
+function isoTol(pip, pct) {
+  const v = PIPETTES[pip] * pct / 100;
+  return {
+    acc: +(ISO_ABS[pip].acc / v * 100).toFixed(2),
+    cv: +(ISO_ABS[pip].s / v * 100).toFixed(2)
+  };
+}
+// Tolérances utilisées : saisies dans la série « avant », sinon valeurs ISO (en grisé)
+function effTol(pip, pct) {
+  const av = series[keyOf(pip, pct, 'avant')], iso = isoTol(pip, pct);
+  return { tolAcc: av.maxAccuracy ?? iso.acc, tolCv: av.maxCV ?? iso.cv };
+}
+
+/* ---------- Calculs ---------- */
+function waterDensity(t, pHpa) {
+  const a1 = -3.983035, a2 = 301.797, a3 = 522528.9, a4 = 69.34881, a5 = 999.974950;
+  const rho = a5 * (1 - (t + a1) ** 2 * (t + a2) / (a3 * (t + a4)));
+  const k = 50.74e-11 - 0.326e-11 * t + 0.00416e-11 * t * t;
+  return rho * (1 + k * (pHpa * 100 - 101325)) / 1000;
+}
+function airDensity(t, pHpa, hr = HR) {
+  return (0.34848 * pHpa - 0.009 * hr * Math.exp(0.061 * t)) / (273.15 + t) / 1000;
+}
+function calculateZ(t, p) {
+  if (t == null || p == null) return null;
+  const rw = waterDensity(t, p), ra = airDensity(t, p);
+  return { rw, ra, Z: (1 / (rw - ra)) * (1 - ra / RHO_WEIGHTS) };
+}
+function standardDeviation(values, mean) {
+  if (values.length < 2) return 0;
+  return Math.sqrt(values.reduce((a, v) => a + (v - mean) ** 2, 0) / (values.length - 1));
+}
+function computeResults(key) {
+  const sr = series[key], c = cond[sr.pip];
+  const zr = calculateZ(c.temperature, c.pressure);
+  if (!zr || !sr.masses.length) return null;
+  const { tolAcc, tolCv } = effTol(sr.pip, sr.pct);
+  const volumes = sr.masses.map(m => m * zr.Z);
+  const mean = volumes.reduce((a, v) => a + v, 0) / volumes.length;
+  const sd = standardDeviation(volumes, mean);
+  const cv = mean ? sd / mean * 100 : 0;
+  const es = mean - sr.testVol;
+  const acc = es / sr.testVol * 100;
+  return {
+    Z: zr.Z, volumes, mean, sd, cv, acc, es, tolAcc, tolCv,
+    isAccurate: Math.abs(acc) <= tolAcc,
+    isFidel: volumes.length >= 2 && cv <= tolCv
+  };
+}
+
+/* ---------- Champs de masse ---------- */
+function massInputs() { return Array.from(massGrid.querySelectorAll('.mass')); }
+function createMassCell(value = '') {
+  const cell = document.createElement('div');
+  cell.className = 'mass-cell';
+  cell.innerHTML = `
+    <span class="idx"></span>
+    <input type="text" inputmode="decimal" class="num mass" placeholder="mg" autocomplete="off" value="${value}">
+    <button type="button" class="del" tabindex="-1" title="Supprimer cette masse">×</button>
+    <small class="vol"></small>`;
+  return cell;
+}
+function renumber() {
+  massGrid.querySelectorAll('.mass-cell').forEach((c, i) => { c.querySelector('.idx').textContent = i + 1; });
+}
+function addMass(focus = true) {
+  const cell = createMassCell();
+  massGrid.appendChild(cell);
+  renumber();
+  if (focus) cell.querySelector('input').focus();
+  return cell;
+}
+function removeMassCell(cell, focusOffset = -1) {
+  const inputs = massInputs();
+  const i = inputs.indexOf(cell.querySelector('input'));
+  cell.remove();
+  if (!massGrid.children.length) addMass(false);
+  renumber();
+  const rest = massInputs();
+  const target = rest[Math.max(0, Math.min(rest.length - 1, i + focusOffset))];
+  if (target) target.focus();
+  autoUpdate();
+}
+
+/* ---------- Données <-> interface ---------- */
+function loadCurrent() {
+  const c = cond[currentPip];
+  const av = series[keyOf(currentPip, currentPct, 'avant')];
+  const iso = isoTol(currentPip, currentPct);
+  temperatureEl.value = c.temperature ?? '';
+  pressureEl.value = c.pressure ?? '';
+  maxAccuracyEl.value = av.maxAccuracy ?? '';
+  maxCVEl.value = av.maxCV ?? '';
+  maxAccuracyEl.placeholder = String(iso.acc).replace('.', ',');
+  maxCVEl.placeholder = String(iso.cv).replace('.', ',');
+  const sr = series[curKey()];
+  massGrid.innerHTML = '';
+  (sr.masses.length ? sr.masses : ['']).forEach(m => massGrid.appendChild(createMassCell(m)));
+  renumber();
+}
+function saveCurrent() {
+  const sr = series[curKey()];
+  sr.masses = massInputs().map(el => num(el.value)).filter(v => v != null);
+  if (currentPhase !== 'avant') return; // conditions et tolérances reprises de la série « avant »
+  cond[currentPip].temperature = num(temperatureEl.value);
+  cond[currentPip].pressure = num(pressureEl.value);
+  sr.maxAccuracy = num(maxAccuracyEl.value);
+  sr.maxCV = num(maxCVEl.value);
+}
+
+/* ---------- Affichage ---------- */
+function setStat(id, val, sub = ' ', state = '') {
+  const el = byId(id);
+  el.querySelector('.val').textContent = val;
+  el.querySelector('.sub').textContent = sub;
+  el.classList.remove('ok', 'bad');
+  if (state) el.classList.add(state);
+}
+function displayResults() {
+  const sr = series[curKey()];
+  const statsEl = document.querySelector('#dataSection > .stats');
+  if (!verified[curKey()]) {
+    byId('zInfo').textContent = '';
+    massGrid.querySelectorAll('.vol').forEach(v => { v.textContent = ''; });
+    ['statMean', 'statSd', 'statAcc', 'statCv', 'statVerdict'].forEach(id => setStat(id, '—', 'Appuyez sur Vérifier'));
+    statsEl.classList.add('pending');
+    return;
+  }
+  statsEl.classList.remove('pending');
+  const c = cond[currentPip];
+  const zr = calculateZ(c.temperature, c.pressure);
+  byId('zInfo').textContent = zr
+    ? `ρ eau = ${zr.rw.toFixed(5)} g/mL · ρ air = ${(zr.ra * 1000).toFixed(3)} kg/m³ · Z = ${zr.Z.toFixed(4)} µL/mg`
+    : '';
+  massGrid.querySelectorAll('.mass-cell').forEach(cell => {
+    const m = num(cell.querySelector('input').value);
+    cell.querySelector('.vol').textContent = (zr && m != null) ? `${(m * zr.Z).toFixed(1)} µL` : '';
+  });
+  const r = computeResults(curKey());
+  if (!r) {
+    ['statMean', 'statSd', 'statAcc', 'statCv', 'statVerdict'].forEach(id => setStat(id, '—'));
+    return;
+  }
+  setStat('statMean', `${r.mean.toFixed(1)} µL`, `volume testé ${fmtVol(sr.testVol)}`);
+  setStat('statSd', `${r.sd.toFixed(1)} µL`, `n = ${r.volumes.length}`);
+  setStat('statAcc', `${r.acc.toFixed(2)} %`, `${fmtEs(r.es)} · ${r.isAccurate ? 'Conforme' : 'Non conforme'}`, r.isAccurate ? 'ok' : 'bad');
+  if (r.volumes.length < 2) {
+    setStat('statCv', '—', '2 masses minimum');
+    setStat('statVerdict', '—', 'mesures insuffisantes');
+  } else {
+    setStat('statCv', `${r.cv.toFixed(2)} %`, r.isFidel ? 'Conforme' : 'Non conforme', r.isFidel ? 'ok' : 'bad');
+    const ok = r.isAccurate && r.isFidel;
+    setStat('statVerdict', ok ? 'CONFORME' : 'NON CONFORME', `${currentPip} · ${fmtVol(sr.testVol)} · ${currentPhase === 'avant' ? 'avant' : 'après'}`, ok ? 'ok' : 'bad');
+  }
+}
+
+const hasMasses = (pip, pct, ph) => series[keyOf(pip, pct, ph)].masses.length > 0;
+
+function refreshNav() {
+  tabsEl.querySelectorAll('.tab').forEach(t => {
+    const pip = t.dataset.pip;
+    t.classList.toggle('active', pip === currentPip);
+    t.classList.toggle('has-data', PCTS.some(pct => hasMasses(pip, pct, 'avant') || hasMasses(pip, pct, 'apres')));
+  });
+  if (!currentPip) return;
+  volSelEl.querySelectorAll('.phase-btn').forEach(b => {
+    const pct = +b.dataset.pct;
+    b.textContent = `${pct} % · ${fmtVol(PIPETTES[currentPip] * pct / 100)}`;
+    b.classList.toggle('active', pct === currentPct);
+    b.classList.toggle('has-data', hasMasses(currentPip, pct, 'avant') || hasMasses(currentPip, pct, 'apres'));
+  });
+  phaseEl.querySelectorAll('.phase-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.phase === currentPhase);
+    b.classList.toggle('has-data', hasMasses(currentPip, currentPct, b.dataset.phase));
+  });
+  const v = fmtVol(PIPETTES[currentPip] * currentPct / 100);
+  byId('dataTitle').textContent = currentPhase === 'apres'
+    ? `Renseignez les masses après étalonnage — ${currentPip} · ${v} (mêmes conditions et tolérances)`
+    : `Renseignez les données ci-dessous — ${currentPip} · ${v} · avant étalonnage`;
+}
+
+function renderAvantRecap() {
+  const box = byId('avantRecap');
+  if (!currentPip || currentPhase !== 'apres') { box.hidden = true; return; }
+  box.hidden = false;
+  const key = keyOf(currentPip, currentPct, 'avant');
+  const sr = series[key], c = cond[currentPip];
+  const r = verified[key] ? computeResults(key) : null;
+  const head = `<div class="recap-head"><b>Résultats avant étalonnage — ${currentPip} · ${fmtVol(sr.testVol)}</b>
+    <span>${c.temperature != null ? `T = ${c.temperature} °C` : ''}${c.pressure != null ? ` · P = ${c.pressure} hPa` : ''}</span></div>`;
+  if (!r) {
+    const list = sr.masses.length ? ` Masses saisies : ${sr.masses.map(m => m.toFixed(2)).join(' ; ')} mg.` : '';
+    box.innerHTML = head + `<p class="recap-empty">Résultats avant étalonnage non vérifiés.${list}</p>`;
+    return;
+  }
+  const chips = sr.masses.map((m, i) => `<span>${i + 1} : ${m.toFixed(2)} mg → ${r.volumes[i].toFixed(1)} µL</span>`).join('');
+  const st = (lbl, val, sub, state) =>
+    `<div class="stat ${state || ''}"><div class="lbl">${lbl}</div><div class="val">${val}</div><div class="sub">${sub || '&nbsp;'}</div></div>`;
+  const enough = r.volumes.length >= 2;
+  const ok = r.isAccurate && r.isFidel;
+  box.innerHTML = head + `<div class="recap-masses">${chips}</div>
+    <div class="stats">
+      ${st('Volume moyen', `${r.mean.toFixed(1)} µL`, `volume testé ${fmtVol(sr.testVol)}`)}
+      ${st('Écart-type', `${r.sd.toFixed(1)} µL`, `n = ${r.volumes.length}`)}
+      ${st('Justesse', `${r.acc.toFixed(2)} %`, `${fmtEs(r.es)} · ${r.isAccurate ? 'Conforme' : 'Non conforme'}`, r.isAccurate ? 'ok' : 'bad')}
+      ${enough ? st('Fidélité (CV)', `${r.cv.toFixed(2)} %`, r.isFidel ? 'Conforme' : 'Non conforme', r.isFidel ? 'ok' : 'bad')
+               : st('Fidélité (CV)', '—', '2 masses minimum')}
+      ${enough ? st('Décision', ok ? 'CONFORME' : 'NON CONFORME', 'avant étalonnage', ok ? 'ok verdict' : 'bad verdict')
+               : st('Décision', '—', 'mesures insuffisantes', 'verdict')}
+    </div>`;
+}
+
+function showCurrent() {
+  byId('dataSection').hidden = false;
+  byId('pickHint').hidden = true;
+  byId('paramsGrid').hidden = currentPhase === 'apres';
+  loadCurrent();
+  refreshNav();
+  displayResults();
+  renderAvantRecap();
+}
+
+function autoUpdate(target) {
+  if (!currentPip) return;
+  verified[curKey()] = false;
+  if (target === temperatureEl || target === pressureEl) {
+    // T et P servent à tous les volumes et aux deux phases de cette pipette
+    PCTS.forEach(pct => Object.keys(PHASES).forEach(ph => { verified[keyOf(currentPip, pct, ph)] = false; }));
+  } else if (target === maxAccuracyEl || target === maxCVEl) {
+    // les tolérances servent aux deux phases de ce volume
+    Object.keys(PHASES).forEach(ph => { verified[keyOf(currentPip, currentPct, ph)] = false; });
+  }
+  saveCurrent();
+  displayResults();
+  refreshNav();
+}
+
+/* ---------- Navigation ---------- */
+tabsEl.addEventListener('click', e => {
+  const tab = e.target.closest('.tab');
+  if (!tab || tab.dataset.pip === currentPip) return;
+  if (currentPip) saveCurrent();
+  currentPip = tab.dataset.pip;
+  currentPct = 100;
+  currentPhase = 'avant';
+  showCurrent();
+});
+volSelEl.addEventListener('click', e => {
+  const b = e.target.closest('.phase-btn');
+  if (!b || !currentPip || +b.dataset.pct === currentPct) return;
+  saveCurrent();
+  currentPct = +b.dataset.pct;
+  currentPhase = 'avant';
+  showCurrent();
+});
+phaseEl.addEventListener('click', e => {
+  const b = e.target.closest('.phase-btn');
+  if (!b || !currentPip || b.dataset.phase === currentPhase) return;
+  saveCurrent();
+  currentPhase = b.dataset.phase;
+  showCurrent();
+});
+
+/* ---------- Boutons ---------- */
+byId('checkBtn').addEventListener('click', () => {
+  if (!currentPip) return;
+  saveCurrent();
+  const c = cond[currentPip], sr = series[curKey()];
+  const missing = [];
+  if (c.temperature == null) missing.push('la température');
+  if (c.pressure == null) missing.push('la pression');
+  if (sr.masses.length < 2) missing.push('au moins 2 masses');
+  if (missing.length) {
+    const where = currentPhase === 'apres' && (c.temperature == null || c.pressure == null)
+      ? ' (température et pression se saisissent dans « Avant étalonnage »)' : '';
+    alert(`Impossible de vérifier : il manque ${missing.join(', ')}${where}.`);
+    return;
+  }
+  verified[curKey()] = true;
+  displayResults();
+});
+
+byId('addMassBtn').addEventListener('click', () => { addMass(); autoUpdate(); });
+
+byId('resetBtn').addEventListener('click', () => {
+  const v = fmtVol(PIPETTES[currentPip] * currentPct / 100);
+  if (!confirm(`Effacer les données de la ${currentPip} à ${v} (${PHASES[currentPhase].toLowerCase()}) ?`)) return;
+  const sr = series[curKey()];
+  sr.masses = [];
+  if (currentPhase === 'avant') { sr.maxAccuracy = null; sr.maxCV = null; }
+  verified[curKey()] = false;
+  loadCurrent();
+  displayResults();
+  refreshNav();
+});
+
+massGrid.addEventListener('click', e => {
+  const del = e.target.closest('.del');
+  if (del) removeMassCell(del.closest('.mass-cell'), 0);
+});
+
+/* ---------- Clavier ---------- */
+massGrid.addEventListener('keydown', e => {
+  const input = e.target;
+  if (!input.classList.contains('mass')) return;
+  const inputs = massInputs();
+  const i = inputs.indexOf(input);
+  const len = input.value.length;
+  const allSelected = len > 0 && input.selectionStart === 0 && input.selectionEnd === len;
+  const caretAtEnd = input.selectionStart === len && input.selectionEnd === len;
+  const caretAtStart = input.selectionStart === 0 && input.selectionEnd === 0;
+
+  if (e.key === 'ArrowRight' && (allSelected || caretAtEnd)) {
+    e.preventDefault();
+    if (inputs[i + 1]) inputs[i + 1].focus();
+  } else if (e.key === 'ArrowLeft' && (allSelected || caretAtStart)) {
+    e.preventDefault();
+    if (inputs[i - 1]) inputs[i - 1].focus();
+  } else if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    if (inputs[i + 1]) inputs[i + 1].focus();
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (inputs[i - 1]) inputs[i - 1].focus();
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    if (inputs[i + 1]) inputs[i + 1].focus();
+    else if (input.value.trim() !== '') { addMass(); autoUpdate(); }
+  } else if (e.key === 'Backspace' && input.value.trim() === '' && inputs.length > 1) {
+    e.preventDefault();
+    removeMassCell(input.closest('.mass-cell'), -1);
+  }
+});
+massGrid.addEventListener('focusin', e => {
+  if (e.target.classList.contains('mass')) { try { e.target.select(); } catch (_) {} }
+});
+[temperatureEl, pressureEl, maxAccuracyEl, maxCVEl].forEach(input => {
+  input.addEventListener('keydown', e => {
+    if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+    e.preventDefault();
+    const step = parseFloat(input.dataset.step) || 1;
+    const dec = (String(step).split('.')[1] || '').length;
+    const v = (num(input.value) ?? num(input.placeholder) ?? 0) + (e.key === 'ArrowUp' ? step : -step);
+    input.value = v.toFixed(dec);
+    autoUpdate(input);
+  });
+});
+document.querySelector('.container').addEventListener('input', e => {
+  if (e.target.classList.contains('num')) autoUpdate(e.target);
+  if (e.target === studentNameEl) studentNameEl.classList.remove('missing');
+});
+
+/* ---------- Compte rendu imprimable ---------- */
+function buildReport() {
+  if (currentPip) saveCurrent();
+  const name = escapeHtml(studentNameEl.value.trim() || '………………………………………');
+  const cls = escapeHtml(studentClassEl.value.trim() || '……………');
+  const dateStr = testDateEl.value
+    ? new Date(testDateEl.value + 'T12:00:00').toLocaleDateString('fr-FR')
+    : '……/……/……';
+  const fmt = (v, d = 2) => (v == null ? '—' : Number(v).toFixed(d));
+
+  function phaseHtml(key) {
+    const sr = series[key];
+    const isChecked = !!verified[key];
+    const r = isChecked ? computeResults(key) : null;
+    const h = `<div class="phase-block"><h4>${PHASES[sr.phase]}</h4>`;
+    if (!r) {
+      const list = sr.masses.length ? ` Masses : ${sr.masses.map(m => m.toFixed(2)).join(' ; ')} mg.` : '';
+      return h + `<p class="rp-incomplete">${isChecked ? 'Données incomplètes.' : 'Série non vérifiée.'}${list}</p></div>`;
+    }
+    const rows = sr.masses.map((m, i) =>
+      `<tr><td>${i + 1}</td><td>${m.toFixed(2)}</td><td>${r.volumes[i].toFixed(1)}</td></tr>`).join('');
+    const fidText = r.volumes.length < 2
+      ? 'non évaluable (n &lt; 2)'
+      : `${r.cv.toFixed(2)} % — <span class="${r.isFidel ? 'conforme' : 'non-conforme'}">${r.isFidel ? 'Conforme' : 'Non conforme'}</span>`;
+    const ok = r.isAccurate && r.isFidel;
+    return h + `
+      <table>
+        <thead><tr><th>N°</th><th>Masse (mg)</th><th>Volume (µL)</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div class="rp-results">
+        <span>Volume moyen : <b>${r.mean.toFixed(1)} µL</b></span>
+        <span>Écart-type : <b>${r.sd.toFixed(1)} µL</b></span>
+        <span>Justesse : <b>${r.acc.toFixed(2)} % (${fmtEs(r.es)})</b> — <span class="${r.isAccurate ? 'conforme' : 'non-conforme'}">${r.isAccurate ? 'Conforme' : 'Non conforme'}</span></span>
+        <span>Fidélité (CV) : <b>${fidText}</b></span>
+      </div>
+      <p class="rp-verdict ${ok ? 'conforme' : 'non-conforme'}">Décision : ${ok ? 'CONFORME' : 'NON CONFORME'}</p>
+    </div>`;
+  }
+
+  let blocks = '';
+  Object.keys(PIPETTES).forEach(pip => {
+    const pcts = PCTS.filter(pct => hasMasses(pip, pct, 'avant') || hasMasses(pip, pct, 'apres'));
+    const c = cond[pip];
+    if (!pcts.length && c.temperature == null && c.pressure == null) return;
+    const zr = calculateZ(c.temperature, c.pressure);
+    const anyChecked = PCTS.some(pct => verified[keyOf(pip, pct, 'avant')] || verified[keyOf(pip, pct, 'apres')]);
+
+    blocks += `<section class="pip-block">
+      <h3>Micropipette ${pip} — volume nominal : ${PIPETTES[pip]} µL</h3>
+      <p class="rp-cond">T : <b>${fmt(c.temperature, 1)} °C</b> · P : <b>${fmt(c.pressure, 0)} hPa</b>
+        · Z : <b>${zr && anyChecked ? zr.Z.toFixed(4) : '—'} µL/mg</b></p>`;
+    pcts.forEach(pct => {
+      const { tolAcc, tolCv } = effTol(pip, pct);
+      const phases = Object.keys(PHASES).filter(ph => hasMasses(pip, pct, ph));
+      blocks += `<div class="vol-block">
+        <p class="vol-title">Volume testé : ${fmtVol(PIPETTES[pip] * pct / 100)} (${pct} % du nominal)
+          <span>Justesse adm. : ± ${fr(tolAcc, 2)} % · CV adm. : ${fr(tolCv, 2)} %</span></p>
+        <div class="phase-grid ${phases.length === 2 ? 'two' : ''}">
+          ${phases.map(ph => phaseHtml(keyOf(pip, pct, ph))).join('')}
+        </div>
+      </div>`;
+    });
+    blocks += `</section>`;
+  });
+  if (!blocks) blocks = '<p class="rp-incomplete">Aucune mesure saisie.</p>';
+
+  printReportEl.innerHTML = `
+    <div class="rp-header">
+      <h1>Étalonnage gravimétrique des micropipettes</h1>
+      <p>Méthode gravimétrique à l'eau (ISO 8655-6) · V = m × Z (Z : masse volumique de l'eau, poussée de l'air) · tolérances ISO 8655-2</p>
+    </div>
+    <div class="rp-student">
+      <span>Nom et prénom : <b>${name}</b></span>
+      <span>Classe : <b>${cls}</b></span>
+      <span>Date : <b>${dateStr}</b></span>
+    </div>
+    ${blocks}`;
+}
+
+byId('printBtn').addEventListener('click', () => {
+  if (!studentNameEl.value.trim()) {
+    studentNameEl.classList.add('missing');
+    studentNameEl.placeholder = "Indiquez votre nom avant d'imprimer";
+    studentNameEl.focus();
+    return;
+  }
+  buildReport();
+  /* Google Sites bloque window.print() dans l'intégration :
+     on ouvre le compte rendu dans un nouvel onglet et on l'imprime là. */
+  const css = [...document.querySelectorAll('style')].map(s => s.textContent).join('\n');
+  const links = [...document.querySelectorAll('link[rel="stylesheet"]')].map(l => l.outerHTML).join('');
+  const w = window.open('', '_blank');
+  if (!w) { printBtnMsg("Autorisez les pop-up pour imprimer."); return; }
+  w.document.open();
+  w.document.write('<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'
+    + '<title>Compte rendu - Étalonnage des micropipettes</title>' + links
+    + '<style>' + css + '\n#printReport{display:block!important} body{background:#fff}</style>'
+    + '</head><body><div id="printReport">' + printReportEl.innerHTML + '</div></body></html>');
+  w.document.close();
+  setTimeout(() => { w.focus(); w.print(); }, 600);
+});
+function printBtnMsg(msg) {
+  const b = byId('printBtn'), old = b.textContent;
+  b.textContent = msg;
+  setTimeout(() => { b.textContent = old; }, 4000);
+}
+window.addEventListener('beforeprint', buildReport);
+
+/* ---------- Initialisation : aucune micropipette sélectionnée ---------- */
+refreshNav();
+})();
+</script>
+</body>
+</html>
