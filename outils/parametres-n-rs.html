@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+<meta name="description" content="Simulateur des paramètres chromatographiques : nombre de plateaux N, résolution Rs, temps de rétention et facteur d’asymétrie des pics. Outil du BTSa ANABIOTEC, lycée Le Gros Chêne, Pontivy.">
+<link rel="canonical" href="https://philrob56.github.io/anabiotec-commun/outils/parametres-n-rs.html">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paramètres chromatographiques : efficacité N et résolution Rs | BTSa ANABIOTEC</title>
+    <style>
+        :root {
+            --bg-color: #f8f9fa; --surface-color: #ffffff; --text-color: #212529;
+            --primary-color: #0e7c7b; --primary-color-light: #d4ebe9; --border-color: #dee2e6;
+            --label-color: #6c757d; --peak1-color: #d63384; --peak2-color: #0d6efd;
+            --deadtime-color: #fd7e14; --sum-color: #212529; --good-color: #198754;
+            --bad-color: #dc3545; --shadow-color: rgba(0, 0, 0, 0.05);
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color); color: var(--text-color);
+            margin: 0; padding: 2em;
+        }
+        .app-container {
+            max-width: 1200px;
+            margin: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 2em;
+        }
+        #chromatogramCanvas {
+            width: 100%; height: auto; background-color: var(--surface-color);
+            border-radius: 8px; border: 1px solid var(--border-color);
+            box-shadow: 0 4px 15px var(--shadow-color);
+        }
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2em;
+        }
+        .panel {
+            background-color: var(--surface-color);
+            padding: 1.5em;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 15px var(--shadow-color);
+            transition: opacity 0.3s ease-in-out;
+        }
+        h2 {
+            margin-top: 0; border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5em; font-size: 1.2em; color: var(--primary-color);
+        }
+        .control-group { margin-bottom: 1.5em; }
+        .control-group label {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 0.75em; color: var(--label-color); font-weight: 500;
+        }
+        .slider { width: 100%; }
+        .value-display {
+            font-weight: bold; color: var(--primary-color); background-color: var(--primary-color-light);
+            padding: 0.2em 0.6em; border-radius: 0.5em; font-size: 0.9em;
+        }
+        .results-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 1em;
+        }
+        .result-item { text-align: center; }
+        .result-item .label { font-size: 0.9em; color: var(--label-color); display: block; }
+        .result-item .value { font-size: 1.5em; font-weight: 600; margin-top: 0.25em; display: block; transition: color 0.3s; }
+        .result-item .value.good { color: var(--good-color); }
+        .result-item .value.bad { color: var(--bad-color); }
+        .toggle-group { display: flex; align-items: center; gap: 0.5em; }
+    </style>
+<!-- anb-commun --><script src="https://philrob56.github.io/anabiotec-commun/anb-commun.js"></script><!-- /anb-commun -->
+</head>
+<body>
+<!-- anb-charte --><div class="anb-head"><div class="anb-crumb"><i></i><a href="https://sites.google.com/view/anabioteclegroschene/accueil" target="_top" style="color:inherit;text-decoration:none" title="Tous les outils du BTSa ANABIOTEC"><b>BTSa ANABIOTEC</b></a><span>›</span>Chromatographie</div><div class="anb-right"><div class="anb-tag">LEGTA Le Gros Chêne · Pontivy</div><button type="button" class="anb-print" onclick="anbPrint()" title="Ouvrir une version imprimable (PDF)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimer / PDF</button></div></div><!-- /anb-charte -->
+
+    <div class="app-container">
+        <canvas id="chromatogramCanvas" width="1200" height="400"></canvas>
+        
+        <div class="dashboard">
+            <div class="panel">
+                <h2>Colonne</h2>
+                <div class="control-group">
+                    <label for="n-slider">Efficacité (Plateaux N) <span id="n-value" class="value-display">2500</span></label>
+                    <input type="range" id="n-slider" class="slider" min="500" max="8000" value="2500" step="100">
+                </div>
+                <h2>Résultats</h2>
+                <div class="results-grid">
+                    <div class="result-item">
+                        <span class="label">Efficacité (N)</span>
+                        <span id="result-n" class="value"></span>
+                    </div>
+                    <div class="result-item" id="rs-result-item">
+                        <span class="label">Résolution (Rₛ)</span>
+                        <span id="result-rs" class="value"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2>Pic 1 (Rose)</h2>
+                <div class="control-group">
+                    <label for="tr1">Temps de Rétention (tᵣ₁) <span id="tr1-value" class="value-display">8.0 min</span></label>
+                    <input type="range" id="tr1" class="slider" min="2" max="15" value="8" step="0.1">
+                </div>
+                <div class="control-group">
+                    <label for="h1">Hauteur <span id="h1-value" class="value-display">80</span></label>
+                    <input type="range" id="h1" class="slider" min="10" max="100" value="80">
+                </div>
+                 <div class="control-group">
+                    <label for="as1">Facteur d'asymétrie (As) <span id="as1-value" class="value-display">1.0</span></label>
+                    <input type="range" id="as1" class="slider" min="0.5" max="1.5" value="1.0" step="0.05">
+                </div>
+                <div class="result-item">
+                    <span class="label">Aire Pic 1</span>
+                    <span id="result-area1" class="value" style="color:var(--peak1-color)"></span>
+                </div>
+            </div>
+
+            <div class="panel" id="panel-peak2">
+                <h2 class="toggle-group">
+                    <label for="show-peak2" style="margin: 0; cursor: pointer;">Pic 2 (Bleu)</label>
+                    <input type="checkbox" id="show-peak2" checked>
+                </h2>
+                <div class="control-group">
+                    <label for="tr2">Temps de Rétention (tᵣ₂) <span id="tr2-value" class="value-display">10.0 min</span></label>
+                    <input type="range" id="tr2" class="slider" min="2" max="15" value="10" step="0.1">
+                </div>
+                <div class="control-group">
+                    <label for="h2">Hauteur <span id="h2-value" class="value-display">100</span></label>
+                    <input type="range" id="h2" class="slider" min="10" max="100" value="100">
+                </div>
+                <div class="control-group">
+                    <label for="as2">Facteur d'asymétrie (As) <span id="as2-value" class="value-display">1.0</span></label>
+                    <input type="range" id="as2" class="slider" min="0.5" max="1.5" value="1.0" step="0.05">
+                </div>
+                <div class="result-item" id="area2-result-item">
+                    <span class="label">Aire Pic 2</span>
+                    <span id="result-area2" class="value" style="color:var(--peak2-color)"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const canvas = document.getElementById('chromatogramCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        const sliders = {
+            tr1: document.getElementById('tr1'), h1: document.getElementById('h1'), as1: document.getElementById('as1'),
+            tr2: document.getElementById('tr2'), h2: document.getElementById('h2'), as2: document.getElementById('as2'),
+            n: document.getElementById('n-slider')
+        };
+        const values = {
+            tr1: document.getElementById('tr1-value'), h1: document.getElementById('h1-value'), as1: document.getElementById('as1-value'),
+            tr2: document.getElementById('tr2-value'), h2: document.getElementById('h2-value'), as2: document.getElementById('as2-value'),
+            n: document.getElementById('n-value')
+        };
+        const results = {
+            n: document.getElementById('result-n'), rs: document.getElementById('result-rs'),
+            area1: document.getElementById('result-area1'), area2: document.getElementById('result-area2')
+        };
+        const showPeak2Checkbox = document.getElementById('show-peak2');
+        const panelPeak2 = document.getElementById('panel-peak2');
+        const rsResultItem = document.getElementById('rs-result-item');
+        const area2ResultItem = document.getElementById('area2-result-item');
+
+        const TM = 1.0;
+
+        // **NOUVELLE FONCTION DE PIC ASYMÉTRIQUE (SPLIT GAUSSIAN)**
+        const splitGaussian = (x, tr, h, w, as) => {
+            if (w <= 0 || h <= 0) return 0;
+            const sigma = w / (2 * (1 + as)); // Divise la largeur en deux parties
+            const sigma1 = as * sigma; // Partie avant
+            const sigma2 = sigma;      // Partie arrière
+
+            if (x <= tr) {
+                return h * Math.exp(-Math.pow(x - tr, 2) / (2 * Math.pow(sigma1, 2)));
+            } else {
+                return h * Math.exp(-Math.pow(x - tr, 2) / (2 * Math.pow(sigma2, 2)));
+            }
+        };
+
+        const calculatePeakArea = (h, w, as) => {
+            if (w <= 0 || h <= 0) return 0;
+            const sigma = w / (2 * (1 + as));
+            const sigma1 = as * sigma;
+            const sigma2 = sigma;
+            // Aire d'une split-gaussian
+            return h * (sigma1 + sigma2) * Math.sqrt(Math.PI / 2);
+        };
+        
+        const updateSimulation = () => {
+            const showPeak2 = showPeak2Checkbox.checked;
+
+            const p = {
+                tr1: parseFloat(sliders.tr1.value), h1: parseFloat(sliders.h1.value), as1: parseFloat(sliders.as1.value),
+                tr2: showPeak2 ? parseFloat(sliders.tr2.value) : 0, 
+                h2: showPeak2 ? parseFloat(sliders.h2.value) : 0,
+                as2: showPeak2 ? parseFloat(sliders.as2.value) : 1.0,
+                n: parseFloat(sliders.n.value)
+            };
+            values.tr1.textContent = `${p.tr1.toFixed(1)} min`; values.h1.textContent = p.h1.toFixed(0); values.as1.textContent = p.as1.toFixed(2);
+            values.tr2.textContent = `${p.tr2.toFixed(1)} min`; values.h2.textContent = p.h2.toFixed(0); values.as2.textContent = p.as2.toFixed(2);
+            values.n.textContent = p.n.toFixed(0);
+
+            const w_tm = 4 * TM / Math.sqrt(p.n);
+            const w1 = 4 * p.tr1 / Math.sqrt(p.n);
+            const area1 = calculatePeakArea(p.h1, w1, p.as1);
+            results.area1.textContent = area1.toFixed(0);
+            results.n.textContent = p.n.toFixed(0);
+            
+            let peakParams = [
+                { tr: TM, w: w_tm, h: 10, as: 1.0, color: getComputedStyle(document.documentElement).getPropertyValue('--deadtime-color') },
+                { tr: p.tr1, w: w1, h: p.h1, as: p.as1, color: getComputedStyle(document.documentElement).getPropertyValue('--peak1-color') }
+            ];
+
+            if (showPeak2) {
+                const w2 = 4 * p.tr2 / Math.sqrt(p.n);
+                const rs = 2 * Math.abs(p.tr2 - p.tr1) / (w1 + w2); // La résolution est toujours basée sur la largeur à la base
+                const area2 = calculatePeakArea(p.h2, w2, p.as2);
+                results.rs.textContent = rs.toFixed(2);
+                results.rs.className = `value ${rs >= 1.5 ? 'good' : 'bad'}`;
+                results.area2.textContent = area2.toFixed(0);
+                peakParams.push({ tr: p.tr2, w: w2, h: p.h2, as: p.as2, color: getComputedStyle(document.documentElement).getPropertyValue('--peak2-color') });
+            }
+
+            drawChromatogram(peakParams);
+        };
+        
+        const drawChromatogram = (peaks) => {
+            const w = canvas.width, h = canvas.height;
+            const padding = { top: 30, right: 30, bottom: 60, left: 60 };
+            const plotWidth = w - padding.left - padding.right;
+            const plotHeight = h - padding.top - padding.bottom;
+            ctx.clearRect(0, 0, w, h);
+
+            const xMax = parseFloat(sliders.tr1.max);
+            
+            let yMaxTheoretical = 0;
+            const step = xMax / 500;
+            for(let x = 0; x <= xMax; x += step) {
+                let totalY = 0;
+                peaks.forEach(peak => { totalY += splitGaussian(x, peak.tr, peak.h, peak.w, peak.as); });
+                if (totalY > yMaxTheoretical) yMaxTheoretical = totalY;
+            }
+            const yMax = Math.max(130, yMaxTheoretical * 1.1);
+
+            const toCanvasX = (x) => padding.left + (x / xMax) * plotWidth;
+            const toCanvasY = (y) => h - padding.bottom - (y / yMax) * plotHeight;
+
+            ctx.strokeStyle = '#cccccc'; ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(padding.left, padding.top); ctx.lineTo(padding.left, h - padding.bottom); ctx.lineTo(w - padding.right, h - padding.bottom); ctx.stroke();
+            
+            ctx.fillStyle = 'var(--label-color)'; ctx.font = '12px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            for (let i = 0; i <= 5; i++) { const xVal = (i/5) * xMax; ctx.fillText(xVal.toFixed(1), toCanvasX(xVal), h - padding.bottom + 20); }
+            ctx.fillText("Temps (min)", padding.left + plotWidth/2, h - padding.bottom + 40);
+            for (let i = 0; i <= 4; i++) { const yVal = (i/4) * yMax; ctx.textAlign = 'right'; ctx.fillText(yVal.toFixed(0), padding.left - 15, toCanvasY(yVal)); }
+            ctx.save(); ctx.translate(20, padding.top + plotHeight/2); ctx.rotate(-Math.PI/2); ctx.textAlign = 'center'; ctx.fillText("Intensité", 0, 0); ctx.restore();
+
+            ctx.strokeStyle = 'var(--sum-color)'; ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            let isFirstPoint = true;
+            for(let x = 0; x <= xMax; x += step) {
+                let totalY = 0;
+                peaks.forEach(peak => { totalY += splitGaussian(x, peak.tr, peak.h, peak.w, peak.as); });
+                const canvasX = toCanvasX(x); const canvasY = toCanvasY(totalY);
+                if (isFirstPoint) { ctx.moveTo(canvasX, canvasY); isFirstPoint = false; } else { ctx.lineTo(canvasX, canvasY); }
+            }
+            ctx.stroke();
+
+            peaks.forEach(peak => {
+                const tr_x = toCanvasX(peak.tr);
+                const top_y = toCanvasY(peak.h);
+                const base_y = toCanvasY(0);
+                ctx.beginPath(); ctx.setLineDash([4, 4]); ctx.strokeStyle = peak.color + '99';
+                ctx.moveTo(tr_x, base_y); ctx.lineTo(tr_x, top_y); ctx.stroke();
+                ctx.setLineDash([]);
+                const w_start_x = toCanvasX(peak.tr - peak.w/2);
+                const w_end_x = toCanvasX(peak.tr + peak.w/2);
+                ctx.beginPath(); ctx.strokeStyle = peak.color + 'cc';
+                ctx.moveTo(w_start_x, base_y + 5); ctx.lineTo(w_end_x, base_y + 5);
+                ctx.stroke();
+                ctx.fillStyle = peak.color;
+                ctx.textAlign = 'center';
+                ctx.fillText(peak.tr.toFixed(2), tr_x, top_y - 15);
+            });
+        };
+        
+        const togglePeak2 = () => {
+            const show = showPeak2Checkbox.checked;
+            panelPeak2.style.opacity = show ? '1' : '0.5';
+            sliders.tr2.disabled = !show;
+            sliders.h2.disabled = !show;
+            sliders.as2.disabled = !show;
+            rsResultItem.style.display = show ? 'block' : 'none';
+            area2ResultItem.style.display = show ? 'block' : 'none';
+            updateSimulation();
+        };
+
+        Object.values(sliders).forEach(slider => slider.addEventListener('input', updateSimulation));
+        showPeak2Checkbox.addEventListener('change', togglePeak2);
+        
+        togglePeak2();
+    });
+    </script>
+
+</body>
+</html>
