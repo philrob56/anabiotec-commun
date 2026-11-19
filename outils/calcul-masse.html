@@ -1,0 +1,730 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="description" content="Calculateur de la masse à peser pour préparer une solution étalon (sels hydratés, pureté, titre réel) et des volumes à prélever pour une gamme d’étalonnage. Outil du BTSa ANABIOTEC, lycée Le Gros Chêne, Pontivy.">
+<link rel="canonical" href="https://philrob56.github.io/anabiotec-commun/outils/calcul-masse.html">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pesée et gamme d’étalons : masse à peser et dilutions | BTSa ANABIOTEC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout : tableau de bord compact — étape 1 (2/3) + étape 2 (1/3) côte à côte, gamme en pleine largeur ; une colonne sur mobile */
+:root{
+  --bg:#eef2f4; --surface:#ffffff; --surface-2:#f5f8f9; --line:#d3dde2; --ink:#14232b; --muted:#5b6d76;
+  --accent:#0f6b8f; --accent-soft:#dcedf4; --real:#b4531a; --real-soft:#f8e6da;
+  --ok:#2e7d4f; --ok-soft:#dff1e6; --warn:#a86a00; --warn-soft:#fbefd4; --bad:#b3261e; --bad-soft:#f9dedc;
+  --lcd:#1c2b22; --lcd-ink:#9ff0b8;
+  --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e171c; --surface:#152229; --surface-2:#1a2a32; --line:#2a3d47; --ink:#e3edf1; --muted:#93a8b2;
+  --accent:#5cb8de; --accent-soft:#163746; --real:#f0945a; --real-soft:#3d2414;
+  --ok:#6fcf97; --ok-soft:#173326; --warn:#f2c14e; --warn-soft:#3a2e12; --bad:#f28b82; --bad-soft:#3e1b19;
+  --lcd:#0a120d; --lcd-ink:#8ff0a8; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e171c; --surface:#152229; --surface-2:#1a2a32; --line:#2a3d47; --ink:#e3edf1; --muted:#93a8b2;
+  --accent:#5cb8de; --accent-soft:#163746; --real:#f0945a; --real-soft:#3d2414;
+  --ok:#6fcf97; --ok-soft:#173326; --warn:#f2c14e; --warn-soft:#3a2e12; --bad:#f28b82; --bad-soft:#3e1b19;
+  --lcd:#0a120d; --lcd-ink:#8ff0a8; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.4}
+.wrap{max-width:1240px;margin:0 auto;padding-inline:16px;padding-block:14px 28px;display:flex;flex-direction:column;gap:12px}
+header.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px}
+header.top h1{font-family:var(--f-display);font-weight:700;font-size:1.35rem;line-height:1.1;margin:0}
+header.top p{margin:2px 0 0;color:var(--muted);font-size:.85rem}
+.toolbar{display:flex;flex-wrap:wrap;gap:6px}
+button{font:inherit;cursor:pointer}
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:7px;padding:5px 10px;font-size:.84rem;font-weight:600}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.btn.primary:hover{filter:brightness(1.08);color:var(--surface)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.grid{display:grid;grid-template-columns:minmax(0,1.75fr) minmax(0,1fr);gap:12px;align-items:start}
+.s3{grid-column:1/-1}
+@media (max-width:920px){.grid{grid-template-columns:minmax(0,1fr)}}
+
+section.step{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;min-width:0}
+.step-head{display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid var(--line);background:var(--surface-2)}
+.num{font-family:var(--f-display);font-weight:700;font-size:.85rem;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:var(--surface);flex:none}
+.step.real .num{background:var(--real)}
+.step-head h2{font-family:var(--f-display);font-weight:700;font-size:1rem;margin:0}
+.step-head small{color:var(--muted);font-size:.8rem;margin-left:auto;text-align:right}
+@media (max-width:560px){.step-head small{display:none}}
+.body{padding:12px 14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+
+.field{display:flex;flex-direction:column;gap:2px;min-width:0}
+.field label{font-size:.78rem;color:var(--muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.field label i{font-family:var(--f-mono);font-style:normal;color:var(--ink)}
+.f4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px 10px}
+@media (max-width:640px){.f4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.inp{display:flex;align-items:stretch;border:1px solid var(--line);border-radius:7px;background:var(--surface);overflow:hidden;height:32px}
+.inp:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.inp input,.inp select{border:0;background:transparent;color:var(--ink);font:inherit;font-family:var(--f-mono);font-size:.88rem;padding:0 8px;min-width:0;width:100%;outline:none}
+.inp select{font-family:var(--f-body);cursor:pointer}
+.inp .u{padding:0 7px;color:var(--muted);font-size:.78rem;background:var(--surface-2);border-left:1px solid var(--line);white-space:nowrap;display:flex;align-items:center}
+.inp .u select{padding:0 2px;font-size:.78rem;color:var(--muted);width:auto;min-width:4.4em}
+.hint{font-size:.72rem;color:var(--muted);min-height:1em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hint.parsed{font-family:var(--f-mono)}
+.hint.err{color:var(--bad)}
+
+.lib{display:flex;flex-direction:column;gap:6px}
+.lib-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.group-title{font-size:.7rem;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:0}
+.presets{display:flex;flex-wrap:wrap;gap:4px}
+.chip{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:2px 9px;font-size:.78rem}
+.chip:hover{border-color:var(--accent)}
+.chip.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
+.chip sub,.chip sup{font-size:.7em}
+.preset-tabs{display:flex;gap:2px;margin-left:auto}
+.preset-tabs button{border:0;background:none;color:var(--muted);font-weight:700;font-size:.72rem;letter-spacing:.05em;text-transform:uppercase;padding:2px 7px;border-radius:5px}
+.preset-tabs button.on{background:var(--accent-soft);color:var(--accent)}
+
+.result{display:grid;grid-template-columns:minmax(0,auto) minmax(0,1fr);gap:10px 16px;align-items:center;border-top:1px solid var(--line);padding-top:10px}
+@media (max-width:640px){.result{grid-template-columns:minmax(0,1fr)}}
+.balance{background:var(--lcd);border-radius:10px;padding:8px 14px;display:flex;flex-direction:column;box-shadow:inset 0 2px 8px rgba(0,0,0,.35);min-width:190px}
+.balance .lbl{font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:color-mix(in srgb,var(--lcd-ink) 65%,transparent)}
+.balance .val{font-family:var(--f-mono);font-weight:600;font-size:1.75rem;color:var(--lcd-ink);font-variant-numeric:tabular-nums;line-height:1.15;text-shadow:0 0 10px color-mix(in srgb,var(--lcd-ink) 35%,transparent)}
+.balance .val small{font-size:.5em;margin-left:5px}
+.balance .sub{font-family:var(--f-mono);font-size:.72rem;color:color-mix(in srgb,var(--lcd-ink) 75%,transparent)}
+.calc{font-family:var(--f-mono);font-size:.72rem;color:var(--muted);overflow-wrap:anywhere;line-height:1.5}
+.kv{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;font-size:.84rem;margin:0}
+.kv.two{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) auto;column-gap:14px}
+@media (max-width:1100px){.kv.two{grid-template-columns:minmax(0,1fr) auto}}
+.kv dt{color:var(--muted);min-width:0}
+.kv dd{margin:0;font-family:var(--f-mono);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+
+.big{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+.big .v{font-family:var(--f-mono);font-weight:600;font-size:1.75rem;color:var(--real);font-variant-numeric:tabular-nums;line-height:1.1}
+.big .unit{color:var(--muted);font-size:.85rem}
+.real-box{background:var(--real-soft);border-radius:10px;padding:8px 12px}
+.real-box .group-title{color:var(--real)}
+
+.s3-top{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:flex-end}
+.s3-top .vf{width:130px}
+.std-wrap{flex:1 1 280px;min-width:0}
+.std-editor{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.std{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:7px;overflow:hidden;background:var(--surface);height:32px}
+.std input{width:54px;border:0;background:transparent;color:var(--ink);font-family:var(--f-mono);font-size:.86rem;padding:0 6px;outline:none;text-align:right;height:100%}
+.std button{border:0;background:var(--surface-2);color:var(--muted);padding:0 7px;height:100%;border-left:1px solid var(--line)}
+.std button:hover{color:var(--bad)}
+.std:focus-within{border-color:var(--accent)}
+
+.table-wrap{border:1px solid var(--line);border-radius:9px;overflow:hidden}
+table{border-collapse:collapse;width:100%;font-size:.86rem}
+th,td{padding:5px 10px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:.68rem;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);background:var(--surface-2);font-weight:700}
+th:first-child,td:first-child{text-align:left}
+td{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+td.glass{font-family:var(--f-body);text-align:left;color:var(--muted);font-size:.8rem;white-space:normal}
+td.real{color:var(--real);font-weight:600}
+tr:last-child td{border-bottom:0}
+tfoot td{background:var(--surface-2);font-weight:600}
+.std-id{display:inline-flex;align-items:center;gap:6px;font-weight:600}
+.std-id svg{width:14px;height:22px;flex:none}
+@media (max-width:640px){
+  table,tbody,tr,td,tfoot{display:block}
+  thead{display:none}
+  tbody tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 12px;padding:8px 10px;border-bottom:1px solid var(--line)}
+  tbody td{border:0;padding:0;text-align:right;display:flex;justify-content:space-between;gap:8px}
+  tbody td::before{content:attr(data-l);font-family:var(--f-body);font-size:.72rem;color:var(--muted);text-align:left}
+  tbody td:first-child{grid-column:1/-1}
+  tbody td:first-child::before{content:none}
+  td.glass{grid-column:1/-1}
+  tfoot tr{display:flex;justify-content:space-between;padding:6px 10px}
+  tfoot td{border:0;padding:0;background:none}
+  tfoot td:empty{display:none}
+  tfoot{background:var(--surface-2)}
+}
+.alerts{display:flex;flex-direction:column;gap:5px}
+.alerts:empty{display:none}
+.alert{border-radius:7px;padding:6px 10px;font-size:.82rem;display:block}
+.alert.warn{background:var(--warn-soft);color:var(--warn)}
+.alert.bad{background:var(--bad-soft);color:var(--bad)}
+.alert.ok{background:var(--ok-soft);color:var(--ok)}
+
+.toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:7px 14px;border-radius:7px;font-size:.85rem;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+textarea.fallback{width:100%;min-height:140px;font-family:var(--f-mono);font-size:.78rem;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:7px;padding:8px}
+footer{color:var(--muted);font-size:.74rem}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.inp.invalid{border-color:var(--bad);box-shadow:0 0 0 2px var(--bad-soft)}
+.inp.warning{border-color:var(--warn)}
+.std.invalid{border-color:var(--bad);box-shadow:0 0 0 2px var(--bad-soft)}
+.hint.err,.hint.warn{white-space:normal}
+.hint.warn{color:var(--warn)}
+.sugg{border:0;background:var(--accent-soft);color:var(--accent);font-family:var(--f-mono);font-size:.72rem;font-weight:600;border-radius:4px;padding:0 5px}
+</style>
+<style>html,body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
+<!-- anb-commun --><script src="https://philrob56.github.io/anabiotec-commun/anb-commun.js"></script><!-- /anb-commun -->
+</head>
+<body>
+<!-- anb-charte --><div class="anb-head"><div class="anb-crumb"><i></i><a href="https://sites.google.com/view/anabioteclegroschene/accueil" target="_top" style="color:inherit;text-decoration:none" title="Tous les outils du BTSa ANABIOTEC"><b>BTSa ANABIOTEC</b></a><span>›</span>Chimie</div><div class="anb-right"><div class="anb-tag">LEGTA Le Gros Chêne · Pontivy</div><button type="button" class="anb-print" onclick="anbPrint()" title="Ouvrir une version imprimable (PDF)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimer / PDF</button></div></div><!-- /anb-charte -->
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Pesée &amp; gamme d'étalons</h1>
+      <p>Masse à peser · titre réel · volumes de la gamme</p>
+    </div>
+    <div class="toolbar">
+      <button class="btn" id="btnReset" type="button">Exemple</button>
+      <button class="btn" id="btnCsv" type="button">Copier CSV</button>
+      <button class="btn primary" id="btnFiche" type="button">Copier la fiche</button>
+    </div>
+  </header>
+
+  <div class="grid">
+  <!-- ÉTAPE 1 -->
+  <section class="step" aria-labelledby="h1s">
+    <div class="step-head"><span class="num">1</span><h2 id="h1s">Masse à peser</h2><small>solide A<sub>a</sub>B<sub>b</sub>, nX → espèce A</small></div>
+    <div class="body">
+      <div class="lib">
+        <div class="lib-head">
+          <p class="group-title">Bibliothèque de sels</p>
+          <div class="preset-tabs" role="tablist">
+            <button type="button" data-tab="anions" class="on">Anions</button>
+            <button type="button" data-tab="cations">Cations</button>
+          </div>
+        </div>
+        <div class="presets" id="presets"></div>
+      </div>
+
+      <div class="f4">
+        <div class="field"><label for="salt">Formule du solide</label>
+          <div class="inp"><input id="salt" spellcheck="false" autocomplete="off"></div>
+          <span class="hint parsed" id="saltHint"></span></div>
+        <div class="field"><label for="M">Masse molaire <i>M</i></label>
+          <div class="inp"><input id="M" inputmode="decimal"><span class="u">g/mol</span></div></div>
+        <div class="field"><label for="sp">Espèce dosée A</label>
+          <div class="inp"><input id="sp" spellcheck="false" autocomplete="off"></div>
+          <span class="hint parsed" id="spHint"></span></div>
+        <div class="field"><label for="MA">Masse molaire <i>M(A)</i></label>
+          <div class="inp"><input id="MA" inputmode="decimal"><span class="u">g/mol</span></div></div>
+        <div class="field"><label for="P">Pureté <i>P</i></label>
+          <div class="inp"><input id="P" inputmode="decimal"><span class="u">%</span></div></div>
+        <div class="field"><label for="a">Coefficient <i>a</i></label>
+          <div class="inp"><input id="a" inputmode="decimal"><span class="u">mol A/mol</span></div>
+          <span class="hint" id="aHint"></span></div>
+        <div class="field"><label for="V">Volume <i>V</i></label>
+          <div class="inp"><input id="V" inputmode="decimal"><span class="u">mL</span></div></div>
+        <div class="field"><label for="t">Titre visé <i>t(A)</i></label>
+          <div class="inp"><input id="t" inputmode="decimal"><span class="u"><select id="unit" aria-label="Unité du titre">
+            <option value="mg/L">mg/L</option><option value="g/L">g/L</option><option value="µg/mL">µg/mL</option><option value="mmol/L">mmol/L</option><option value="mol/L">mol/L</option></select></span></div></div>
+      </div>
+
+      <div class="result">
+        <div class="balance" aria-live="polite">
+          <span class="lbl">m théorique à peser</span>
+          <span class="val" id="mTheo">—</span>
+          <span class="sub" id="mTheoSub"></span>
+        </div>
+        <div class="calc" id="calcTheo"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ÉTAPE 2 -->
+  <section class="step real" aria-labelledby="h2s">
+    <div class="step-head"><span class="num">2</span><h2 id="h2s">Titre réel</h2><small>d'après la masse pesée</small></div>
+    <div class="body">
+      <div class="field"><label for="mR">Masse pesée <i>m réelle</i></label>
+        <div class="inp"><input id="mR" inputmode="decimal"><span class="u"><select id="mUnit" aria-label="Unité de masse"><option value="mg">mg</option><option value="g">g</option></select></span></div></div>
+      <div class="real-box">
+        <p class="group-title">t(A) réel de la solution mère</p>
+        <div class="big"><span class="v" id="tReal">—</span><span class="unit" id="tRealU"></span></div>
+      </div>
+      <div class="calc" id="calcReal"></div>
+    </div>
+  </section>
+
+  <!-- ÉTAPE 3 -->
+  <section class="step s3" aria-labelledby="h3s">
+    <div class="step-head"><span class="num">3</span><h2 id="h3s">Gamme d'étalons</h2><small>prélever V<sub>m</sub> de solution mère, compléter à V<sub>f</sub></small></div>
+    <div class="body">
+      <div class="s3-top">
+        <div class="field vf"><label for="Vf">Fioles <i>V<sub>f</sub></i></label>
+          <div class="inp"><input id="Vf" inputmode="decimal"><span class="u">mL</span></div></div>
+        <div class="field std-wrap">
+          <label>Titres visés <span id="stdUnitLbl"></span></label>
+          <div class="std-editor" id="stdEditor"></div>
+        </div>
+      </div>
+      <div class="table-wrap"><table id="tbl"></table></div>
+      <div class="alerts" id="alerts"></div>
+    </div>
+  </section>
+  </div>
+
+  <footer>Relations utilisées : m = t·V·M / (P·a·M(A)) ; t<sub>réel</sub> = m·P·a·M(A) / (V·M) ; V<sub>m</sub> = t<sub>f</sub>·V<sub>f</sub> / t ; F = t / t<sub>f</sub> ; t<sub>f réel</sub> = t<sub>réel</sub> / F. Saisies conservées dans ce navigateur.</footer>
+  <div id="fallbackBox" hidden><p class="hint">La copie automatique n'est pas disponible ici : sélectionne le texte ci-dessous.</p><textarea class="fallback" id="fallbackTxt" readonly></textarea></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(()=>{
+/* ---------- Masses atomiques ---------- */
+const AW={H:1.008,He:4.0026,Li:6.94,Be:9.0122,B:10.81,C:12.011,N:14.007,O:15.999,F:18.998,Ne:20.18,Na:22.990,Mg:24.305,Al:26.982,Si:28.085,P:30.974,S:32.06,Cl:35.45,Ar:39.948,K:39.098,Ca:40.078,Sc:44.956,Ti:47.867,V:50.942,Cr:51.996,Mn:54.938,Fe:55.845,Co:58.933,Ni:58.693,Cu:63.546,Zn:65.38,Ga:69.723,Ge:72.63,As:74.922,Se:78.971,Br:79.904,Kr:83.798,Rb:85.468,Sr:87.62,Y:88.906,Zr:91.224,Nb:92.906,Mo:95.95,Ru:101.07,Rh:102.91,Pd:106.42,Ag:107.87,Cd:112.41,In:114.82,Sn:118.71,Sb:121.76,Te:127.6,I:126.9,Cs:132.91,Ba:137.33,La:138.91,Ce:140.12,W:183.84,Pt:195.08,Au:196.97,Hg:200.59,Tl:204.38,Pb:207.2,Bi:208.98,U:238.03};
+
+/* ---------- Reconnaissance chimique ---------- */
+const SUBS={'₀':'0','₁':'1','₂':'2','₃':'3','₄':'4','₅':'5','₆':'6','₇':'7','₈':'8','₉':'9'};
+const SUPS={'⁰':'0','¹':'1','²':'2','³':'3','⁴':'4','⁵':'5','⁶':'6','⁷':'7','⁸':'8','⁹':'9','⁺':'+','⁻':'-'};
+const MAXF=40;
+class ChemError extends Error{constructor(m,sugg){super(m);this.sugg=sugg||[];}}
+
+function normalize(raw){
+  let s=String(raw==null?'':raw).normalize('NFC').trim();
+  if(!s)throw new ChemError('formule requise');
+  if(s.length>MAXF)throw new ChemError('formule trop longue ('+MAXF+' caractères max)');
+  return s.replace(/[₀-₉]/g,c=>SUBS[c]).replace(/[−–—]/g,'-').replace(/[•∙⋅·.*]/g,'·');
+}
+function mkCharge(f,chStr){
+  f=f.replace(/\s+/g,'');chStr=(chStr||'').replace(/\s+/g,'');
+  let z=0;
+  if(chStr){
+    if(chStr.includes('+')&&chStr.includes('-'))throw new ChemError('charge incohérente (+ et − à la fois)');
+    const nS=(chStr.match(/[+-]/g)||[]).length,dg=chStr.replace(/[+-]/g,'');
+    if(dg&&nS>1)throw new ChemError('charge mal écrite : utiliser par ex. ^2-');
+    z=(chStr.includes('-')?-1:1)*(dg?parseInt(dg,10):nS);
+    if(z===0)throw new ChemError('charge nulle : retirer le signe');
+    if(Math.abs(z)>6)throw new ChemError('charge '+Math.abs(z)+' improbable');
+  }
+  return {f,z};
+}
+/* Renvoie les lectures possibles de la charge, la préférée en premier */
+function chargeReadings(s){
+  const sup=x=>[...x].map(c=>SUPS[c]||c).join('');
+  let m;
+  if((m=s.match(/^(.*?)([⁰¹²³⁴⁵⁶⁷⁸⁹]*[⁺⁻]+)$/)))return [mkCharge(m[1],sup(m[2]))];
+  if((m=s.match(/^(.*?)\^\s*\(?\s*(\d*\s*[+-]+|[+-]\s*\d+)\s*\)?$/)))return [mkCharge(m[1],m[2])];
+  if((m=s.match(/^(.*?)[(\[]\s*(\d*[+-]|[+-]\d+)\s*[)\]]$/)))return [mkCharge(m[1],m[2])];
+  if((m=s.match(/^(.*?\S)\s+(\d*[+-]+)$/)))return [mkCharge(m[1],m[2])];
+  if((m=s.match(/^(.*?)(\d*)([+-]+)$/))){
+    const body=m[1].replace(/\s+/g,''),d=m[2],sg=m[3];
+    if(!d)return [mkCharge(body,sg)];
+    const asCharge=()=>mkCharge(body+d.slice(0,-1),d.slice(-1)+sg);  // SO42- → SO4 ²⁻
+    const asIndex=()=>mkCharge(body+d,sg);                             // NO3-  → NO3 ⁻
+    const mono=(body.match(/[A-Z(\[]/g)||[]).length<=1&&!/\d/.test(body);
+    const preferCharge=mono||d.length>=2||/\d$/.test(body);
+    const out=[];
+    for(const fn of preferCharge?[asCharge,asIndex]:[asIndex,asCharge]){try{out.push(Object.assign(fn(),{amb:true}));}catch(e){}}
+    if(!out.length)throw new ChemError('charge illisible : écrire par ex. SO4^2-');
+    return out;
+  }
+  if(/[+-]/.test(s))throw new ChemError('signe + ou − mal placé : la charge s\'écrit à la fin (ex. SO4^2-)');
+  return [mkCharge(s,'')];
+}
+function parsePart(s){
+  let i=0;
+  const index=()=>{let n='';while(i<s.length&&/\d/.test(s[i]))n+=s[i++];if(!n)return 1;const k=parseInt(n,10);
+    if(k===0)throw new ChemError('indice 0 interdit');if(k>999)throw new ChemError('indice '+k+' trop grand');return k;};
+  const seq=depth=>{
+    const c={};let any=false;
+    while(i<s.length){
+      const ch=s[i];
+      if(ch==='('||ch==='['){
+        const close=ch==='('?')':']';i++;const inner=seq(depth+1);
+        if(s[i]!==close)throw new ChemError(s[i]?'parenthèses mal imbriquées':'parenthèse « '+ch+' » non fermée');
+        if(!Object.keys(inner).length)throw new ChemError('parenthèses vides');
+        i++;const k=index();for(const e in inner)c[e]=(c[e]||0)+inner[e]*k;any=true;
+      }else if(ch===')'||ch===']'){if(!depth)throw new ChemError('parenthèse « '+ch+' » en trop');return c;}
+      else if(/[A-Z]/.test(ch)){
+        let el=ch;i++;if(i<s.length&&/[a-z]/.test(s[i]))el+=s[i++];
+        if(i<s.length&&/[a-z]/.test(s[i]))throw new ChemError('symbole « '+el+s[i]+'… » invalide');
+        if(!(el in AW))throw new ChemError('élément inconnu « '+el+' »');
+        const k=index();c[el]=(c[el]||0)+k;any=true;
+      }else if(/[a-z]/.test(ch))throw new ChemError('un symbole d\'élément commence par une majuscule');
+      else if(/\d/.test(ch))throw new ChemError('chiffre mal placé');
+      else throw new ChemError('caractère non autorisé « '+ch+' »');
+    }
+    if(depth)throw new ChemError('parenthèse non fermée');
+    return c;
+  };
+  return seq(0);
+}
+function parseBody(f){
+  const bad=f.match(/[^A-Za-z0-9()\[\]·]/);
+  if(bad)throw new ChemError('caractère non autorisé « '+bad[0]+' »');
+  const parts=f.split('·');
+  if(parts.some(p=>!p))throw new ChemError('point d\'hydratation mal placé');
+  const comp={};
+  parts.forEach((p,j)=>{
+    const m=p.match(/^(\d+)(.*)$/);
+    if(m&&j===0)throw new ChemError('pas de coefficient devant la formule du solide');
+    if(!m&&j>0&&/^[a-z]/.test(p))throw new ChemError('coefficient « '+p[0]+' » : remplacer par un nombre (ex. 7H2O)');
+    const k=m?parseInt(m[1],10):1;
+    if(k===0||k>99)throw new ChemError('coefficient d\'hydratation '+k+' invalide');
+    const g=parsePart(m?m[2]:p);
+    if(!Object.keys(g).length)throw new ChemError('groupe vide');
+    for(const e in g)comp[e]=(comp[e]||0)+g[e]*k;
+  });
+  let M=0;for(const e in comp)M+=AW[e]*comp[e];
+  return {comp,M};
+}
+/* Propositions de casse pour « nacl », « CACO3 »… */
+function suggestCase(f){
+  const res=[],low=f.toLowerCase();
+  (function rec(i,acc,two){
+    if(res.length>=6)return;
+    if(i>=low.length){res.push([acc,two]);return;}
+    const c=low[i];
+    if(/[a-z]/.test(c)){
+      const one=c.toUpperCase();
+      if(one in AW)rec(i+1,acc+one,two);
+      const t=one+(low[i+1]||'');
+      if(/[a-z]/.test(low[i+1]||'')&&t in AW)rec(i+2,acc+t,two+1);
+    }else rec(i+1,acc+c,two);
+  })(0,'',0);
+  return res.sort((a,b)=>a[1]-b[1]).map(r=>r[0]).filter(x=>x!==f).filter(x=>{try{parseBody(x);return true;}catch(e){return false;}}).slice(0,2);
+}
+function withSuggestions(fn,f){
+  try{return fn();}catch(e){
+    if(e instanceof ChemError&&/[a-z]/i.test(f)&&/(majuscule|inconnu|invalide)/.test(e.message))e.sugg=suggestCase(f);
+    throw e;
+  }
+}
+function parseSalt(raw){
+  const s=normalize(raw);
+  const r=chargeReadings(s)[0];
+  if(r.z!==0)throw new ChemError('un solide est neutre : retirer la charge');
+  const b=withSuggestions(()=>parseBody(r.f),r.f);
+  return Object.assign({f:r.f,z:0},b);
+}
+function parseSpecies(raw,saltComp){
+  const s=normalize(raw);
+  const readings=chargeReadings(s);
+  let firstErr=null;const ok=[];
+  for(const r of readings){try{ok.push(Object.assign({},r,withSuggestions(()=>parseBody(r.f),r.f)));}catch(e){firstErr=firstErr||e;}}
+  if(!ok.length)throw firstErr;
+  let pick=ok[0],byContext=false;
+  if(saltComp&&ok.length>1&&coefA(saltComp,ok[0].comp)===0&&coefA(saltComp,ok[1].comp)>0){pick=ok[1];byContext=true;}
+  return Object.assign(pick,{byContext});
+}
+function prettyF(p){
+  let h=p.f.replace(/([A-Za-z)\]])(\d+)/g,'$1<sub>$2</sub>');
+  if(p.z){const n=Math.abs(p.z);h+='<sup>'+(n>1?n:'')+(p.z>0?'+':'−')+'</sup>';}
+  return h;
+}
+function pretty(str){try{return prettyF(chargeReadings(normalize(str))[0]);}catch(e){return esc(str);}}
+function compText(c){return Object.keys(c).map(e=>e+' '+(+c[e].toFixed(3))).join(' · ');}
+function coefA(saltComp,spComp){
+  // O et H ignorés (eau d'hydratation, expression en oxyde) dès qu'un autre élément identifie A
+  let els=Object.keys(spComp).filter(e=>e!=='O'&&e!=='H');if(!els.length)els=Object.keys(spComp);
+  let a=Infinity;
+  for(const e of els){a=Math.min(a,(saltComp[e]||0)/spComp[e]);}
+  if(!isFinite(a)||a<=0)return 0;
+  return a>=1?Math.floor(a+1e-9):+a.toFixed(4);
+}
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ---------- Bibliothèque ---------- */
+const LIB={
+  anions:[
+    ['Cl-','NaCl'],['Cl-','KCl'],['NO3-','KNO3'],['NO3-','NaNO3'],['SO42-','Na2SO4'],['SO42-','K2SO4'],['NO2-','NaNO2'],['F-','NaF'],['PO43-','KH2PO4'],['Br-','KBr'],['HCO3-','NaHCO3']],
+  cations:[
+    ['Na+','NaCl'],['K+','KCl'],['Ca2+','CaCl2'],['Ca2+','CaCl2·2H2O'],['Ca2+','CaCO3'],['Mg2+','MgSO4·7H2O'],['Mg2+','MgCl2·6H2O'],['NH4+','NH4Cl'],['Fe2+','Fe(NH4)2(SO4)2·6H2O'],['Cu2+','CuSO4·5H2O'],['Zn2+','ZnSO4·7H2O']]
+};
+let tab='anions';
+
+/* ---------- État ---------- */
+const UNITS=['mg/L','g/L','µg/mL','mmol/L','mol/L'];
+const textIds=['V','t','salt','M','P','sp','MA','a','mR','Vf'];
+const numIds=['V','t','M','P','MA','a','mR','Vf'];
+const DEFAULT={V:'1000',t:'100',unit:'mg/L',salt:'Na2SO4',M:'142.04',P:'99',sp:'SO42-',MA:'96.06',a:'1',
+  mR:'147.08',mUnit:'mg',Vf:'25',stds:['5','10','20','25']};
+const KEY='pesee-etalons-v1';
+function sanitizeState(o){
+  const r=JSON.parse(JSON.stringify(DEFAULT));
+  if(!o||typeof o!=='object'||Array.isArray(o))return r;
+  for(const k of textIds){
+    if(typeof o[k]==='string'&&o[k].length<=MAXF)r[k]=o[k];
+    else if(typeof o[k]==='number'&&isFinite(o[k]))r[k]=String(o[k]);
+  }
+  if(UNITS.includes(o.unit))r.unit=o.unit;
+  if(o.mUnit==='g'||o.mUnit==='mg')r.mUnit=o.mUnit;
+  if(Array.isArray(o.stds))r.stds=o.stds.slice(0,20).filter(x=>typeof x==='string'||typeof x==='number').map(x=>String(x).slice(0,16));
+  return r;
+}
+let S;
+try{S=sanitizeState(JSON.parse(localStorage.getItem(KEY)||'null'));}catch(e){S=sanitizeState(null);}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+
+const $=id=>document.getElementById(id);
+/* Lecture stricte d'un nombre : « 12,5 », « 1 000 », « 1.5e3 » ; refuse « 12abc », « 1,2,3 », vide */
+function parseNum(str){
+  const s=String(str==null?'':str).replace(/[\s  ]/g,'');
+  if(!s)return {err:'valeur requise'};
+  if(/^-/.test(s))return {err:'doit être positif'};
+  if(!/^\+?(\d+([.,]\d*)?|[.,]\d+)([eE][+-]?\d{1,3})?$/.test(s))return {err:'nombre invalide (ex. 12,5)'};
+  const v=parseFloat(s.replace(',','.').replace('+',''));
+  return isFinite(v)?{v}:{err:'nombre invalide'};
+}
+const num=v=>{const p=parseNum(v);return p.err?NaN:p.v;};
+const nf=(x,d)=>isFinite(x)?x.toLocaleString('fr-FR',{minimumFractionDigits:d,maximumFractionDigits:d}):'—';
+function sig(x,n=4){if(!isFinite(x))return '—';if(x===0)return '0';const d=Math.max(0,n-1-Math.floor(Math.log10(Math.abs(x))));return nf(x,Math.min(d,6));}
+const fmtIn=x=>String(+(+x).toPrecision(6)).replace('.',',');
+
+const FLASKS={5:.025,10:.025,20:.04,25:.04,50:.06,100:.1,200:.15,250:.15,500:.25,1000:.4,2000:.6};
+const PIP_J={1:.008,2:.01,3:.01,4:.015,5:.015,10:.02,15:.025,20:.03,25:.03,50:.05,100:.08};
+function flaskTol(v){const k=Object.keys(FLASKS).find(x=>Math.abs(+x-v)<1e-6);return k?FLASKS[k]:null;}
+function glassFor(v){
+  if(!(v>0))return {txt:'—'};
+  for(const p in PIP_J){if(Math.abs(+p-v)<5e-4)return {txt:'pipette jaugée '+nf(+p,0)+' mL'};}
+  for(const cap of [1,2,5,10]){if(v<=cap)return {txt:'pipette graduée '+cap+' mL'};}
+  if(v<=25)return {txt:'burette 25 mL'};
+  if(v<=50)return {txt:'burette 50 mL'};
+  return {txt:'éprouvette / combinaison'};
+}
+function unitFactor(u,MA){return {'mg/L':1,'g/L':1000,'µg/mL':1,'mmol/L':MA,'mol/L':1000*MA}[u]||1;}
+
+/* ---------- Affichage de l'état des champs ---------- */
+function msgEl(id){
+  let m=$(id+'Hint')||$(id+'Msg');
+  if(!m){m=document.createElement('span');m.className='hint';m.id=id+'Msg';$(id).closest('.inp').after(m);}
+  return m;
+}
+function setField(id,state){ // state: null | {lvl:'err'|'warn'|'info', msg, html, sugg}
+  const box=$(id).closest('.inp'),m=msgEl(id);
+  box.classList.toggle('invalid',!!state&&state.lvl==='err');
+  box.classList.toggle('warning',!!state&&state.lvl==='warn');
+  $(id).setAttribute('aria-invalid',state&&state.lvl==='err'?'true':'false');
+  m.className='hint'+(state?(state.lvl==='err'?' err':state.lvl==='warn'?' warn':' parsed'):'');
+  m.textContent='';m.removeAttribute('title');
+  if(!state)return;
+  if(state.html)m.innerHTML=state.html;else m.textContent=state.msg;
+  if(state.title)m.title=state.title;
+  if(state.sugg&&state.sugg.length){
+    m.append(' — ');
+    state.sugg.forEach((sg,i)=>{
+      const b=document.createElement('button');b.type='button';b.className='sugg';b.textContent=sg;
+      b.addEventListener('click',()=>{const cur=$(id).value,rep=cur.replace(/^\s*\S+?(?=(\s*[\^(\[]|\s+\d*[+-]|[+-]|$))/,sg);
+        $(id).value=/[A-Za-z]/.test(rep)?rep:sg;$(id).dispatchEvent(new Event('input'));});
+      if(i)m.append(' ');m.append(b);
+    });
+    m.append(' ?');
+  }
+}
+
+/* ---------- Bindings ---------- */
+function fill(){
+  textIds.forEach(id=>{$(id).value=numIds.includes(id)?String(S[id]).replace('.',','):S[id];});
+  $('unit').value=S.unit;$('mUnit').value=S.mUnit;
+  renderStds();renderPresets();
+}
+textIds.forEach(id=>{
+  const el=$(id);el.maxLength=numIds.includes(id)?16:MAXF;el.autocomplete='off';el.spellcheck=false;
+  el.addEventListener('input',()=>{
+    S[id]=el.value;
+    if(id==='salt'||id==='sp')autoFromFormulas(id);
+    renderPresets();compute();
+  });
+});
+$('unit').addEventListener('change',e=>{
+  const nu=e.target.value;if(!UNITS.includes(nu)){e.target.value=S.unit;return;}
+  const molar=u=>u==='mmol/L'||u==='mol/L';
+  const MA=num(S.MA);
+  if((molar(nu)||molar(S.unit))&&!(MA>0)){e.target.value=S.unit;toast('Renseigne d\'abord une M(A) valide');return;}
+  const r=unitFactor(S.unit,MA)/unitFactor(nu,MA);
+  const t=num(S.t);if(isFinite(t)){S.t=fmtIn(t*r);$('t').value=S.t;}
+  S.stds=S.stds.map(x=>{const v=num(x);return isFinite(v)?fmtIn(v*r):x;});
+  S.unit=nu;renderStds();compute();
+});
+$('mUnit').addEventListener('change',e=>{
+  const nu=e.target.value==='g'?'g':'mg';
+  const v=num(S.mR);if(isFinite(v)){S.mR=fmtIn(nu==='g'?v/1000:v*1000);$('mR').value=S.mR;}
+  S.mUnit=nu;compute();
+});
+document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>{tab=b.dataset.tab;document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('on',x===b));renderPresets();}));
+
+/* Remplit automatiquement M, M(A) et a quand une formule devient lisible */
+function autoFromFormulas(changed){
+  let s=null,p=null;
+  try{s=parseSalt(S.salt);}catch(e){}
+  try{p=parseSpecies(S.sp,s&&s.comp);}catch(e){}
+  if(changed==='salt'&&s){S.M=s.M.toFixed(2);$('M').value=S.M.replace('.',',');}
+  if(changed==='sp'&&p){S.MA=p.M.toFixed(2);$('MA').value=S.MA.replace('.',',');}
+  if(s&&p&&changed){const a=coefA(s.comp,p.comp);if(a>0){S.a=String(a);$('a').value=S.a.replace('.',',');}}
+}
+function renderPresets(){
+  const box=$('presets');box.innerHTML='';
+  LIB[tab].forEach(([sp,salt])=>{
+    const b=document.createElement('button');b.type='button';b.className='chip';
+    if(S.sp===sp&&S.salt===salt)b.classList.add('on');
+    b.innerHTML='<b>'+pretty(sp)+'</b> · '+pretty(salt);
+    b.addEventListener('click',()=>{
+      S.salt=salt;S.sp=sp;$('salt').value=salt;$('sp').value=sp;
+      autoFromFormulas('salt');autoFromFormulas('sp');renderPresets();compute();
+    });
+    box.appendChild(b);
+  });
+}
+function renderStds(){
+  const ed=$('stdEditor');ed.innerHTML='';
+  S.stds.forEach((v,i)=>{
+    const w=document.createElement('span');w.className='std';
+    const inp=document.createElement('input');inp.value=String(v).replace('.',',');inp.inputMode='decimal';inp.id='std'+i;inp.maxLength=16;inp.autocomplete='off';
+    inp.setAttribute('aria-label','Étalon '+(i+1));
+    inp.addEventListener('input',()=>{S.stds[i]=inp.value;compute();});
+    inp.addEventListener('change',()=>{S.stds.sort((a,b)=>{const x=num(a),y=num(b);return (isFinite(x)?x:Infinity)-(isFinite(y)?y:Infinity);});renderStds();compute();});
+    const rm=document.createElement('button');rm.type='button';rm.textContent='×';rm.setAttribute('aria-label','Retirer l\'étalon '+(i+1));
+    rm.addEventListener('click',()=>{S.stds.splice(i,1);renderStds();compute();});
+    w.append(inp,rm);ed.appendChild(w);
+  });
+  if(S.stds.length<20){
+    const add=document.createElement('button');add.type='button';add.className='chip';add.textContent='+ étalon';
+    add.addEventListener('click',()=>{
+      const vals=S.stds.map(num).filter(isFinite);const last=vals.length?vals[vals.length-1]:0;
+      const step=vals.length>1?last-vals[vals.length-2]:5;
+      S.stds.push(fmtIn(last+(step>0?step:5)));renderStds();compute();
+      const ins=ed.querySelectorAll('input');ins[ins.length-1]&&ins[ins.length-1].focus();});
+    ed.appendChild(add);
+  }
+  $('stdUnitLbl').textContent='('+S.unit+')';
+}
+$('btnReset').addEventListener('click',()=>{S=sanitizeState(null);tab='anions';document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('on',x.dataset.tab==='anions'));fill();compute();toast('Exemple du fichier rechargé (SO₄²⁻ / Na₂SO₄)');});
+
+/* ---------- Validation + calcul ---------- */
+let R={};
+const RANGES={V:[0,20000,'mL'],t:[0,1e7,''],M:[1,5000,'g/mol'],MA:[1,5000,'g/mol'],P:[0,100,'%'],a:[0,50,''],mR:[0,1e6,''],Vf:[0,5000,'mL']};
+function compute(){
+  save();
+  const F={};const val={};
+  const err=(id,msg,extra)=>{F[id]=Object.assign({lvl:'err',msg},extra||{});};
+  const warn=(id,msg)=>{if(!F[id]||F[id].lvl==='info')F[id]={lvl:'warn',msg};};
+
+  // 1. nombres
+  for(const id of numIds){
+    const p=parseNum(S[id]);
+    if(p.err){err(id,p.err);continue;}
+    const [lo,hi]=RANGES[id];
+    if(!(p.v>lo))err(id,'doit être > '+lo);
+    else if(p.v>hi)err(id,'valeur trop grande (max '+nf(hi,0)+')');
+    else val[id]=p.v;
+  }
+  if(val.P!==undefined&&val.P<90)warn('P','pureté inhabituelle (< 90 %) : vérifier');
+  if(val.a!==undefined&&Math.abs(val.a*2-Math.round(val.a*2))>1e-6)warn('a','a devrait être entier (ou ½ pour un oxyde)');
+  if(val.V!==undefined&&flaskTol(val.V)===null)warn('V','pas une fiole jaugée standard');
+  if(val.Vf!==undefined&&flaskTol(val.Vf)===null)warn('Vf','pas une fiole jaugée standard');
+
+  // 2. chimie
+  let s=null,p=null;
+  try{s=parseSalt(S.salt);F.salt={lvl:'info',html:prettyF(s)+' · '+nf(s.M,2)+' g/mol',title:compText(s.comp)};}
+  catch(e){err('salt',e.message,{sugg:e.sugg});}
+  try{
+    p=parseSpecies(S.sp,s&&s.comp);
+    F.sp={lvl:'info',html:'lu : '+prettyF(p)+' · '+nf(p.M,2)+' g/mol'+(p.byContext?' (d\'après le solide)':''),title:compText(p.comp)+(p.amb?' — pour lever toute ambiguïté, noter la charge avec ^ (ex. SO4^2-)':'')};
+  }catch(e){err('sp',e.message,{sugg:e.sugg});}
+  if(s&&p){
+    const aCalc=coefA(s.comp,p.comp);
+    if(aCalc===0)err('sp','A n\'est pas contenue dans '+s.f.replace(/·/g,'·'));
+    else if(val.a!==undefined&&Math.abs(val.a-aCalc)>1e-6)warn('a','d\'après les formules, a = '+nf(aCalc,aCalc%1?2:0));
+    if(val.M!==undefined&&Math.abs(val.M-s.M)/s.M>0.003)warn('M','la formule donne '+nf(s.M,2)+' g/mol');
+    if(val.MA!==undefined&&Math.abs(val.MA-p.M)/p.M>0.003)warn('MA','la formule donne '+nf(p.M,2)+' g/mol');
+  }
+  if(val.M!==undefined&&val.MA!==undefined&&val.a!==undefined&&val.a*val.MA>val.M*1.0005){err('MA','a·M(A) > M : impossible');delete val.MA;}
+
+  const ok1=['V','t','M','P','MA','a'].every(id=>val[id]!==undefined)&&!(F.salt&&F.salt.lvl==='err')&&!(F.sp&&F.sp.lvl==='err');
+  const {V,M,P,a,MA}=val;
+  const uf=ok1?unitFactor(S.unit,MA):NaN;
+  const t=ok1?val.t*uf:NaN;
+  const mTheo=ok1?(t*V*M/1000)/((P/100)*a*MA):NaN;
+  if(ok1&&mTheo>100000)warn('t','masse à peser > 100 g : vérifier t et son unité');
+  const mR=val.mR!==undefined?val.mR*(S.mUnit==='g'?1000:1):NaN;
+  if(ok1&&isFinite(mR)&&(mR/mTheo>2||mR/mTheo<0.5))warn('mR','très loin de m théorique : erreur d\'unité (mg / g) ?');
+  const ok2=ok1&&isFinite(mR);
+  const tReal=ok2?mR*a*P*MA*10/V/M:NaN;
+  const ecart=ok2?(mR-mTheo)/mTheo*100:NaN;
+  const Vf=val.Vf;
+
+  // 3. étalons
+  const stdState=S.stds.map(x=>{const q=parseNum(x);if(q.err)return {err:q.err};if(!(q.v>0))return {err:'doit être > 0'};return {v:q.v};});
+  const stdsOk=S.stds.length>0&&stdState.every(x=>!x.err);
+  S.stds.forEach((_,i)=>{const el=$('std'+i);if(el){const bad=!!stdState[i].err;el.parentElement.classList.toggle('invalid',bad);el.setAttribute('aria-invalid',bad?'true':'false');el.title=bad?stdState[i].err:'';}});
+  const ok3=ok2&&Vf!==undefined&&stdsOk;
+
+  // états des champs
+  for(const id of textIds)setField(id,F[id]||null);
+
+  R={ok1,ok2,ok3,V,M,P,a,MA,t,uf,mTheo,mR,tReal,ecart,Vf,rows:[],sumV:0};
+  const BLOCK='Corrige les champs signalés en rouge.';
+
+  // étape 1
+  $('mTheo').innerHTML=ok1?(mTheo>=1000?nf(mTheo/1000,4)+'<small>g</small>':nf(mTheo,2)+'<small>mg</small>'):'—';
+  $('mTheoSub').textContent=ok1?'soit '+(mTheo>=1000?nf(mTheo,1)+' mg':nf(mTheo/1000,5)+' g'):'saisie incomplète';
+  $('calcTheo').textContent=ok1?'m = t·V·M / (P·a·M(A)) = '+sig(t)+' mg/L × '+sig(V/1000)+' L × '+sig(M,5)+' / ('+sig(P/100,4)+' × '+sig(a,3)+' × '+sig(MA,5)+') = '+sig(mTheo,5)+' mg':BLOCK;
+
+  // étape 2
+  $('tReal').textContent=ok2?sig(tReal/uf,5):'—';
+  $('tRealU').textContent=ok2?S.unit+(S.unit!=='mg/L'&&S.unit!=='µg/mL'?' · '+sig(tReal,5)+' mg/L':''):'';
+  $('calcReal').textContent=ok2?'t réel = m·P·a·M(A) / (V·M) = '+sig(mR,5)+' mg × '+sig(P/100,4)+' × '+sig(a,3)+' × '+sig(MA,5)+' / ('+sig(V/1000)+' L × '+sig(M,5)+') = '+sig(tReal,5)+' mg/L':(ok1?'Saisis la masse pesée.':BLOCK);
+
+  // tableau
+  const u=esc(S.unit);
+  const al=[];
+  if(!ok3){
+    const why=!ok1?BLOCK:!ok2?'Saisis une masse pesée valide.':Vf===undefined?'Saisis un volume de fiole valide.':!S.stds.length?'Ajoute au moins un étalon.':'Corrige les titres d\'étalons en rouge.';
+    $('tbl').innerHTML='<tbody><tr><td class="glass" style="text-align:left;padding:10px">'+esc(why)+'</td></tr></tbody>';
+  }else{
+    const rows=stdState.map(x=>{const tf=x.v*uf;const Vm=tf*Vf/t;return {tf,Vm,F:t/tf,tfReal:tReal*Vm/Vf,g:glassFor(Vm)};});
+    const sumV=rows.reduce((s,r)=>s+r.Vm,0);R.rows=rows;R.sumV=sumV;
+    const maxT=Math.max(...rows.map(r=>r.tfReal),1e-9);
+    const ico=r=>'<svg viewBox="0 0 14 22" aria-hidden="true"><path d="M5 1h4v7l4 9a3 3 0 0 1-3 4H4a3 3 0 0 1-3-4l4-9z" fill="var(--real)" fill-opacity="'+Math.min(1,.15+.8*r.tfReal/maxT).toFixed(2)+'" stroke="var(--muted)" stroke-width="1"/></svg>';
+    let h='<thead><tr><th>Étalon</th><th>t<sub>f</sub> visé ('+u+')</th><th>V<sub>m</sub> (mL)</th><th>Verrerie</th><th>F</th><th>t<sub>f</sub> réel ('+u+')</th></tr></thead><tbody>';
+    rows.forEach((r,i)=>{
+      const imp=r.Vm>Vf;
+      h+='<tr><td><span class="std-id">'+ico(r)+'E'+(i+1)+'</span></td><td data-l="t visé">'+sig(r.tf/uf,4)+'</td><td data-l="Vm (mL)">'+nf(r.Vm,3)+'</td><td class="glass" data-l="Verrerie">'+(imp?'impossible':r.g.txt)+'</td><td data-l="F dilution">'+nf(r.F,2)+'</td><td class="real" data-l="t réel">'+(imp?'—':sig(r.tfReal/uf,4))+'</td></tr>';
+    });
+    h+='</tbody><tfoot><tr><td>Total V<sub>m</sub></td><td></td><td>'+nf(sumV,3)+' mL</td><td></td><td></td><td></td></tr></tfoot>';
+    $('tbl').innerHTML=h;
+    rows.forEach(r=>{if(r.Vm>Vf)al.push(['bad','t<sub>f</sub> = '+sig(r.tf/uf,3)+' '+u+' dépasse le titre de la solution mère : impossible par dilution.']);});
+    const small=rows.filter(r=>r.Vm<1).length;
+    if(small)al.push(['warn','V<sub>m</sub> inférieur à 1 mL pour '+small+' étalon(s) : préférer une solution intermédiaire diluée (par ex. 1/10) ou une micropipette.']);
+    if(sumV>V)al.push(['bad','Volume total à prélever ('+nf(sumV,1)+' mL) supérieur au volume de solution mère préparé ('+nf(V,0)+' mL).']);
+    const vs=stdState.map(x=>x.v);if(new Set(vs).size<vs.length)al.push(['warn','Deux étalons ont le même titre.']);
+  }
+  if(ok1&&mTheo<50)al.push(['warn','Masse à peser faible ('+nf(mTheo,1)+' mg) : l\'erreur relative de pesée devient importante. Augmente V ou t.']);
+  R.ok3=ok3&&!al.some(x=>x[0]==='bad');
+  $('alerts').innerHTML=al.map(([c,m])=>'<div class="alert '+c+'">'+m+'</div>').join('');
+}
+
+/* ---------- Export ---------- */
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2400);}
+async function copy(txt,okMsg){
+  try{await navigator.clipboard.writeText(txt);$('fallbackBox').hidden=true;toast(okMsg);}
+  catch(e){$('fallbackBox').hidden=false;$('fallbackTxt').value=txt;$('fallbackTxt').focus();$('fallbackTxt').select();toast('Copie bloquée : texte affiché en bas de page');}
+}
+const cell=v=>{let s=String(v).replace(/[;\r\n"]/g,' ');return /^[=+\-@\t]/.test(s)?"'"+s:s;}; // pas de formule injectée dans le tableur
+$('btnCsv').addEventListener('click',()=>{
+  if(!R.ok3)return toast('Corrige d\'abord les saisies signalées');
+  const uf=R.uf,u=S.unit;
+  let c=['Etalon','tf vise ('+u+')','Vm (mL)','Verrerie','F','tf reel ('+u+')'].map(cell).join(';')+'\n';
+  R.rows.forEach((r,i)=>{c+=['E'+(i+1),sig(r.tf/uf,4),nf(r.Vm,3),r.g.txt,nf(r.F,3),sig(r.tfReal/uf,4)].map(cell).join(';')+'\n';});
+  copy(c,'Tableau copié (séparateur ;)');
+});
+$('btnFiche').addEventListener('click',()=>{
+  if(!R.ok3)return toast('Corrige d\'abord les saisies signalées');
+  const u=S.unit,uf=R.uf;let s,p;
+  try{s=parseSalt(S.salt);p=parseSpecies(S.sp,s.comp);}catch(e){return toast('Formule illisible');}
+  const ion=p.f+(p.z?(Math.abs(p.z)>1?Math.abs(p.z):'')+(p.z>0?'+':'-'):'');
+  let f='FICHE DE PRÉPARATION\n\n';
+  f+='Solution mère : '+nf(R.V,0)+' mL à '+sig(R.t/uf,5)+' '+u+' en '+ion+'\n';
+  f+='Solide : '+s.f+' (M = '+nf(R.M,2)+' g/mol, P = '+nf(R.P,2)+' %, a = '+nf(R.a,R.a%1?2:0)+', M(A) = '+nf(R.MA,2)+' g/mol)\n';
+  f+='Masse théorique à peser : '+sig(R.mTheo,5)+' mg\n';
+  f+='Masse pesée : '+sig(R.mR,5)+' mg (écart '+nf(R.ecart,2)+' %)\n';
+  f+='Titre réel : '+sig(R.tReal/uf,5)+' '+u+'\n\n';
+  f+='Gamme d\'étalons — fioles de '+nf(R.Vf,0)+' mL\n';
+  R.rows.forEach((r,i)=>{f+='  E'+(i+1)+' : prélever '+nf(r.Vm,3)+' mL ('+r.g.txt+') → t réel = '+sig(r.tfReal/uf,4)+' '+u+'\n';});
+  f+='  Volume total de solution mère : '+nf(R.sumV,2)+' mL\n';
+  copy(f,'Fiche copiée dans le presse-papiers');
+});
+
+fill();compute();
+})();
+</script>
+
+
+</body>
+</html>
