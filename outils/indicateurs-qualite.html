@@ -1,0 +1,1709 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+<meta name="description" content="Application interactive sur les indicateurs de qualité d’un système de mesure : justesse, fidélité, répétabilité, reproductibilité, exactitude et spécificité (module M6). Outil du BTSa ANABIOTEC, lycée Le Gros Chêne, Pontivy.">
+<link rel="canonical" href="https://philrob56.github.io/anabiotec-commun/outils/indicateurs-qualite.html">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Indicateurs de qualité d’un système de mesure : justesse, fidélité | BTSa ANABIOTEC</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0e7c7b 0%, #0a4f4f 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #0a4f4f 0%, #0e7c7b 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        nav {
+            background: #f8f9fa;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            border-bottom: 3px solid #e9ecef;
+        }
+
+        .nav-btn {
+            padding: 12px 25px;
+            background: white;
+            border: 2px solid #0e7c7b;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            color: #0e7c7b;
+        }
+
+        .nav-btn:hover {
+            background: #0e7c7b;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(14,124,123, 0.3);
+        }
+
+        .nav-btn.active {
+            background: #0e7c7b;
+            color: white;
+        }
+
+        .content {
+            padding: 40px;
+            min-height: 600px;
+        }
+
+        .section {
+            display: none;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-left: 5px solid #0e7c7b;
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateX(5px);
+        }
+
+        .card h2 {
+            color: #0a4f4f;
+            margin-bottom: 15px;
+            font-size: 1.8em;
+        }
+
+        .card h3 {
+            color: #0e7c7b;
+            margin: 20px 0 10px 0;
+            font-size: 1.3em;
+        }
+
+        .definition-box {
+            background: linear-gradient(135deg, #e7f3f2 0%, #bbdefb 100%);
+            border-left: 5px solid #0e7c7b;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .remark-box {
+            background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%);
+            border-left: 5px solid #ff9800;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .formula-box {
+            background: #f5f5f5;
+            padding: 25px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 1.5em;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            border: 2px dashed #0e7c7b;
+        }
+
+        .interactive-demo {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 30px;
+            border-radius: 15px;
+            margin: 30px 0;
+        }
+
+        .slider-container {
+            margin: 20px 0;
+        }
+
+        .slider-container label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #0a4f4f;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #d3d3d3;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: #0e7c7b;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: #0e7c7b;
+            cursor: pointer;
+        }
+
+        .canvas-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        canvas {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            max-width: 100%;
+        }
+
+        .quiz-container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .quiz-question {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #0a4f4f;
+            margin-bottom: 20px;
+        }
+
+        .quiz-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .quiz-option {
+            padding: 20px;
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.1em;
+        }
+
+        .quiz-option:hover {
+            background: #e7f3f2;
+            border-color: #0e7c7b;
+            transform: translateX(5px);
+        }
+
+        .quiz-option.correct {
+            background: #c8e6c9;
+            border-color: #4caf50;
+        }
+
+        .quiz-option.incorrect {
+            background: #ffcdd2;
+            border-color: #f44336;
+        }
+
+        .quiz-feedback {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 1.1em;
+            display: none;
+        }
+
+        .quiz-feedback.show {
+            display: block;
+        }
+
+        .quiz-feedback.correct {
+            background: #c8e6c9;
+            color: #2e7d32;
+        }
+
+        .quiz-feedback.incorrect {
+            background: #ffcdd2;
+            color: #c62828;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            background: #0e7c7b;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin: 10px 5px;
+        }
+
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(14,124,123, 0.3);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 30px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .comparison-table th {
+            background: #0a4f4f;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 1.1em;
+        }
+
+        .comparison-table td {
+            padding: 15px;
+            border: 1px solid #e9ecef;
+            text-align: center;
+        }
+
+        .comparison-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        .comparison-table tr:hover {
+            background: #e7f3f2;
+        }
+
+        .highlight {
+            background: #fff59d;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-weight: 600;
+        }
+
+        .icon {
+            font-size: 1.5em;
+            margin-right: 10px;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #0e7c7b 0%, #0a4f4f 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .stat-card h3 {
+            font-size: 2.5em;
+            margin: 10px 0;
+            color: white;
+        }
+
+        .stat-card p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .progress-bar {
+            background: #e9ecef;
+            height: 30px;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #0e7c7b 0%, #0a4f4f 100%);
+            height: 100%;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .target-visual {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+            margin: 30px 0;
+        }
+
+        .target {
+            position: relative;
+            width: 200px;
+            height: 200px;
+        }
+
+        .target-circle {
+            position: absolute;
+            border: 3px solid #0a4f4f;
+            border-radius: 50%;
+        }
+
+        .target-circle.outer {
+            width: 200px;
+            height: 200px;
+            top: 0;
+            left: 0;
+        }
+
+        .target-circle.middle {
+            width: 150px;
+            height: 150px;
+            top: 25px;
+            left: 25px;
+        }
+
+        .target-circle.inner {
+            width: 100px;
+            height: 100px;
+            top: 50px;
+            left: 50px;
+            background: #ffeb3b;
+        }
+
+        .target-dot {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: #f44336;
+            border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+
+        .target-label {
+            text-align: center;
+            margin-top: 10px;
+            font-weight: 600;
+            color: #0a4f4f;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8em;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .nav-btn {
+                font-size: 0.9em;
+                padding: 10px 15px;
+            }
+        }
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+            color: #0e7c7b;
+            font-weight: 600;
+        }
+
+        .tooltip:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #0a4f4f;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            white-space: nowrap;
+            font-size: 0.9em;
+            z-index: 1000;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .example-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .example-list li {
+            padding: 15px;
+            margin: 10px 0;
+            background: #f8f9fa;
+            border-left: 4px solid #0e7c7b;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .example-list li:hover {
+            background: #e7f3f2;
+            transform: translateX(5px);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .input-group input[type="number"] {
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1em;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .input-group input[type="number"]:focus {
+            outline: none;
+            border-color: #0e7c7b;
+        }
+
+        .result-display {
+            background: linear-gradient(135deg, #0e7c7b 0%, #0a4f4f 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            font-size: 1.5em;
+            font-weight: 600;
+            margin: 20px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+    </style>
+<!-- anb-commun --><script src="https://philrob56.github.io/anabiotec-commun/anb-commun.js"></script><!-- /anb-commun -->
+<!-- anb-charte --><style>body{background:#f6f8f7!important;background-image:none!important}</style><!-- /anb-charte -->
+</head>
+<body>
+<!-- anb-charte --><div class="anb-head"><div class="anb-crumb"><i></i><a href="https://sites.google.com/view/anabioteclegroschene/accueil" target="_top" style="color:inherit;text-decoration:none" title="Tous les outils du BTSa ANABIOTEC"><b>BTSa ANABIOTEC</b></a><span>›</span>M6</div><div class="anb-right"><div class="anb-tag">LEGTA Le Gros Chêne · Pontivy</div><button type="button" class="anb-print" onclick="anbPrint()" title="Ouvrir une version imprimable (PDF)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimer / PDF</button></div></div><!-- /anb-charte -->
+    <div class="container">
+        <header>
+            <h1>🔬 Indicateurs de Qualité d'un Système de Mesure</h1>
+            <p>Application Interactive d'Apprentissage</p>
+        </header>
+
+        <nav>
+            <button class="nav-btn active" onclick="showSection('home')">🏠 Accueil</button>
+            <button class="nav-btn" onclick="showSection('specificite')">🎯 Spécificité</button>
+            <button class="nav-btn" onclick="showSection('intervalle')">📊 Intervalle</button>
+            <button class="nav-btn" onclick="showSection('sensibilite')">⚡ Sensibilité</button>
+            <button class="nav-btn" onclick="showSection('resolution')">🔍 Résolution</button>
+            <button class="nav-btn" onclick="showSection('justesse')">🎲 Justesse</button>
+            <button class="nav-btn" onclick="showSection('fidelite')">🔄 Fidélité</button>
+            <button class="nav-btn" onclick="showSection('quiz')">✅ Quiz</button>
+        </nav>
+
+        <div class="content">
+            <!-- Section Accueil -->
+            <div id="home" class="section active">
+                <div class="card">
+                    <h2><span class="icon">🎓</span>Bienvenue dans l'application interactive</h2>
+                    <p style="font-size: 1.2em; line-height: 1.8; margin: 20px 0;">
+                        Cette application vous permet d'explorer et de maîtriser les <span class="highlight">7 indicateurs de qualité</span> 
+                        essentiels pour évaluer un système de mesure.
+                    </p>
+                </div>
+
+                <div class="grid-2">
+                    <div class="stat-card">
+                        <div class="icon">🎯</div>
+                        <h3>7</h3>
+                        <p>Indicateurs de Qualité</p>
+                    </div>
+                    <div class="stat-card">
+                        <div class="icon">📚</div>
+                        <h3>15+</h3>
+                        <p>Démonstrations Interactives</p>
+                    </div>
+                    <div class="stat-card">
+                        <div class="icon">✅</div>
+                        <h3>20+</h3>
+                        <p>Questions de Quiz</p>
+                    </div>
+                    <div class="stat-card">
+                        <div class="icon">🔬</div>
+                        <h3>∞</h3>
+                        <p>Simulations Possibles</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>📋 Les 7 Indicateurs Essentiels</h3>
+                    <ul class="example-list">
+                        <li><strong>1. Spécificité</strong> - Le signal provient uniquement de la substance à analyser</li>
+                        <li><strong>2. Intervalle de mesure</strong> - Plage de valeurs mesurables avec incertitude spécifiée</li>
+                        <li><strong>3. Limites de quantification</strong> - Valeurs minimale et maximale déterminables</li>
+                        <li><strong>4. Sensibilité</strong> - Capacité à détecter de petites variations</li>
+                        <li><strong>5. Résolution</strong> - Plus petite variation mesurable</li>
+                        <li><strong>6. Justesse</strong> - Proximité avec la valeur de référence</li>
+                        <li><strong>7. Fidélité</strong> - Reproductibilité des mesures répétées</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h3>🚀 Comment utiliser cette application ?</h3>
+                    <p style="line-height: 1.8;">
+                        Utilisez le menu de navigation en haut pour explorer chaque indicateur. Chaque section contient :
+                    </p>
+                    <ul style="margin: 20px 0; line-height: 2;">
+                        <li>✨ Des définitions claires et illustrées</li>
+                        <li>🎮 Des démonstrations interactives</li>
+                        <li>📊 Des visualisations graphiques</li>
+                        <li>💡 Des exemples pratiques</li>
+                        <li>🧮 Des calculateurs en temps réel</li>
+                    </ul>
+                    <p style="line-height: 1.8;">
+                        Terminez par le <strong>Quiz</strong> pour tester vos connaissances !
+                    </p>
+                </div>
+            </div>
+
+            <!-- Section Spécificité -->
+            <div id="specificite" class="section">
+                <div class="card">
+                    <h2><span class="icon">🎯</span>Spécificité</h2>
+                    
+                    <div class="definition-box">
+                        <strong>📖 Définition :</strong><br>
+                        Une procédure d'analyse est dite <span class="highlight">spécifique</span> lorsqu'elle permet de garantir 
+                        que le signal mesuré provient <strong>uniquement</strong> de la substance à analyser.
+                    </div>
+
+                    <div class="remark-box">
+                        <strong>💡 Remarque importante :</strong><br>
+                        La spécificité est la <span class="highlight">1ère caractéristique</span> à étudier car elle permet de vérifier 
+                        que l'indication correspond bien uniquement au mesurande.
+                    </div>
+
+                    <h3>🔍 Sélectivité vs Spécificité</h3>
+                    <p style="margin: 20px 0; line-height: 1.8;">
+                        La <span class="tooltip" data-tooltip="Capacité à discriminer plusieurs constituants">sélectivité</span> 
+                        est l'aptitude d'un élément de la procédure de mesure à discerner une famille de constituants donnés 
+                        dans un mélange et à quantifier, de façon indépendante, plusieurs mesurandes de cette famille.
+                    </p>
+
+                    <h3>⚠️ Causes du manque de spécificité</h3>
+                    <div class="interactive-demo">
+                        <p style="margin-bottom: 20px;"><strong>Le manque de spécificité peut causer :</strong></p>
+                        <div class="grid-2">
+                            <div style="background: #ffcdd2; padding: 20px; border-radius: 10px;">
+                                <h4 style="color: #c62828;">📈 Surestimation</h4>
+                                <p>Les constituants indésirables se comportent comme le mesurande</p>
+                            </div>
+                            <div style="background: #c5e1a5; padding: 20px; border-radius: 10px;">
+                                <h4 style="color: #558b2f;">📉 Sous-estimation</h4>
+                                <p>Les constituants indésirables gênent la réponse du mesurande</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3>📊 Démonstration Interactive</h3>
+                    <div class="interactive-demo">
+                        <p><strong>Simulez la présence d'interférents :</strong></p>
+                        <div class="slider-container">
+                            <label>Signal du mesurande : <span id="signal-mesurande">50</span>%</label>
+                            <input type="range" min="0" max="100" value="50" id="slider-mesurande" oninput="updateSpecificite()">
+                        </div>
+                        <div class="slider-container">
+                            <label>Signal des interférents : <span id="signal-interferents">20</span>%</label>
+                            <input type="range" min="0" max="100" value="20" id="slider-interferents" oninput="updateSpecificite()">
+                        </div>
+                        <div class="canvas-container">
+                            <canvas id="canvas-specificite" width="600" height="300"></canvas>
+                        </div>
+                        <div class="result-display" id="result-specificite">
+                            Signal total mesuré : 70%
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section Intervalle -->
+            <div id="intervalle" class="section">
+                <div class="card">
+                    <h2><span class="icon">📊</span>Intervalle de Mesure et Limites</h2>
+                    
+                    <div class="definition-box">
+                        <strong>📖 Définitions :</strong><br><br>
+                        <strong>Intervalle de mesure :</strong> Ensemble des valeurs qu'un système de mesure peut mesurer avec une incertitude spécifiée.<br><br>
+                        <strong>Limite inférieure de quantification :</strong> Plus petite valeur du mesurande pouvant être déterminée assortie d'une incertitude.<br><br>
+                        <strong>Limite supérieure de quantification :</strong> Plus grande valeur du mesurande pouvant être déterminée.<br><br>
+                        <strong>Limite de détection :</strong> Plus petite valeur du mesurande pour laquelle on considère qu'il y a présence de l'analyte.
+                    </div>
+
+                    <h3>📏 Visualisation Interactive</h3>
+                    <div class="interactive-demo">
+                        <div class="slider-container">
+                            <label>Limite de détection : <span id="limite-detection">5</span> unités</label>
+                            <input type="range" min="0" max="20" value="5" id="slider-detection" oninput="updateIntervalle()">
+                        </div>
+                        <div class="slider-container">
+                            <label>Limite inférieure de quantification : <span id="limite-inf">10</span> unités</label>
+                            <input type="range" min="5" max="50" value="10" id="slider-inf" oninput="updateIntervalle()">
+                        </div>
+                        <div class="slider-container">
+                            <label>Limite supérieure de quantification : <span id="limite-sup">100</span> unités</label>
+                            <input type="range" min="50" max="200" value="100" id="slider-sup" oninput="updateIntervalle()">
+                        </div>
+                        <div class="canvas-container">
+                            <canvas id="canvas-intervalle" width="700" height="200"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="remark-box">
+                        <strong>💡 Point clé :</strong><br>
+                        L'intervalle de mesure est compris entre la limite inférieure et la limite supérieure de quantification.
+                        La limite de détection est toujours inférieure à la limite inférieure de quantification.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section Sensibilité -->
+            <div id="sensibilite" class="section">
+                <div class="card">
+                    <h2><span class="icon">⚡</span>Sensibilité</h2>
+                    
+                    <div class="definition-box">
+                        <strong>📖 Définition :</strong><br>
+                        La <span class="highlight">sensibilité s</span> est le quotient de la variation d'une indication du système de mesure 
+                        par la variation correspondante de la valeur de la grandeur mesurée.
+                    </div>
+
+                    <div class="formula-box">
+                        s = Δy / Δx
+                    </div>
+
+                    <p style="margin: 20px 0; line-height: 1.8;">
+                        La sensibilité correspond à la <span class="highlight">pente de la tangente</span> à la courbe de réponse.
+                    </p>
+
+                    <div class="remark-box">
+                        <strong>⚡ Point clé :</strong><br>
+                        Plus la sensibilité est grande, plus le système de mesure peut séparer deux valeurs très proches.
+                    </div>
+
+                    <h3>📈 Simulation Interactive de Discrimination</h3>
+                    <div class="interactive-demo">
+                        <p><strong>Comparez différentes sensibilités (pente) et variations d'entrée (Δx) :</strong></p>
+                        <div class="slider-container">
+                            <label>Sensibilité (Pente) : <span id="sensibilite-value">1.0</span></label>
+                            <input type="range" min="0.1" max="3" step="0.1" value="1.0" id="slider-sensibilite" oninput="updateSensibilite()">
+                        </div>
+                        <div class="slider-container">
+                            <label>Variation d'entrée (Δx) : <span id="delta-x-value">40</span></label>
+                            <input type="range" min="10" max="150" step="1" value="40" id="slider-delta-x" oninput="updateSensibilite()">
+                        </div>
+                        <div class="canvas-container">
+                            <canvas id="canvas-sensibilite" width="600" height="400"></canvas>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Section Résolution -->
+            <div id="resolution" class="section">
+                <div class="card">
+                    <h2><span class="icon">🔍</span>Résolution</h2>
+                    
+                    <div class="definition-box">
+                        <strong>📖 Définition :</strong><br>
+                        La <span class="highlight">résolution</span> est la plus petite variation de la grandeur mesurée.
+                    </div>
+
+                    <h3>📝 Exemples Pratiques</h3>
+                    <ul class="example-list">
+                        <li>
+                            <strong>pH-mètre</strong> : affiche pH = 6,87 
+                            → résolution = <span class="highlight">0,01 unité pH</span>
+                        </li>
+                        <li>
+                            <strong>Thermomètre</strong> : affiche 22,1 °C 
+                            → résolution = <span class="highlight">0,1 °C</span>
+                        </li>
+                        <li>
+                            <strong>Balance</strong> : affiche 123,12 mg 
+                            → résolution = <span class="highlight">0,01 mg</span>
+                        </li>
+                    </ul>
+
+                    <div class="remark-box">
+                        <strong>💡 Bon à savoir :</strong><br>
+                        Le choix d'un instrument ayant une grande résolution dépend du <span class="highlight">but du mesurage</span>. 
+                        Il n'est pas nécessaire d'utiliser une balance de même résolution pour peser une masse très précise 
+                        que pour saturer une solution aqueuse.
+                    </div>
+
+                    <h3>🎮 Simulateur de Résolution</h3>
+                    <div class="interactive-demo">
+                        <p><strong>Sélectionnez la résolution de votre instrument :</strong></p>
+                        <div class="slider-container">
+                            <label>Résolution : <span id="resolution-value">0.1</span></label>
+                            <input type="range" min="0.001" max="10" step="0.001" value="0.1" id="slider-resolution" oninput="updateResolution()">
+                        </div>
+                        <div style="background: white; padding: 30px; border-radius: 10px; text-align: center; margin: 20px 0;">
+                            <h3>Affichage de l'instrument</h3>
+                            <div style="background: #0a4f4f; color: #0f0; padding: 30px; border-radius: 10px; font-family: 'Courier New'; font-size: 3em; margin: 20px 0;">
+                                <span id="display-resolution">0.0</span>
+                            </div>
+                            <input type="range" min="0" max="100" value="0" id="slider-mesure" oninput="updateMesure()" style="width: 80%;">
+                            <p style="margin-top: 15px;">Déplacez le curseur pour simuler une mesure</p>
+                        </div>
+                    </div>
+
+                    <h3>🔍 Quiz Résolution</h3>
+                    <div class="interactive-demo">
+                        <p><strong>Quelle est la résolution d'un instrument qui affiche "25.834" ?</strong></p>
+                        <div class="input-group">
+                            <input type="text" id="quiz-resolution-input" placeholder="Votre réponse (ex: 0.001)" style="flex: 2;">
+                            <button class="btn" onclick="verifierResolution()">Vérifier</button>
+                        </div>
+                        <div id="feedback-resolution" class="quiz-feedback"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section Justesse -->
+            <div id="justesse" class="section">
+                <div class="card">
+                    <h2><span class="icon">🎲</span>Justesse de Mesure</h2>
+                    
+                    <div class="definition-box">
+                        <strong>📖 Définition :</strong><br>
+                        La <span class="highlight">justesse de mesure</span> est l'étroitesse de l'accord entre la moyenne 
+                        des mesures expérimentales et une valeur de référence.
+                    </div>
+
+                    <div class="remark-box">
+                        <strong>💡 Relation importante :</strong><br>
+                        La justesse varie en <span class="highlight">sens inverse de l'erreur systématique</span> : 
+                        quand l'erreur systématique est faible, la justesse est bonne et inversement.
+                    </div>
+
+                    <h3>📊 Le Biais (Erreur de Justesse)</h3>
+                    <div class="formula-box">
+                        Biais = Moyenne des mesures - Valeur de référence
+                    </div>
+
+                    <div class="remark-box">
+                        <strong>⚠️ Important :</strong><br>
+                        Pour calculer le biais d'un instrument, il faut disposer de la <span class="highlight">valeur de référence</span> 
+                        fournie par un matériau de référence certifié.
+                    </div>
+
+                    <h3>🧮 Calculateur de Biais</h3>
+                    <div class="interactive-demo">
+                        <p><strong>Calculez le biais de votre instrument :</strong></p>
+                        <div class="input-group">
+                            <div style="flex: 1;">
+                                <label>Valeur de référence :</label>
+                                <input type="number" id="valeur-ref" value="100" step="0.01">
+                            </div>
+                        </div>
+                        <p><strong>Entrez vos mesures (séparées par des virgules) :</strong></p>
+                        <input type="text" id="mesures-justesse" placeholder="Ex: 98.5, 99.2, 98.8, 99.5, 98.9" 
+                               style="width: 100%; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px; margin: 10px 0;">
+                        <button class="btn" onclick="calculerBiais()">Calculer le Biais</button>
+                        <div id="result-biais" style="display: none;"></div>
+                    </div>
+
+                    <h3>🎯 Visualisation de la Justesse</h3>
+                    <div class="interactive-demo">
+                        <div class="slider-container">
+                            <label>Biais : <span id="biais-value">0</span></label>
+                            <input type="range" min="-30" max="30" value="0" id="slider-biais" oninput="updateJustesse()">
+                        </div>
+                        <div class="canvas-container">
+                            <canvas id="canvas-justesse" width="600" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section Fidélité -->
+            <div id="fidelite" class="section">
+                <div class="card">
+                    <h2><span class="icon">🔄</span>Fidélité de Mesure</h2>
+                    
+                    <div class="definition-box">
+                        <strong>📖 Définition :</strong><br>
+                        La <span class="highlight">fidélité de mesure</span> est l'étroitesse de l'accord entre les valeurs 
+                        mesurées obtenues par des mesurages répétés du même objet dans des conditions spécifiées.
+                    </div>
+
+                    <div class="remark-box">
+                        <strong>💡 Interprétation :</strong><br>
+                        Lorsque les valeurs mesurées sont <span class="highlight">proches les unes des autres</span>, 
+                        cela signifie qu'elles sont peu dispersées et donc que la fidélité est grande.
+                    </div>
+
+                    <div style="background: #ffcdd2; padding: 20px; border-radius: 10px; margin: 20px 0;">
+                        <strong>⚠️ Note terminologique importante :</strong><br>
+                        Le terme « fidélité » est traduit en anglais par « precision ». Il ne faut <strong>PAS utiliser 
+                        le terme « précision » en français</strong> car il n'existe pas dans le VIM 
+                        (Vocabulaire International de Métrologie).
+                    </div>
+
+                    <h3>📋 Types de Conditions de Fidélité</h3>
+                    <table class="comparison-table">
+                        <thead>
+                            <tr>
+                                <th>RÉPÉTABILITÉ</th>
+                                <th>REPRODUCTIBILITÉ</th>
+                                <th>FIDÉLITÉ INTERMÉDIAIRE</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="3" style="background: #e7f3f2; font-weight: 600;">Même procédure + Même matériau</td>
+                            </tr>
+                            <tr>
+                                <td style="background: #c8e6c9;">Même laboratoire</td>
+                                <td style="background: #ffcdd2;">Laboratoires différents</td>
+                                <td style="background: #c8e6c9;">Même laboratoire</td>
+                            </tr>
+                            <tr>
+                                <td style="background: #c8e6c9;">Même opérateur</td>
+                                <td style="background: #ffcdd2;">Opérateurs différents</td>
+                                <td style="background: #fff9c4;">Opérateurs éventuellement différents</td>
+                            </tr>
+                            <tr>
+                                <td style="background: #c8e6c9;">Même équipement</td>
+                                <td style="background: #ffcdd2;">Équipements différents</td>
+                                <td style="background: #fff9c4;">Équipements éventuellement différents</td>
+                            </tr>
+                            <tr>
+                                <td style="background: #c8e6c9;">Intervalle de temps court</td>
+                                <td style="background: #ffcdd2;">Moments différents</td>
+                                <td style="background: #fff9c4;">Intervalle de temps étendu</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h3>📐 Quantification : Écart-type et Coefficient de Variation</h3>
+                    
+                    <div class="formula-box">
+                        s = √[Σ(yᵢ - ȳ)² / (n-1)]
+                    </div>
+
+                    <div class="formula-box">
+                        CV = (s / ȳ) × 100
+                    </div>
+
+                    <h3>🧮 Calculateur de Fidélité</h3>
+                    <div class="interactive-demo">
+                        <p><strong>Entrez vos mesures répétées (séparées par des virgules) :</strong></p>
+                        <input type="text" id="mesures-fidelite" placeholder="Ex: 25.3, 25.1, 25.4, 25.2, 25.3" 
+                               style="width: 100%; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px; margin: 10px 0;">
+                        <button class="btn" onclick="calculerFidelite()">Calculer</button>
+                        <div id="result-fidelite" style="display: none;"></div>
+                    </div>
+
+                    <h3>🎯 Justesse vs Fidélité : Visualisation</h3>
+                    <div class="target-visual">
+                        <div>
+                            <div class="target" id="target-1">
+                                <div class="target-circle outer"></div>
+                                <div class="target-circle middle"></div>
+                                <div class="target-circle inner"></div>
+                            </div>
+                            <div class="target-label">✅ Bonne Justesse<br>Bonne Fidélité</div>
+                        </div>
+                        <div>
+                            <div class="target" id="target-2">
+                                <div class="target-circle outer"></div>
+                                <div class="target-circle middle"></div>
+                                <div class="target-circle inner"></div>
+                            </div>
+                            <div class="target-label">⚠️ Bonne Justesse<br>Mauvaise Fidélité</div>
+                        </div>
+                        <div>
+                            <div class="target" id="target-3">
+                                <div class="target-circle outer"></div>
+                                <div class="target-circle middle"></div>
+                                <div class="target-circle inner"></div>
+                            </div>
+                            <div class="target-label">⚠️ Mauvaise Justesse<br>Bonne Fidélité</div>
+                        </div>
+                        <div>
+                            <div class="target" id="target-4">
+                                <div class="target-circle outer"></div>
+                                <div class="target-circle middle"></div>
+                                <div class="target-circle inner"></div>
+                            </div>
+                            <div class="target-label">❌ Mauvaise Justesse<br>Mauvaise Fidélité</div>
+                        </div>
+                    </div>
+
+                    <div class="remark-box">
+                        <strong>📌 Notion d'exactitude :</strong><br>
+                        Si on s'intéresse au résultat d'un <span class="highlight">mesurage unique</span>, 
+                        la qualité recherchée s'appelera <strong>l'exactitude de la mesure</strong>. 
+                        Elle correspondra à l'étroitesse de l'accord entre cette mesure et la valeur de référence.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section Quiz -->
+            <div id="quiz" class="section">
+                <div class="card">
+                    <h2><span class="icon">✅</span>Quiz - Testez vos connaissances</h2>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="quiz-progress" style="width: 0%">0%</div>
+                    </div>
+                </div>
+
+                <div id="quiz-container"></div>
+
+                <div style="text-align: center; margin-top: 30px;">
+                    <button class="btn" onclick="previousQuestion()" id="btn-previous" style="display: none;">⬅️ Précédent</button>
+                    <button class="btn" onclick="nextQuestion()" id="btn-next">Suivant ➡️</button>
+                    <button class="btn" onclick="restartQuiz()" id="btn-restart" style="display: none;">🔄 Recommencer</button>
+                </div>
+
+                <div id="quiz-results" style="display: none; margin-top: 30px;">
+                    <div class="card" style="background: linear-gradient(135deg, #0e7c7b 0%, #0a4f4f 100%); color: white;">
+                        <h2 style="color: white;">🏆 Résultats du Quiz</h2>
+                        <div style="font-size: 3em; margin: 20px 0;" id="quiz-score">0/0</div>
+                        <p style="font-size: 1.3em;" id="quiz-message"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Navigation entre sections
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById(sectionId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Spécificité
+        function updateSpecificite() {
+            const mesurande = document.getElementById('slider-mesurande').value;
+            const interferents = document.getElementById('slider-interferents').value;
+            const total = parseInt(mesurande) + parseInt(interferents);
+            
+            document.getElementById('signal-mesurande').textContent = mesurande;
+            document.getElementById('signal-interferents').textContent = interferents;
+            document.getElementById('result-specificite').textContent = `Signal total mesuré : ${total}% (Mesurande: ${mesurande}% + Interférents: ${interferents}%)`;
+            
+            const canvas = document.getElementById('canvas-specificite');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Barres
+            const barWidth = 80;
+            const spacing = 150;
+            
+            // Mesurande
+            ctx.fillStyle = '#4caf50';
+            ctx.fillRect(100, 250 - mesurande * 2, barWidth, mesurande * 2);
+            ctx.fillStyle = '#0a4f4f';
+            ctx.font = '16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Mesurande', 140, 280);
+            ctx.fillText(`${mesurande}%`, 140, 295);
+            
+            // Interférents
+            ctx.fillStyle = '#f44336';
+            ctx.fillRect(100 + spacing, 250 - interferents * 2, barWidth, interferents * 2);
+            ctx.fillText('Interférents', 140 + spacing, 280);
+            ctx.fillText(`${interferents}%`, 140 + spacing, 295);
+            
+            // Total
+            ctx.fillStyle = '#ff9800';
+            ctx.fillRect(100 + spacing * 2, 250 - total * 2, barWidth, total * 2);
+            ctx.fillText('Total mesuré', 140 + spacing * 2, 280);
+            ctx.fillText(`${total}%`, 140 + spacing * 2, 295);
+        }
+
+        // Intervalle de mesure
+        function updateIntervalle() {
+            const detection = document.getElementById('slider-detection').value;
+            const inf = document.getElementById('slider-inf').value;
+            const sup = document.getElementById('slider-sup').value;
+            
+            document.getElementById('limite-detection').textContent = detection;
+            document.getElementById('limite-inf').textContent = inf;
+            document.getElementById('limite-sup').textContent = sup;
+            
+            const canvas = document.getElementById('canvas-intervalle');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const scale = canvas.width / 220;
+            
+            // Ligne principale
+            ctx.strokeStyle = '#0a4f4f';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(50, 100);
+            ctx.lineTo(canvas.width - 50, 100);
+            ctx.stroke();
+            
+            // Limite de détection
+            const xDetection = 50 + detection * scale;
+            ctx.fillStyle = '#ff5722';
+            ctx.fillRect(xDetection - 2, 80, 4, 40);
+            ctx.font = '14px Arial';
+            ctx.fillText(`Limite de détection`, xDetection, 60);
+            ctx.fillText(`${detection}`, xDetection, 140);
+            
+            // Limite inférieure
+            const xInf = 50 + parseInt(inf) * scale;
+            ctx.fillStyle = '#4caf50';
+            ctx.fillRect(xInf - 2, 70, 4, 60);
+            ctx.fillText(`Limite inf.`, xInf, 50);
+            ctx.fillText(`${inf}`, xInf, 150);
+            
+            // Limite supérieure
+            const xSup = 50 + parseInt(sup) * scale;
+            ctx.fillStyle = '#4caf50';
+            ctx.fillRect(xSup - 2, 70, 4, 60);
+            ctx.fillText(`Limite sup.`, xSup, 50);
+            ctx.fillText(`${sup}`, xSup, 150);
+            
+            // Intervalle de mesure
+            ctx.fillStyle = 'rgba(76, 175, 80, 0.2)';
+            ctx.fillRect(xInf, 85, xSup - xInf, 30);
+            ctx.fillStyle = '#4caf50';
+            ctx.font = 'bold 16px Arial';
+            ctx.fillText(`Intervalle de mesure`, (xInf + xSup) / 2, 175);
+        }
+
+        // Sensibilité - MODIFIED
+        function updateSensibilite() {
+            // Get values from BOTH sliders
+            const sensibilite = parseFloat(document.getElementById('slider-sensibilite').value);
+            const deltaX_pixel = parseFloat(document.getElementById('slider-delta-x').value);
+
+            // Update slider labels
+            document.getElementById('sensibilite-value').textContent = sensibilite.toFixed(1);
+            document.getElementById('delta-x-value').textContent = deltaX_pixel;
+
+            const canvas = document.getElementById('canvas-sensibilite');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Axes
+            ctx.strokeStyle = '#0a4f4f';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(50, 350);
+            ctx.lineTo(550, 350); // Axe X
+            ctx.moveTo(50, 350);
+            ctx.lineTo(50, 50); // Axe Y
+            ctx.stroke();
+
+            // Labels
+            ctx.font = '14px Arial';
+            ctx.fillStyle = '#0a4f4f';
+            ctx.textAlign = 'center';
+            ctx.fillText('x (grandeur mesurée)', 300, 385);
+            ctx.save();
+            ctx.translate(20, 200);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText('y (indication)', 0, 0);
+            ctx.restore();
+
+            // Courbe principale
+            ctx.strokeStyle = '#0e7c7b';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            for (let x = 0; x <= 500; x += 5) {
+                const y = 350 - (x * sensibilite * 0.6);
+                if (y >= 50) {
+                    if (x === 0) ctx.moveTo(50 + x, y);
+                    else ctx.lineTo(50 + x, y);
+                }
+            }
+            ctx.stroke();
+
+            // --- Visualisation quantitative ---
+            const x1_pixel = 150; 
+            const x2_pixel = x1_pixel + deltaX_pixel;
+
+            const y1_canvas = 350 - (x1_pixel * sensibilite * 0.6);
+            const y2_canvas = 350 - (x2_pixel * sensibilite * 0.6);
+            
+            // Stop drawing if points go off-screen
+            if (y1_canvas < 50 || y2_canvas < 50 || x2_pixel > 500) {
+                ctx.fillStyle = 'red';
+                ctx.font = '16px Arial';
+                ctx.fillText("Valeurs hors de la plage de simulation !", canvas.width / 2, 30);
+                return;
+            }
+
+            ctx.save();
+            ctx.strokeStyle = '#f44336';
+            ctx.fillStyle = '#f44336';
+            ctx.setLineDash([4, 4]);
+            ctx.lineWidth = 1.5;
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+
+            // Point 1 (x1, y1)
+            ctx.beginPath();
+            ctx.moveTo(50 + x1_pixel, 350);
+            ctx.lineTo(50 + x1_pixel, y1_canvas);
+            ctx.lineTo(50, y1_canvas);
+            ctx.stroke();
+            ctx.fillText('y₁', 35, y1_canvas + 4);
+            ctx.fillText('x₁', 50 + x1_pixel, 365);
+
+            // Point 2 (x2, y2)
+            ctx.beginPath();
+            ctx.moveTo(50 + x2_pixel, 350);
+            ctx.lineTo(50 + x2_pixel, y2_canvas);
+            ctx.lineTo(50, y2_canvas);
+            ctx.stroke();
+            ctx.fillText('y₂', 35, y2_canvas + 4);
+            ctx.fillText('x₂', 50 + x2_pixel, 365);
+            
+            // Points sur la courbe
+            ctx.setLineDash([]);
+            ctx.beginPath();
+            ctx.arc(50 + x1_pixel, y1_canvas, 4, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(50 + x2_pixel, y2_canvas, 4, 0, 2 * Math.PI);
+            ctx.fill();
+
+            // Indicateur Δy (vertical on the left)
+            ctx.strokeStyle = '#0a4f4f';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(42, y1_canvas);
+            ctx.lineTo(42, y2_canvas);
+            ctx.stroke();
+            
+            ctx.save();
+            ctx.fillStyle = '#0a4f4f';
+            ctx.translate(28, (y1_canvas + y2_canvas) / 2);
+            ctx.rotate(-Math.PI/2);
+            ctx.fillText("Δy", 0, 0);
+            ctx.restore();
+
+            // Indicateur Δx (horizontal on the bottom)
+            ctx.beginPath();
+            ctx.moveTo(50 + x1_pixel, 342);
+            ctx.lineTo(50 + x2_pixel, 342);
+            ctx.stroke();
+            ctx.fillText("Δx", 50 + (x1_pixel + x2_pixel) / 2, 335);
+
+            ctx.restore();
+        }
+
+
+        // Résolution
+        function updateResolution() {
+            const resolution = parseFloat(document.getElementById('slider-resolution').value);
+            document.getElementById('resolution-value').textContent = resolution;
+            updateMesure();
+        }
+
+        function updateMesure() {
+            const mesure = parseFloat(document.getElementById('slider-mesure').value);
+            const resolution = parseFloat(document.getElementById('slider-resolution').value);
+            
+            const decimalPlaces = resolution.toString().includes('.') ? resolution.toString().split('.')[1].length : 0;
+            const mesureAffichee = (Math.round(mesure / resolution) * resolution).toFixed(decimalPlaces);
+            
+            document.getElementById('display-resolution').textContent = mesureAffichee;
+        }
+
+        function verifierResolution() {
+            const reponse = parseFloat(document.getElementById('quiz-resolution-input').value);
+            const feedbackDiv = document.getElementById('feedback-resolution');
+            
+            if (reponse === 0.001) {
+                feedbackDiv.className = 'quiz-feedback correct show';
+                feedbackDiv.innerHTML = '✅ Correct ! La résolution est 0.001 (le chiffre le plus à droite).';
+            } else {
+                feedbackDiv.className = 'quiz-feedback incorrect show';
+                feedbackDiv.innerHTML = '❌ Incorrect. La résolution correspond à la plus petite graduation, ici 0.001.';
+            }
+        }
+
+        // Justesse
+        function calculerBiais() {
+            const valeurRef = parseFloat(document.getElementById('valeur-ref').value);
+            const mesuresText = document.getElementById('mesures-justesse').value;
+            const mesures = mesuresText.split(',').map(m => parseFloat(m.trim())).filter(m => !isNaN(m));
+            
+            if (mesures.length === 0) {
+                alert('Veuillez entrer au moins une mesure valide !');
+                return;
+            }
+            
+            const moyenne = mesures.reduce((a, b) => a + b, 0) / mesures.length;
+            const biais = moyenne - valeurRef;
+            
+            const resultDiv = document.getElementById('result-biais');
+            resultDiv.innerHTML = `
+                <div class="stat-card" style="padding: 20px;">
+                    <p>Valeur de référence : ${valeurRef.toFixed(2)}</p>
+                    <p>Moyenne des mesures : ${moyenne.toFixed(2)}</p>
+                    <h3 style="font-size: 2em;">Biais = ${biais.toFixed(2)}</h3>
+                    <p>${biais > 0 ? 'Surestimation' : biais < 0 ? 'Sous-estimation' : 'Pas de biais'}</p>
+                </div>
+            `;
+            resultDiv.style.display = 'block';
+        }
+
+        function updateJustesse() {
+            const biais = parseInt(document.getElementById('slider-biais').value);
+            document.getElementById('biais-value').textContent = biais;
+            
+            const canvas = document.getElementById('canvas-justesse');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Valeur de référence
+            ctx.strokeStyle = '#4caf50';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([10, 5]);
+            ctx.beginPath();
+            ctx.moveTo(300, 50);
+            ctx.lineTo(300, 250);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            ctx.font = 'bold 16px Arial';
+            ctx.fillStyle = '#4caf50';
+            ctx.textAlign = 'center';
+            ctx.fillText('Valeur de référence', 300, 30);
+            
+            // Moyenne des mesures
+            const xMoyenne = 300 + biais * 5;
+            ctx.fillStyle = '#f44336';
+            ctx.fillRect(xMoyenne - 2, 50, 4, 200);
+            ctx.fillText('Moyenne mesurée', xMoyenne, 280);
+            
+            // Flèche du biais
+            if (biais !== 0) {
+                ctx.strokeStyle = '#ff9800';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(300, 150);
+                ctx.lineTo(xMoyenne, 150);
+                ctx.stroke();
+                
+                // Dessiner la pointe de la flèche
+                const headlen = 10;
+                const angle = Math.atan2(0, xMoyenne - 300);
+                ctx.beginPath();
+                ctx.moveTo(xMoyenne, 150);
+                ctx.lineTo(xMoyenne - headlen * Math.cos(angle - Math.PI / 6), 150 - headlen * Math.sin(angle - Math.PI / 6));
+                ctx.moveTo(xMoyenne, 150);
+                ctx.lineTo(xMoyenne - headlen * Math.cos(angle + Math.PI / 6), 150 - headlen * Math.sin(angle + Math.PI / 6));
+                ctx.stroke();
+
+
+                ctx.fillStyle = '#ff9800';
+                ctx.font = 'bold 14px Arial';
+                ctx.fillText(`Biais = ${biais}`, (300 + xMoyenne) / 2, 140);
+            }
+        }
+
+        // Fidélité
+        function calculerFidelite() {
+            const mesuresText = document.getElementById('mesures-fidelite').value;
+            const mesures = mesuresText.split(',').map(m => parseFloat(m.trim())).filter(m => !isNaN(m));
+            
+            if (mesures.length < 2) {
+                alert('Veuillez entrer au moins 2 mesures valides !');
+                return;
+            }
+            
+            const n = mesures.length;
+            const moyenne = mesures.reduce((a, b) => a + b, 0) / n;
+            const variance = mesures.reduce((sum, m) => sum + Math.pow(m - moyenne, 2), 0) / (n - 1);
+            const ecartType = Math.sqrt(variance);
+            const cv = (moyenne !== 0) ? (ecartType / moyenne) * 100 : 0;
+            
+            const resultDiv = document.getElementById('result-fidelite');
+            resultDiv.innerHTML = `
+                <div class="grid-2">
+                    <div class="stat-card">
+                        <p>Nombre de mesures</p>
+                        <h3>${n}</h3>
+                    </div>
+                    <div class="stat-card">
+                        <p>Moyenne (ȳ)</p>
+                        <h3>${moyenne.toFixed(3)}</h3>
+                    </div>
+                    <div class="stat-card">
+                        <p>Écart-type (s)</p>
+                        <h3>${ecartType.toFixed(3)}</h3>
+                    </div>
+                    <div class="stat-card">
+                        <p>Coefficient de variation (CV)</p>
+                        <h3>${cv.toFixed(2)}%</h3>
+                    </div>
+                </div>
+            `;
+            resultDiv.style.display = 'block';
+        }
+
+        // Initialiser les cibles (justesse vs fidélité)
+        function initTargets() {
+            ['target-1', 'target-2', 'target-3', 'target-4'].forEach(id => {
+                const target = document.getElementById(id);
+                // Vider les points existants pour éviter la duplication au rechargement
+                target.innerHTML = `
+                    <div class="target-circle outer"></div>
+                    <div class="target-circle middle"></div>
+                    <div class="target-circle inner"></div>`;
+            });
+
+            // Target 1: Bonne justesse, bonne fidélité
+            for (let i = 0; i < 8; i++) addDot('target-1', 0, 10);
+            
+            // Target 2: Bonne justesse, mauvaise fidélité
+            for (let i = 0; i < 8; i++) addDot('target-2', 0, 50);
+            
+            // Target 3: Mauvaise justesse, bonne fidélité
+            for (let i = 0; i < 8; i++) addDot('target-3', 60, 10);
+
+            // Target 4: Mauvaise justesse, mauvaise fidélité
+            for (let i = 0; i < 8; i++) addDot('target-4', -50, 60);
+        }
+
+        function addDot(targetId, bias, spread) {
+            const target = document.getElementById(targetId);
+            const dot = document.createElement('div');
+            dot.className = 'target-dot';
+
+            const angle = Math.random() * 2 * Math.PI;
+            const radius = Math.random() * spread;
+
+            const centerX = 94 + bias; // 94 = 200/2 - dot_width/2
+            const centerY = 94;
+
+            dot.style.top = (centerY + radius * Math.sin(angle)) + 'px';
+            dot.style.left = (centerX + radius * Math.cos(angle)) + 'px';
+            target.appendChild(dot);
+        }
+
+
+        // Quiz
+        const questions = [
+            {
+                question: "Quelle est la première caractéristique à étudier pour un système de mesure ?",
+                options: ["La résolution", "La spécificité", "La justesse", "La fidélité"],
+                correct: 1,
+                explanation: "La spécificité est la 1ère caractéristique à étudier car elle permet de vérifier que l'indication correspond bien uniquement au mesurande."
+            },
+            {
+                question: "Que mesure la sensibilité d'un système de mesure ?",
+                options: [
+                    "La plus petite valeur mesurable",
+                    "Le quotient de la variation de l'indication par la variation de la grandeur",
+                    "L'accord avec la valeur de référence",
+                    "La répétabilité des mesures"
+                ],
+                correct: 1,
+                explanation: "La sensibilité s = Δy / Δx correspond à la pente de la courbe de réponse."
+            },
+            {
+                question: "Un thermomètre affiche 37.2°C. Quelle est sa résolution ?",
+                options: ["1°C", "0.1°C", "0.01°C", "37.2°C"],
+                correct: 1,
+                explanation: "La résolution correspond à la plus petite variation affichable, ici 0.1°C."
+            },
+            {
+                question: "Le biais d'un instrument quantifie :",
+                options: [
+                    "Le défaut de fidélité",
+                    "Le défaut de justesse",
+                    "Le défaut de résolution",
+                    "Le défaut de sensibilité"
+                ],
+                correct: 1,
+                explanation: "Le biais (ou erreur de justesse) est la différence entre la moyenne des mesures et la valeur de référence."
+            },
+            {
+                question: "Dans quelles conditions la fidélité est-elle mesurée en répétabilité ?",
+                options: [
+                    "Laboratoires différents, opérateurs différents",
+                    "Même laboratoire, même opérateur, intervalle court",
+                    "Même laboratoire, opérateurs différents",
+                    "Laboratoires différents, même opérateur"
+                ],
+                correct: 1,
+                explanation: "La répétabilité implique : même procédure, même laboratoire, même opérateur, même équipement, intervalle de temps court."
+            },
+            {
+                question: "Quel terme ne doit PAS être utilisé en français selon le VIM ?",
+                options: ["Fidélité", "Précision", "Justesse", "Exactitude"],
+                correct: 1,
+                explanation: "Le terme 'précision' n'existe pas dans le VIM. On utilise 'fidélité' en français ('precision' en anglais)."
+            },
+            {
+                question: "La limite de détection est :",
+                options: [
+                    "Plus grande que la limite inférieure de quantification",
+                    "Plus petite que la limite inférieure de quantification",
+                    "Égale à la limite inférieure de quantification",
+                    "Sans rapport avec les limites de quantification"
+                ],
+                correct: 1,
+                explanation: "La limite de détection (présence de l'analyte) est toujours inférieure à la limite inférieure de quantification (détermination avec incertitude)."
+            },
+            {
+                question: "Le coefficient de variation (CV) se calcule par :",
+                options: [
+                    "CV = s × ȳ",
+                    "CV = (s / ȳ) × 100",
+                    "CV = ȳ / s",
+                    "CV = (ȳ - s) × 100"
+                ],
+                correct: 1,
+                explanation: "Le coefficient de variation (ou écart-type relatif) = (s / ȳ) × 100, exprimé en pourcentage."
+            },
+            {
+                question: "Une haute sensibilité permet de :",
+                options: [
+                    "Mesurer des valeurs très grandes",
+                    "Séparer deux valeurs très proches",
+                    "Augmenter la fidélité",
+                    "Réduire le biais"
+                ],
+                correct: 1,
+                explanation: "Plus la sensibilité est grande, plus le système peut discriminer (séparer) deux valeurs très proches."
+            },
+            {
+                question: "Des mesures regroupées loin de la valeur de référence indiquent :",
+                options: [
+                    "Bonne justesse et bonne fidélité",
+                    "Mauvaise justesse et bonne fidélité",
+                    "Bonne justesse et mauvaise fidélité",
+                    "Mauvaise justesse et mauvaise fidélité"
+                ],
+                correct: 1,
+                explanation: "Regroupées = bonne fidélité (faible dispersion), loin du centre = mauvaise justesse (biais important)."
+            }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+        let answers = [];
+
+        function loadQuiz() {
+            const container = document.getElementById('quiz-container');
+            container.innerHTML = '';
+            
+            const q = questions[currentQuestion];
+            const quizHtml = `
+                <div class="quiz-container">
+                    <div class="quiz-question">
+                        Question ${currentQuestion + 1}/${questions.length}: ${q.question}
+                    </div>
+                    <div class="quiz-options" id="quiz-options">
+                        ${q.options.map((opt, idx) => `
+                            <div class="quiz-option" onclick="selectAnswer(${idx})">
+                                ${opt}
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="quiz-feedback" id="quiz-feedback"></div>
+                </div>
+            `;
+            container.innerHTML = quizHtml;
+            
+            updateProgress();
+            updateButtons();
+        }
+
+        function selectAnswer(idx) {
+            if (answers[currentQuestion] !== undefined) return;
+            
+            const q = questions[currentQuestion];
+            const options = document.querySelectorAll('.quiz-option');
+            const feedback = document.getElementById('quiz-feedback');
+            
+            answers[currentQuestion] = idx;
+            
+            if (idx === q.correct) {
+                options[idx].classList.add('correct');
+                feedback.className = 'quiz-feedback correct show';
+                feedback.innerHTML = `✅ Correct ! ${q.explanation}`;
+                score++;
+            } else {
+                options[idx].classList.add('incorrect');
+                options[q.correct].classList.add('correct');
+                feedback.className = 'quiz-feedback incorrect show';
+                feedback.innerHTML = `❌ Incorrect. ${q.explanation}`;
+            }
+            
+            updateProgress();
+            updateButtons();
+        }
+
+        function nextQuestion() {
+            if (currentQuestion < questions.length - 1) {
+                currentQuestion++;
+                loadQuiz();
+            } else {
+                showResults();
+            }
+        }
+
+        function previousQuestion() {
+            if (currentQuestion > 0) {
+                currentQuestion--;
+                loadQuiz();
+            }
+        }
+
+        function updateButtons() {
+            document.getElementById('btn-previous').style.display = currentQuestion > 0 ? 'inline-block' : 'none';
+            document.getElementById('btn-next').style.display = currentQuestion < questions.length ? 'inline-block' : 'none';
+            if(currentQuestion === questions.length-1 && answers[currentQuestion] !== undefined) {
+                 document.getElementById('btn-next').textContent = "Voir les résultats 🏆";
+            } else {
+                 document.getElementById('btn-next').textContent = "Suivant ➡️";
+            }
+        }
+
+        function updateProgress() {
+            const answeredCount = answers.filter(a => a !== undefined).length;
+            const progress = (answeredCount / questions.length) * 100;
+            const progressBar = document.getElementById('quiz-progress');
+            progressBar.style.width = progress + '%';
+            progressBar.textContent = Math.round(progress) + '%';
+        }
+
+        function showResults() {
+            document.getElementById('quiz-container').style.display = 'none';
+            document.getElementById('btn-next').style.display = 'none';
+            document.getElementById('btn-previous').style.display = 'none';
+            document.getElementById('btn-restart').style.display = 'inline-block';
+            
+            const resultsDiv = document.getElementById('quiz-results');
+            const percentage = (score / questions.length) * 100;
+            let message = '';
+            
+            if (percentage >= 90) {
+                message = '🏆 Excellent ! Vous maîtrisez parfaitement les indicateurs de qualité !';
+            } else if (percentage >= 70) {
+                message = '👍 Très bien ! Vous avez une bonne compréhension du sujet.';
+            } else if (percentage >= 50) {
+                message = '📚 Pas mal ! Revoyez certains concepts pour améliorer vos connaissances.';
+            } else {
+                message = '💪 Continuez à étudier ! Revoyez les sections pour mieux comprendre.';
+            }
+            
+            document.getElementById('quiz-score').textContent = `${score}/${questions.length}`;
+            document.getElementById('quiz-message').textContent = message;
+            resultsDiv.style.display = 'block';
+        }
+
+        function restartQuiz() {
+            currentQuestion = 0;
+            score = 0;
+            answers = [];
+            document.getElementById('quiz-container').style.display = 'block';
+            document.getElementById('quiz-results').style.display = 'none';
+            document.getElementById('btn-restart').style.display = 'none';
+            loadQuiz();
+        }
+
+        // Initialisation
+        window.onload = function() {
+            updateSpecificite();
+            updateIntervalle();
+            updateSensibilite();
+            updateResolution();
+            updateMesure();
+            updateJustesse();
+            initTargets();
+            loadQuiz();
+        };
+    </script>
+
+</body>
+</html>
