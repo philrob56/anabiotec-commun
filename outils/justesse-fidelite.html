@@ -1831,6 +1831,49 @@ if (typeof module !== 'undefined') module.exports = Core;
       });
     });
     wl.autoFilter = { from: 'A3', to: `${colL(cols.length - 1)}${3 + model.labs.length}` };
+    // --- Fiches laboratoires : la cible de chaque labo, comme dans l'onglet Laboratoires de l'appli ---
+    const CW = 290, CH = 380, GAP = 16, PER = 4;
+    const tagOf = (kind, l) => {
+      if (kind === 'fid') return l.fidele == null ? ['nc', '—', 'n.c.'] : l.fidele ? ['good', '✓', 'fidèle'] : ['crit', '✕', 'non fidèle'];
+      if (kind === 'acc') return l.zGrade == null ? ['nc', '—', 'n.c.'] : l.zGrade === 0 ? ['good', '✓', 'accord'] : l.zGrade === 1 ? ['warn', '!', 'discutable'] : ['crit', '✕', 'désaccord'];
+      return l.zRefGrade == null ? ['nc', '—', 'n.c.'] : l.zRefGrade === 0 ? ['good', '✓', 'juste'] : l.zRefGrade === 1 ? ['warn', '!', 'discutable'] : ['crit', '✕', 'écart'];
+    };
+    const TAGC = { good: ['var(--good-soft)', 'var(--good-ink)'], warn: ['var(--warn-soft)', 'var(--warn-ink)'], crit: ['var(--crit-soft)', 'var(--crit-ink)'], nc: ['var(--surface-2)', 'var(--muted)'] };
+    const stripC = l => ({ ok: 'var(--good)', warn: 'var(--warn)', crit: 'var(--crit)', suspendu: 'var(--excl)' })[l.status] || 'var(--good)';
+    const T_ = (x, y, t, st) => `<text x="${x}" y="${y}" style="font-family:Arial,Helvetica,sans-serif;${st}">${t}</text>`;
+    const cardSvg = (l, ox) => {
+      let g = `<g transform="translate(${ox},0)"${l.excluded ? ' opacity="0.75"' : ''}>`;
+      g += `<rect x="0.5" y="0.5" width="${CW - 1}" height="${CH - 1}" rx="12" fill="var(--surface)" stroke="var(--line)"/>`;
+      g += `<path d="M0.5,12 a11.5,11.5 0 0 1 11.5,-11.5 H${CW - 12} a11.5,11.5 0 0 1 11.5,11.5 V6 H0.5 Z" fill="${stripC(l)}"/>`;
+      const nm = l.name.length > 26 ? l.name.slice(0, 25) + '…' : l.name;
+      g += T_(16, 32, esc(nm), `font-size:15px;font-weight:700;fill:${l.excluded ? 'var(--muted)' : 'var(--text)'}`);
+      if (l.excluded) { g += `<rect x="${CW - 66}" y="17" width="52" height="20" rx="10" fill="var(--surface-2)"/>` + T_(CW - 40, 31, 'exclu', 'font-size:11px;font-weight:700;fill:var(--muted);text-anchor:middle'); }
+      const tg = target(l, 240, false).replace(/^<svg[^>]*>/, '').replace(/<\/svg>\s*$/, '');
+      g += `<g transform="translate(${(CW - 240) / 2},44)">${tg}</g>`;
+      const tags = ['fid', 'acc', ...(model.mu0 ? ['ref'] : [])].map(k => tagOf(k, l));
+      const tw = tags.map(t => (t[1] + ' ' + t[2]).length * 6.6 + 18), tot = tw.reduce((a, b) => a + b, 0) + (tags.length - 1) * 6;
+      let tx = (CW - tot) / 2;
+      tags.forEach((t, i) => { const [bg, ink] = TAGC[t[0]]; g += `<rect x="${tx}" y="292" width="${tw[i]}" height="22" rx="11" fill="${bg}"/>` + T_(tx + tw[i] / 2, 307, `${t[1]} ${t[2]}`, `font-size:11.5px;font-weight:700;fill:${ink};text-anchor:middle`); tx += tw[i] + 6; });
+      const mini = [['ȳᵢ', fM(l.mean)], ['sᵢ', sci(l.s, 2)], [model.mu0 ? 'z / z_ref' : 'z', zTxt(l.z) + (model.mu0 ? ' / ' + zTxt(l.zRef) : '')]];
+      const inner = CW - 32 - 12, fr3 = model.mu0 ? [0.30, 0.28, 0.42] : [0.36, 0.34, 0.30];
+      let mx = 16;
+      mini.forEach((m, i) => { const mw = inner * fr3[i], fs = Math.min(13, Math.floor((mw - 8) / (m[1].length * 0.6))); g += `<rect x="${mx}" y="324" width="${mw}" height="42" rx="8" fill="var(--surface-2)"/>` + T_(mx + mw / 2, 340, m[0], 'font-size:11px;fill:var(--muted);text-anchor:middle') + T_(mx + mw / 2, 357, esc(m[1]), `font-family:'Courier New',monospace;font-size:${fs}px;font-weight:700;fill:var(--text);text-anchor:middle`); mx += mw + 6; });
+      return g + '</g>';
+    };
+    let rl = 3 + model.labs.length + 3;
+    wl.getRow(rl - 1).addPageBreak();
+    put(wl, `B${rl}`, 'Fiches laboratoires : cibles', { font: { size: 13, bold: true, color: C.coral } }); wl.getRow(rl).height = 22; rl += 1;
+    put(wl, `B${rl}`, `Centre = valeur consensuelle ȳ̿ = ${fM(f.gm)} · anneaux à 1, 2 et 3 s_R · points = dosages du labo · croix = moyenne ȳᵢ. Le décalage par rapport au centre est l’écart au consensus, pas un biais de justesse.`, { font: { size: 9, color: C.muted } }); rl += 2;
+    const LW = PER * CW + (PER - 1) * GAP;
+    for (let i = 0, row = 0; i < model.labs.length; i += PER, row++) {
+      const chunk = model.labs.slice(i, i + PER);
+      let svg = `<svg viewBox="0 0 ${LW} ${CH}">`; chunk.forEach((l, k) => { svg += cardSvg(l, k * (CW + GAP)); }); svg += '</svg>';
+      let png; try { png = await svgToPng(svg, LW); } catch (e) { continue; }
+      if (row > 0 && row % 2 === 0) wl.getRow(rl - 1).addPageBreak();
+      const id = wb.addImage({ base64: png.dataUrl, extension: 'png' });
+      wl.addImage(id, { tl: { col: 1, row: rl - 1 }, ext: { width: png.w, height: png.h }, editAs: 'oneCell' });
+      rl += Math.ceil(png.h / 20) + 1;
+    }
 
     // =================== 3. SYNTHÈSE CHIFFRÉE ===================
     const wsS = wb.addWorksheet('Synthèse', { views: [{ showGridLines: false }], properties: { tabColor: { argb: C.teal2 } }, pageSetup: { ...fitPage, orientation: 'portrait' } });
