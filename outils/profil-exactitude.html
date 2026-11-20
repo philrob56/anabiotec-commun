@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<!-- anb-commun --><script src="https://philrob56.github.io/anabiotec-commun/anb-commun.js"></script><!-- /anb-commun -->
+<meta charset="UTF-8">
+<meta name="description" content="Application interactive pour comprendre, construire et lire un profil d'exactitude (NF V03-110) : justesse, fidélité, intervalle de tolérance, limites d'acceptabilité λ, domaine de validité et limite de quantification, avec entraînement.">
+<link rel="canonical" href="https://philrob56.github.io/anabiotec-commun/outils/profil-exactitude.html">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Profil d'exactitude (NF V03-110) : comprendre, construire, lire | BTSa ANABIOTEC</title>
+<style>
+:root{
+  --bg:#F4F5F9; --panel:#FFFFFF; --ink:#161A2B; --muted:#5E6378; --line:#D9DCE7; --grid:#E9EBF2;
+  --accent:#3F35C4; --accent-soft:#E8E7FB;
+  --mean:#2563EB; --tol:#7C3AED; --tol-soft:#EDE6FD;
+  --ok:#1C8A4E; --ok-zone:#E2F3E8; --bad:#C62E2E; --bad-zone:#FBE6E4; --warn:#B87406; --warn-zone:#FBF0D9;
+  --font-ui: system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --font-num: ui-monospace,"SF Mono","Cascadia Mono","Roboto Mono",Menlo,Consolas,monospace;
+  --font-display: "Avenir Next","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10121C; --panel:#191C2A; --ink:#E5E7F2; --muted:#9EA3B8; --line:#2C3045; --grid:#22263A;
+  --accent:#9C95FF; --accent-soft:#2A2850;
+  --mean:#6EA1FF; --tol:#B794F6; --tol-soft:#2D2346;
+  --ok:#4CC383; --ok-zone:#16302A; --bad:#FF7B72; --bad-zone:#3A1D1D; --warn:#F0B34A; --warn-zone:#332914;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10121C; --panel:#191C2A; --ink:#E5E7F2; --muted:#9EA3B8; --line:#2C3045; --grid:#22263A;
+  --accent:#9C95FF; --accent-soft:#2A2850;
+  --mean:#6EA1FF; --tol:#B794F6; --tol-soft:#2D2346;
+  --ok:#4CC383; --ok-zone:#16302A; --bad:#FF7B72; --bad-zone:#3A1D1D; --warn:#F0B34A; --warn-zone:#332914;
+  color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-ui);font-size:15px;line-height:1.5;margin:0}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+header.top{display:flex;flex-wrap:wrap;gap:8px 24px;align-items:flex-end;justify-content:space-between;padding-block:8px 18px;border-bottom:1px solid var(--line)}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+h1{font-family:var(--font-display);font-size:clamp(26px,4vw,38px);line-height:1.1;margin:4px 0 0;letter-spacing:-.01em;text-wrap:balance}
+h2{font-family:var(--font-display);font-size:22px;margin:0 0 6px;text-wrap:balance}
+h3{font-size:15px;margin:0 0 6px}
+p{margin:0}
+.lede{color:var(--muted);max-width:62ch}
+.std{font-family:var(--font-num);font-size:13px;color:var(--muted);text-align:right}
+.std b{color:var(--ink);font-weight:600}
+nav.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;gap:4px;overflow-x:auto;padding-block:10px;margin-bottom:8px;border-bottom:1px solid var(--line)}
+.tab{flex:0 0 auto;border:1px solid transparent;background:none;color:var(--muted);font:inherit;font-weight:600;padding:8px 14px;border-radius:999px;cursor:pointer;display:flex;gap:8px;align-items:center}
+.tab .n{font-family:var(--font-num);font-size:12px;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--line)}
+.tab[aria-selected="true"]{background:var(--panel);color:var(--ink);border-color:var(--line)}
+.tab[aria-selected="true"] .n{background:var(--accent);color:var(--panel);border-color:var(--accent)}
+.tab:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+section.view{display:grid;gap:16px;padding-top:12px}
+.intro{display:grid;gap:6px;max-width:78ch}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:16px;align-items:start}
+@media (max-width:920px){.grid2{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px;min-width:0}
+.chartbox{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:10px 8px 4px;min-width:0}
+.chartbox svg{display:block;width:100%;height:auto}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--muted);padding:6px 8px 8px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:14px;height:4px;border-radius:2px;display:inline-block}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.stack{display:grid;gap:10px}
+button.btn{font:inherit;font-weight:600;font-size:14px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:8px 12px;cursor:pointer}
+button.btn:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.chips .lbl{font-size:13px;color:var(--muted);margin-right:4px;min-width:20px}
+.chip{font:inherit;font-size:13.5px;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;padding:5px 12px;cursor:pointer;font-family:var(--font-num)}
+.chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);font-weight:700}
+.slider{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:center}
+.slider label{font-size:14px;font-weight:600}
+.slider output{font-family:var(--font-num);font-size:14px;text-align:right}
+.slider small{grid-column:1/-1;color:var(--muted);font-size:12.5px}
+.slider input{grid-column:1/-1;width:100%;accent-color:var(--accent)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:14px;margin:0}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0;font-family:var(--font-num);font-variant-numeric:tabular-nums;text-align:right}
+.kv .sep{grid-column:1/-1;border-top:1px solid var(--line);margin:2px 0}
+.num{font-family:var(--font-num);font-variant-numeric:tabular-nums}
+.pill{display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:13px;padding:4px 10px;border-radius:999px;border:1px solid currentColor}
+.p-ok{color:var(--ok);background:var(--ok-zone)} .p-bad{color:var(--bad);background:var(--bad-zone)} .p-warn{color:var(--warn);background:var(--warn-zone)}
+.muted{color:var(--muted)} .small{font-size:13px}
+.verdict{display:grid;gap:6px;padding:12px;border-radius:var(--r);border:1px solid var(--line)}
+.verdict.ok{border-color:var(--ok);background:var(--ok-zone)} .verdict.bad{border-color:var(--bad);background:var(--bad-zone)}
+.tablewrap{overflow-x:auto}
+table.data{border-collapse:collapse;font-size:13.5px;width:100%;min-width:720px}
+table.data th{font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);padding:6px;border-bottom:1px solid var(--line);text-align:center;font-weight:600}
+table.data td{padding:3px;border-bottom:1px solid var(--line);text-align:center}
+table.data td.lv{font-family:var(--font-num);font-weight:700;text-align:left;padding-left:8px;white-space:nowrap}
+table.data tr.sel td{background:var(--accent-soft)}
+table.data input{width:72px;font:inherit;font-family:var(--font-num);font-size:13px;padding:4px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);text-align:right}
+table.data tr{cursor:pointer}
+table.data td.res{font-family:var(--font-num);white-space:nowrap}
+table.data th.grp{border-left:1px solid var(--line)} table.data td.grp{border-left:1px solid var(--line)}
+table.rules{width:100%;border-collapse:collapse;font-size:14px}
+table.rules td{padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+.formula{font-family:var(--font-num);background:var(--bg);border-radius:8px;padding:10px 12px;font-size:13.5px;line-height:1.75;overflow-x:auto}
+.callout{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:0 var(--r) var(--r) 0;padding:12px 14px}
+.callout.warn{border-color:var(--warn);background:var(--warn-zone)}
+.callout.okc{border-color:var(--ok);background:var(--ok-zone)}
+ol.steps{margin:0;padding-left:20px;display:grid;gap:8px}
+.answers{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+@media (max-width:520px){.answers{grid-template-columns:minmax(0,1fr)}}
+.answers button{text-align:left;padding:12px;line-height:1.3}
+.answers button.right{border-color:var(--ok);background:var(--ok-zone)}
+.answers button.wrong{border-color:var(--bad);background:var(--bad-zone)}
+.score{display:flex;gap:18px;font-size:14px}
+.score b{font-family:var(--font-num);font-size:20px;display:block}
+.feedback{border-radius:var(--r);padding:12px 14px;border:1px solid var(--line)}
+.feedback.good{border-color:var(--ok);background:var(--ok-zone)}
+.feedback.badf{border-color:var(--bad);background:var(--bad-zone)}
+.question{font-size:16px;font-weight:600}
+details{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px}
+summary{cursor:pointer;font-weight:600}
+.z-ok{fill:var(--ok-zone)} .z-bad{fill:var(--bad-zone)}
+.g-grid{stroke:var(--grid);stroke-width:1}
+.g-axis{stroke:var(--line);stroke-width:1}
+.g-txt{fill:var(--muted);font-family:var(--font-num);font-size:12px}
+.g-lab{font-family:var(--font-num);font-size:12px;font-weight:600}
+.g-lam{stroke:var(--bad);stroke-width:1.6;stroke-dasharray:8 5}
+.g-ref{stroke:var(--ink);stroke-width:1.2;opacity:.55}
+.g-tolfill{fill:var(--tol-soft);opacity:.9}
+.g-tol{stroke:var(--tol);stroke-width:2.4;fill:none}
+.g-tolpt{fill:var(--tol)}
+.g-mean{stroke:var(--mean);stroke-width:2.6;fill:none}
+.g-meanpt{fill:var(--mean);stroke:var(--panel);stroke-width:2}
+.g-dot{fill:var(--mean);opacity:.85}
+.g-dom{stroke:var(--ok);stroke-width:2.4}
+.g-domtxt{fill:var(--ok);font-family:var(--font-ui);font-weight:700;font-size:13px}
+.g-red{fill:var(--bad)} .g-redtxt{fill:var(--bad);font-family:var(--font-ui);font-size:12px;font-weight:600}
+.g-lqtxt{fill:var(--ink);font-family:var(--font-ui);font-size:12px}
+.g-sel{fill:var(--accent);opacity:.10}
+.g-bar{stroke:var(--tol);stroke-width:8;stroke-linecap:round;opacity:.85}
+.g-future{stroke:var(--muted);stroke-width:1;opacity:.45}
+.g-click{cursor:pointer}
+.c-ok{fill:var(--ok)} .c-bad{fill:var(--bad)}
+</style>
+</head>
+<body>
+<!-- anb-charte --><div class="anb-head"><div class="anb-crumb"><i></i><a href="https://sites.google.com/view/anabioteclegroschene/accueil" target="_top" style="color:inherit;text-decoration:none" title="Tous les outils du BTSa ANABIOTEC"><b>BTSa ANABIOTEC</b></a><span>›</span>M6</div><div class="anb-right"><div class="anb-tag">LEGTA Le Gros Chêne · Pontivy</div><button type="button" class="anb-print" onclick="anbPrint()" title="Ouvrir une version imprimable (PDF)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimer / PDF</button></div></div><!-- /anb-charte -->
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow">BTSa ANABIOTEC · Métrologie · Chapitre 3</div>
+      <h1>Le profil d'exactitude</h1>
+      <p class="lede">Valider une méthode sur la seule question qui compte : mes futurs résultats seront-ils assez proches de la vraie valeur ?</p>
+    </div>
+    <div class="std">NF V03-110 · plan 3 séries × 3 répétitions<br>exemple du cours : λ = <b>± 10 %</b> · β = <b>80 %</b></div>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Étapes">
+    <button class="tab" role="tab" id="tab-comprendre" aria-selected="true" data-view="comprendre"><span class="n">1</span>Comprendre</button>
+    <button class="tab" role="tab" id="tab-construire" aria-selected="false" data-view="construire"><span class="n">2</span>Construire</button>
+    <button class="tab" role="tab" id="tab-entrainer" aria-selected="false" data-view="entrainer"><span class="n">3</span>S'entraîner</button>
+    <button class="tab" role="tab" id="tab-memo" aria-selected="false" data-view="memo"><span class="n">4</span>Mémo</button>
+  </nav>
+
+  <!-- 1. COMPRENDRE -->
+  <section class="view" id="view-comprendre" role="tabpanel" aria-labelledby="tab-comprendre">
+    <div class="intro">
+      <h2>Un niveau de concentration à la loupe</h2>
+      <p class="muted">Un standard de validation est analysé en 3 séries (3 jours) × 3 répétitions. Chaque résultat est exprimé en taux de recouvrement (100 % = la valeur de référence). Réglez la justesse et la fidélité de la méthode et regardez l'intervalle de tolérance bouger par rapport aux limites ± λ.</p>
+    </div>
+    <div class="grid2">
+      <div class="stack">
+        <div class="chartbox"><div id="chart-one"></div>
+          <div class="legend"><span><i class="sw" style="background:var(--mean);height:10px;width:10px;border-radius:50%"></i>résultat (recouvrement)</span><span><i class="sw" style="background:var(--tol);height:8px"></i>intervalle de tolérance</span><span><i class="sw" style="background:var(--bad)"></i>limites ± λ</span><span><i class="sw" style="background:var(--muted)"></i>futurs résultats simulés</span></div>
+        </div>
+        <div class="card stack">
+          <div class="slider"><label for="sl-bias">Biais (justesse)</label><output id="o-bias"></output><input type="range" id="sl-bias" min="-10" max="10" step="0.1" value="1.5"><small>écart entre le recouvrement moyen et 100 %</small></div>
+          <div class="slider"><label for="sl-sr">Écart-type de répétabilité s<sub>r</sub></label><output id="o-sr"></output><input type="range" id="sl-sr" min="0.3" max="8" step="0.1" value="2"><small>dispersion à l'intérieur d'une série (même jour)</small></div>
+          <div class="slider"><label for="sl-sb">Écart-type inter-séries s<sub>B</sub></label><output id="o-sb"></output><input type="range" id="sl-sb" min="0" max="6" step="0.1" value="1"><small>variation d'un jour à l'autre (étalonnage, opérateur, température…)</small></div>
+          <div class="row"><div class="chips" id="c-lam"><span class="lbl">λ</span></div><div class="chips" id="c-beta"><span class="lbl">β</span></div></div>
+          <div class="row"><button class="btn" id="one-new">Nouveau tirage des 9 résultats</button><button class="btn" id="one-fut">Simuler 200 futurs résultats</button></div>
+        </div>
+      </div>
+      <div class="stack">
+        <div class="card stack">
+          <h3>Calcul pour ce niveau</h3>
+          <dl class="kv" id="one-kv"></dl>
+        </div>
+        <div id="one-verdict"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. CONSTRUIRE -->
+  <section class="view" id="view-construire" role="tabpanel" aria-labelledby="tab-construire" hidden>
+    <div class="intro">
+      <h2>Le profil complet : 5 niveaux de 1 à 20 mg/L</h2>
+      <p class="muted">Les données sont celles de l'exemple du cours. Modifiez une valeur, changez λ ou β, et le profil se recalcule. Cliquez sur un niveau (dans le tableau ou sur le graphique) pour voir le détail du calcul.</p>
+    </div>
+    <div class="card row" style="justify-content:space-between">
+      <div class="row"><div class="chips" id="p-lam"><span class="lbl">λ</span></div><div class="chips" id="p-beta"><span class="lbl">β</span></div></div>
+      <div class="row"><button class="btn" id="p-course">Exemple du cours</button><button class="btn" id="p-random">Autre méthode (données aléatoires)</button></div>
+    </div>
+    <div class="grid2">
+      <div class="chartbox"><div id="chart-prof"></div>
+        <div class="legend"><span><i class="sw" style="background:var(--tol)"></i>bornes de l'intervalle de tolérance (β)</span><span><i class="sw" style="background:var(--mean)"></i>recouvrement moyen (justesse)</span><span><i class="sw" style="background:var(--bad)"></i>limites d'acceptabilité ± λ</span><span><i class="sw" style="background:var(--ok)"></i>domaine de validité</span></div>
+      </div>
+      <div class="stack">
+        <div id="p-summary"></div>
+        <div class="card stack"><h3 id="p-det-title">Détail du calcul</h3><dl class="kv" id="p-det"></dl></div>
+      </div>
+    </div>
+    <div class="card tablewrap">
+      <table class="data" id="p-table"></table>
+    </div>
+  </section>
+
+  <!-- 3. S'ENTRAINER -->
+  <section class="view" id="view-entrainer" role="tabpanel" aria-labelledby="tab-entrainer" hidden>
+    <div class="intro">
+      <h2>Lire un profil</h2>
+      <p class="muted">Un nouveau profil à chaque question. Répondez à partir du graphique.</p>
+    </div>
+    <div class="grid2">
+      <div class="chartbox"><div id="chart-train"></div></div>
+      <div class="card stack">
+        <div class="score"><div><span class="muted small">Bonnes réponses</span><b id="t-good">0 / 0</b></div><div><span class="muted small">Série en cours</span><b id="t-streak">0</b></div></div>
+        <p class="small muted">λ et β sont indiqués sur chaque profil. Niveaux testés : 1 · 2,5 · 5 · 10 · 20 mg/L.</p>
+      </div>
+    </div>
+    <p class="question" id="t-q"></p>
+    <div class="answers" id="answers"></div>
+    <div id="t-feedback" hidden></div>
+    <div class="row"><button class="btn primary" id="t-next">Question suivante</button></div>
+  </section>
+
+  <!-- 4. MEMO -->
+  <section class="view" id="view-memo" role="tabpanel" aria-labelledby="tab-memo" hidden>
+    <div class="grid2">
+      <div class="card stack">
+        <h2>Construire le profil, étape par étape</h2>
+        <ol class="steps">
+          <li><b>Fixer les règles avant les essais</b> : les limites d'acceptabilité λ (selon l'usage du résultat : réglementation, besoin du client) et la proportion β (souvent 80 %).</li>
+          <li><b>Réaliser le plan d'expériences</b> : k niveaux qui couvrent la gamme visée, avec des standards de validation de valeur connue (MRC ou ajouts dosés dans la matrice), analysés en I séries (jours différents) × J répétitions.</li>
+          <li><b>Calculer, pour chaque niveau</b> : le recouvrement moyen R = ȳ / y<sub>ref</sub> × 100, les écarts-types de répétabilité s<sub>r</sub> et de fidélité intermédiaire s<sub>FI</sub>, puis l'intervalle de tolérance R ± k × s<sub>FI</sub>.</li>
+          <li><b>Tracer</b> : concentration en abscisse, recouvrement en ordonnée ; on relie les bornes hautes entre elles et les bornes basses entre elles.</li>
+        </ol>
+      </div>
+      <div class="stack">
+        <div class="callout"><b>Lire le profil.</b> Intervalle entre − λ et + λ : le niveau est validé. Intervalle qui sort : le niveau n'est pas validé. Le domaine de validité va du plus bas au plus haut niveau validé ; ses bornes sont les limites de quantification inférieure et supérieure.</div>
+        <div class="callout warn"><b>Attention.</b> λ et β se fixent avant les essais : on ne les élargit pas après coup pour « faire passer » un niveau.</div>
+      </div>
+    </div>
+    <div class="card stack">
+      <h3>Le diagnostic</h3>
+      <table class="rules"><tbody>
+        <tr><td><b>La courbe bleue s'éloigne de 100 %</b></td><td>problème de <b>justesse</b> (biais) : contamination, interférence, étalonnage, rendement d'extraction…</td></tr>
+        <tr><td><b>La courbe reste centrée mais l'intervalle est large</b></td><td>problème de <b>fidélité</b> : dispersion trop grande, souvent aux faibles concentrations (bruit de fond, intégration des petits pics).</td></tr>
+        <tr><td><b>Les deux à la fois</b></td><td>ex. à 1 mg/L dans le cours : biais de + 4,5 % et s<sub>FI</sub> de 5,8 %.</td></tr>
+      </tbody></table>
+    </div>
+    <div class="card stack">
+      <h3>D'où vient le facteur k ?</h3>
+      <div class="formula">s<sub>r</sub>² = carré moyen intra-série · s<sub>B</sub>² = (carré moyen inter-séries − s<sub>r</sub>²) / J · s<sub>FI</sub>² = s<sub>r</sub>² + s<sub>B</sub>²<br>H = s<sub>B</sub>² / s<sub>r</sub>² · B = √[(H + 1) / (J·H + 1)]<br>ν = (H + 1)² / [ (H + 1/J)² / (I − 1) + (1 − 1/J) / (I·J) ]<br>k = t(ν ; (1 + β)/2) × √[1 + 1 / (I·J·B²)]</div>
+      <p class="small muted">β fixe le quantile de la loi de Student : plus β est grand, plus k est grand et plus l'intervalle s'élargit. En pratique, k est donné par le tableur ou le logiciel de validation (ici voisin de 1,5 pour β = 80 %).</p>
+    </div>
+    <details>
+      <summary>À vous : le client exige λ = ± 5 %</summary>
+      <p style="margin-top:8px">Avec les mêmes résultats que l'exemple du cours, quel est le nouveau domaine de validité ?</p>
+      <details style="margin-top:10px"><summary>Voir la réponse</summary>
+        <p style="margin-top:8px">On compare chaque intervalle à [95 ; 105] %. À 2,5 mg/L, la borne haute (106,9 %) sort ; à 5, 10 et 20 mg/L, l'intervalle reste dedans (95,6 % ≥ 95 %). Le domaine devient 5 à 20 mg/L : une exigence plus sévère réduit la gamme utilisable.</p>
+        <button class="btn" id="m-try" style="margin-top:10px">Vérifier dans l'onglet Construire</button>
+      </details>
+    </details>
+  </section>
+</div>
+
+<script>
+(function(){
+const q=s=>document.querySelector(s);
+const fr=(v,d=1)=>(Math.abs(v)<5e-12?0:v).toFixed(d).replace('.',',').replace('-','−');
+const I=3,J=3;
+const LEVELS=[1,2.5,5,10,20];
+const COURSE=[[1.0384,1.0615,1.0053,0.9456,1.094,0.9868,1.1116,1.0927,1.069],[2.5558,2.6375,2.6024,2.5476,2.4806,2.4226,2.5932,2.5944,2.516],[4.957,5.127,4.889,5.073,5.041,5.074,5.164,5.13,4.905],[10.329,9.905,9.825,9.967,9.931,9.881,10.073,9.92,9.808],[19.657,19.747,19.479,19.433,19.368,19.39,19.947,19.76,19.978]];
+
+// ---------- Student t quantile (non-integer df) ----------
+function lgamma(x){const c=[76.18009172947146,-86.50532032941677,24.01409824083091,-1.231739572450155,0.1208650973866179e-2,-0.5395239384953e-5];let y=x,t=x+5.5;t-=(x+0.5)*Math.log(t);let s=1.000000000190015;for(const ci of c)s+=ci/++y;return -t+Math.log(2.5066282746310005*s/x)}
+function betacf(a,b,x){let qab=a+b,qap=a+1,qam=a-1,c=1,d=1-qab*x/qap;if(Math.abs(d)<1e-30)d=1e-30;d=1/d;let h=d;for(let m=1;m<=200;m++){let m2=2*m,aa=m*(b-m)*x/((qam+m2)*(a+m2));d=1+aa*d;if(Math.abs(d)<1e-30)d=1e-30;c=1+aa/c;if(Math.abs(c)<1e-30)c=1e-30;d=1/d;h*=d*c;aa=-(a+m)*(qab+m)*x/((a+m2)*(qap+m2));d=1+aa*d;if(Math.abs(d)<1e-30)d=1e-30;c=1+aa/c;if(Math.abs(c)<1e-30)c=1e-30;d=1/d;const del=d*c;h*=del;if(Math.abs(del-1)<3e-12)break}return h}
+function ibeta(a,b,x){if(x<=0)return 0;if(x>=1)return 1;const bt=Math.exp(lgamma(a+b)-lgamma(a)-lgamma(b)+a*Math.log(x)+b*Math.log(1-x));return x<(a+1)/(a+b+2)?bt*betacf(a,b,x)/a:1-bt*betacf(b,a,1-x)/b}
+function tcdf(t,nu){const x=nu/(nu+t*t),p=0.5*ibeta(nu/2,0.5,x);return t>0?1-p:p}
+function tinv(p,nu){let lo=0,hi=200;for(let i=0;i<100;i++){const m=(lo+hi)/2;if(tcdf(m,nu)<p)lo=m;else hi=m}return (lo+hi)/2}
+
+// ---------- statistics for one level (values in % recovery) ----------
+function stats(R,beta){
+  const g=[R.slice(0,3),R.slice(3,6),R.slice(6,9)];
+  const mi=g.map(a=>a.reduce((x,y)=>x+y,0)/J), m=mi.reduce((x,y)=>x+y,0)/I;
+  let scw=0;g.forEach((a,i)=>a.forEach(v=>scw+=(v-mi[i])**2));
+  const scb=J*mi.reduce((x,y)=>x+(y-m)**2,0);
+  const msw=scw/(I*(J-1)), msb=scb/(I-1);
+  const sr2=msw, sb2=Math.max(0,(msb-msw)/J), sfi=Math.sqrt(sr2+sb2);
+  const H=sr2>0?sb2/sr2:0, B=Math.sqrt((H+1)/(J*H+1));
+  const nu=(H+1)**2/((H+1/J)**2/(I-1)+(1-1/J)/(I*J));
+  const t=tinv((1+beta)/2,nu), k=t*Math.sqrt(1+1/(I*J*B*B));
+  return {mi,m,scw,scb,msw,msb,sr:Math.sqrt(sr2),sb:Math.sqrt(sb2),sfi,H,B,nu,t,k,lo:m-k*sfi,hi:m+k*sfi,bias:m-100};
+}
+function profile(data,lam,beta){
+  const lv=LEVELS.map((c,i)=>{const R=data[i].map(y=>y/c*100);const s=stats(R,beta);s.c=c;s.R=R;s.ok=s.lo>=100-lam&&s.hi<=100+lam;return s});
+  // largest contiguous run of validated levels (ties: higher concentrations)
+  let best=null,cur=null;lv.forEach((s,i)=>{if(s.ok){if(!cur)cur=[i,i];else cur[1]=i;if(!best||cur[1]-cur[0]>=best[1]-best[0])best=[...cur]}else cur=null});
+  const nOk=lv.filter(s=>s.ok).length, gap=best&&(best[1]-best[0]+1)<nOk;
+  // crossing estimates (linear interpolation of bounds between adjacent levels)
+  const cross=[];
+  for(let i=0;i<lv.length-1;i++){const a=lv[i],b=lv[i+1];if(a.ok===b.ok)continue;
+    for(const [key,L] of [['hi',100+lam],['lo',100-lam]]){const ya=a[key],yb=b[key];if((ya-L)*(yb-L)<0){const x=a.c+(b.c-a.c)*(L-ya)/(yb-ya);cross.push({x,y:L,low:!a.ok})}}}
+  return {lv,dom:best,gap,cross,lam,beta};
+}
+
+// ---------- profile chart ----------
+function profSVG(P,o={}){
+  const W=900,H=o.H||430,padL=58,padR=78,padT=18,padB=68;
+  const pw=W-padL-padR, ph=H-padT-padB, lam=P.lam;
+  let lo=Math.min(100-lam-4,...P.lv.map(s=>s.lo-1.5)), hi=Math.max(100+lam+4,...P.lv.map(s=>s.hi+1.5));
+  lo=Math.floor(lo/5)*5; hi=Math.ceil(hi/5)*5;
+  const x=c=>padL+(c/21)*pw, y=v=>padT+(hi-v)/(hi-lo)*ph;
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Profil d'exactitude">`;
+  s+=`<rect class="z-bad" x="${padL}" y="${padT}" width="${pw}" height="${ph}"/><rect class="z-ok" x="${padL}" y="${y(100+lam)}" width="${pw}" height="${y(100-lam)-y(100+lam)}"/>`;
+  if(o.sel!=null){const c=P.lv[o.sel].c;s+=`<rect class="g-sel" x="${x(c)-18}" y="${padT}" width="36" height="${ph}"/>`}
+  for(let v=lo;v<=hi;v+=5)s+=`<line class="g-grid" x1="${padL}" x2="${padL+pw}" y1="${y(v)}" y2="${y(v)}"/><text class="g-txt" x="${padL-8}" y="${y(v)+4}" text-anchor="end">${v}</text>`;
+  s+=`<text class="g-txt" x="14" y="${padT+ph/2}" transform="rotate(-90 14 ${padT+ph/2})" text-anchor="middle">recouvrement (%)</text>`;
+  s+=`<line class="g-axis" x1="${padL}" x2="${padL+pw}" y1="${padT+ph}" y2="${padT+ph}"/>`;
+  P.lv.forEach(L=>{s+=`<line class="g-axis" x1="${x(L.c)}" x2="${x(L.c)}" y1="${padT+ph}" y2="${padT+ph+5}"/><text class="g-txt" x="${x(L.c)}" y="${padT+ph+18}" text-anchor="middle">${fr(L.c,L.c%1?1:0)}</text>`});
+  s+=`<text class="g-txt" x="${padL+pw/2}" y="${H-6}" text-anchor="middle">concentration de référence (mg/L)</text>`;
+  s+=`<line class="g-ref" x1="${padL}" x2="${padL+pw}" y1="${y(100)}" y2="${y(100)}"/>`;
+  s+=`<line class="g-lam" x1="${padL}" x2="${padL+pw}" y1="${y(100+lam)}" y2="${y(100+lam)}"/><line class="g-lam" x1="${padL}" x2="${padL+pw}" y1="${y(100-lam)}" y2="${y(100-lam)}"/>`;
+  s+=`<text class="g-lab" style="fill:var(--bad)" x="${padL+pw+6}" y="${y(100+lam)+4}">+ λ ${fr(100+lam,0)} %</text><text class="g-lab" style="fill:var(--bad)" x="${padL+pw+6}" y="${y(100-lam)+4}">− λ ${fr(100-lam,0)} %</text>`;
+  const up=P.lv.map(L=>`${x(L.c)},${y(L.hi)}`), dn=P.lv.map(L=>`${x(L.c)},${y(L.lo)}`).reverse();
+  s+=`<polygon class="g-tolfill" points="${up.join(' ')} ${dn.join(' ')}"/>`;
+  s+=`<polyline class="g-tol" points="${up.join(' ')}"/><polyline class="g-tol" points="${P.lv.map(L=>`${x(L.c)},${y(L.lo)}`).join(' ')}"/>`;
+  s+=`<polyline class="g-mean" points="${P.lv.map(L=>`${x(L.c)},${y(L.m)}`).join(' ')}"/>`;
+  if(o.dots)P.lv.forEach(L=>L.R.forEach((r,j)=>{s+=`<circle class="g-dot" cx="${x(L.c)+(Math.floor(j/3)-1)*7}" cy="${y(r)}" r="2.6"/>`}));
+  P.lv.forEach((L,i)=>{const tri=(cx,cy,d)=>`<path class="g-tolpt" d="M${cx-6},${cy-d*5} L${cx+6},${cy-d*5} L${cx},${cy+d*6} Z"/>`;
+    s+=tri(x(L.c),y(L.hi),1)+tri(x(L.c),y(L.lo),-1);
+    s+=`<circle class="g-meanpt" cx="${x(L.c)}" cy="${y(L.m)}" r="6"/>`;
+    if(!o.hideVerdict)s+=`<circle class="${L.ok?'c-ok':'c-bad'}" cx="${x(L.c)}" cy="${padT+ph+34}" r="5"/>`;
+    if(o.click)s+=`<rect class="g-click" data-i="${i}" x="${x(L.c)-20}" y="${padT}" width="40" height="${ph+40}" fill="transparent"/>`;
+  });
+  if(o.labels){P.lv.forEach(L=>{s+=`<text class="g-txt" x="${x(L.c)+9}" y="${y(L.hi)-6}">${fr(L.hi)}</text><text class="g-txt" x="${x(L.c)+9}" y="${y(L.lo)+15}">${fr(L.lo)}</text>`})}
+  if(!o.hideVerdict&&P.dom){const a=P.lv[P.dom[0]].c,b=P.lv[P.dom[1]].c,yy=y(100-lam)-14;
+    s+=`<line class="g-dom" x1="${x(a)}" x2="${x(b)}" y1="${yy}" y2="${yy}"/><path class="c-ok" d="M${x(a)},${yy} l9,-5 v10 Z"/><path class="c-ok" d="M${x(b)},${yy} l-9,-5 v10 Z"/>`;
+    s+=`<text class="g-domtxt" x="${(x(a)+x(b))/2}" y="${yy-7}" text-anchor="middle">domaine de validité : ${fr(a,a%1?1:0)} à ${fr(b,b%1?1:0)} mg/L</text>`}
+  if(!o.hideVerdict)P.cross.forEach(c=>{s+=`<circle class="g-red" cx="${x(c.x)}" cy="${y(c.y)}" r="4"/><text class="g-lqtxt" x="${x(c.x)+8}" y="${y(c.y)+(c.y>100?-8:16)}">${c.low?'LQ inf.':'LQ sup.'} ≈ ${fr(c.x)} mg/L</text>`});
+  if(!o.hideVerdict)s+=`<text class="g-txt" x="${padL-8}" y="${padT+ph+38}" text-anchor="end">validé ?</text>`;
+  return s+'</svg>';
+}
+
+// ---------- tabs ----------
+const tabs=[...document.querySelectorAll('.tab')];
+function openView(n){tabs.forEach(t=>{const on=t.dataset.view===n;t.setAttribute('aria-selected',on);q('#view-'+t.dataset.view).hidden=!on});try{localStorage.setItem('pe-tab',n)}catch(e){}}
+tabs.forEach(t=>t.addEventListener('click',()=>openView(t.dataset.view)));
+let start='comprendre';const hs=(location.hash||'').slice(1);
+if(['comprendre','construire','entrainer','memo'].includes(hs))start=hs;else{try{const v=localStorage.getItem('pe-tab');if(v)start=v}catch(e){}}
+
+function chips(el,vals,cur,fmt,cb){const box=q(el);box.querySelectorAll('.chip').forEach(c=>c.remove());vals.forEach(v=>{const b=document.createElement('button');b.className='chip';b.textContent=fmt(v);b.setAttribute('aria-pressed',v===cur);b.addEventListener('click',()=>{box.querySelectorAll('.chip').forEach(c=>c.setAttribute('aria-pressed',c===b));cb(v)});box.appendChild(b)})}
+const randn=()=>{let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)};
+// exact pattern: 9 values whose ANOVA gives exactly sr and sB
+function pattern(){let u=[randn(),randn(),randn()];const mu=u.reduce((a,b)=>a+b)/3;u=u.map(v=>v-mu);const su=Math.sqrt(u.reduce((a,b)=>a+b*b,0)/2)||1;u=u.map(v=>v/su);
+  let e=[[0,0,0],[0,0,0],[0,0,0]].map(r=>r.map(()=>randn()));e=e.map(r=>{const m=r.reduce((a,b)=>a+b)/3;return r.map(v=>v-m)});const ss=Math.sqrt(e.flat().reduce((a,b)=>a+b*b,0)/6)||1;e=e.map(r=>r.map(v=>v/ss));return {u,e}}
+function build(pat,bias,sr,sb){const out=[];const a=Math.sqrt(sb*sb+sr*sr/J);for(let i=0;i<3;i++)for(let j=0;j<3;j++)out.push(100+bias+a*pat.u[i]+sr*pat.e[i][j]);return out}
+
+// ---------- 1. comprendre ----------
+const one={pat:pattern(),lam:10,beta:0.8,fut:null};
+function renderOne(){
+  const bias=+q('#sl-bias').value, sr=+q('#sl-sr').value, sb=+q('#sl-sb').value;
+  q('#o-bias').textContent=(bias>0?'+':'')+fr(bias)+' %';q('#o-sr').textContent=fr(sr)+' %';q('#o-sb').textContent=fr(sb)+' %';
+  const R=build(one.pat,bias,sr,sb), st=stats(R,one.beta), lam=one.lam;
+  const ok=st.lo>=100-lam&&st.hi<=100+lam;
+  const W=720,H=300,padL=150,padR=24,padT=20,padB=44,pw=W-padL-padR;
+  const span=Math.max(lam+8,Math.abs(st.lo-100)+3,Math.abs(st.hi-100)+3,...R.map(r=>Math.abs(r-100)+3),20);
+  const lo=100-span,hi=100+span, x=v=>padL+(v-lo)/(hi-lo)*pw;
+  const rows=[56,92,128], yTol=190, yFut=232;
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Résultats d'un niveau et intervalle de tolérance">`;
+  s+=`<rect class="z-bad" x="${padL}" y="${padT}" width="${pw}" height="${H-padT-padB}"/><rect class="z-ok" x="${x(100-lam)}" y="${padT}" width="${x(100+lam)-x(100-lam)}" height="${H-padT-padB}"/>`;
+  const step=span>22?10:5;for(let v=Math.ceil(lo/step)*step;v<=hi;v+=step)s+=`<line class="g-grid" x1="${x(v)}" x2="${x(v)}" y1="${padT}" y2="${H-padB}"/><text class="g-txt" x="${x(v)}" y="${H-padB+16}" text-anchor="middle">${v}</text>`;
+  s+=`<text class="g-txt" x="${padL+pw/2}" y="${H-6}" text-anchor="middle">recouvrement (%)</text>`;
+  s+=`<line class="g-ref" x1="${x(100)}" x2="${x(100)}" y1="${padT}" y2="${H-padB}"/>`;
+  s+=`<line class="g-lam" x1="${x(100-lam)}" x2="${x(100-lam)}" y1="${padT}" y2="${H-padB}"/><line class="g-lam" x1="${x(100+lam)}" x2="${x(100+lam)}" y1="${padT}" y2="${H-padB}"/>`;
+  s+=`<text class="g-lab" style="fill:var(--bad)" x="${x(100-lam)+4}" y="${padT+14}">− λ</text><text class="g-lab" style="fill:var(--bad)" x="${x(100+lam)+4}" y="${padT+14}">+ λ</text>`;
+  rows.forEach((yy,i)=>{s+=`<text class="g-txt" x="${padL-10}" y="${yy+4}" text-anchor="end">série ${i+1} (jour ${i+1})</text>`;
+    s+=`<line class="g-mean" style="stroke-width:1.2;opacity:.5" x1="${x(st.mi[i])}" x2="${x(st.mi[i])}" y1="${yy-12}" y2="${yy+12}"/>`;
+    for(let j=0;j<3;j++)s+=`<circle class="g-dot" cx="${x(R[i*3+j])}" cy="${yy}" r="6"><title>${fr(R[i*3+j],2)} %</title></circle>`});
+  s+=`<text class="g-txt" x="${padL-10}" y="${yTol+4}" text-anchor="end">intervalle (β ${Math.round(one.beta*100)} %)</text>`;
+  s+=`<line class="g-bar" x1="${x(st.lo)}" x2="${x(st.hi)}" y1="${yTol}" y2="${yTol}"/><circle class="g-meanpt" cx="${x(st.m)}" cy="${yTol}" r="7"/>`;
+  s+=`<text class="g-txt" x="${x(st.lo)}" y="${yTol-12}" text-anchor="middle">${fr(st.lo)}</text><text class="g-txt" x="${x(st.hi)}" y="${yTol-12}" text-anchor="middle">${fr(st.hi)}</text>`;
+  if(one.fut){s+=`<text class="g-txt" x="${padL-10}" y="${yFut+4}" text-anchor="end">futurs résultats</text>`;one.fut.forEach(z=>{const v=100+bias+z*Math.sqrt(sr*sr+sb*sb);if(v>lo&&v<hi)s+=`<line class="g-future" x1="${x(v)}" x2="${x(v)}" y1="${yFut-9}" y2="${yFut+9}"/>`})}
+  q('#chart-one').innerHTML=s+'</svg>';
+  q('#one-kv').innerHTML=`<dt>Recouvrement moyen R</dt><dd>${fr(st.m,2)} %</dd><dt>Biais</dt><dd>${st.bias>=0?'+':''}${fr(st.bias,2)} %</dd><div class="sep"></div><dt>s<sub>r</sub> (répétabilité)</dt><dd>${fr(st.sr,2)} %</dd><dt>s<sub>B</sub> (inter-séries)</dt><dd>${fr(st.sb,2)} %</dd><dt>s<sub>FI</sub> = √(s<sub>r</sub>² + s<sub>B</sub>²)</dt><dd>${fr(st.sfi,2)} %</dd><div class="sep"></div><dt>facteur k (β = ${Math.round(one.beta*100)} %)</dt><dd>${fr(st.k,3)}</dd><dt>R − k·s<sub>FI</sub></dt><dd>${fr(st.lo,2)} %</dd><dt>R + k·s<sub>FI</sub></dt><dd>${fr(st.hi,2)} %</dd><dt>Limites ± λ</dt><dd>${fr(100-lam,0)} – ${fr(100+lam,0)} %</dd>`;
+  let msg;
+  if(ok)msg=`L'intervalle de tolérance [${fr(st.lo)} ; ${fr(st.hi)}] % est entre ${100-lam} et ${100+lam} %. Au moins ${Math.round(one.beta*100)} % des futurs résultats à ce niveau s'écarteront de moins de ${lam} % de la vraie valeur.`;
+  else{const bigB=Math.abs(st.bias)>0.45*lam, wide=st.k*st.sfi>0.75*lam;
+    const cause=bigB&&wide?'de justesse et de fidélité':bigB?'de justesse : le recouvrement moyen est trop loin de 100 %':wide?'de fidélité : l\'intervalle est trop large':'de justesse et de fidélité combinées';
+    msg=`L'intervalle [${fr(st.lo)} ; ${fr(st.hi)}] % sort des limites ± ${lam} %. Problème ${cause}.`}
+  if(one.fut){const sd=Math.sqrt(sr*sr+sb*sb);const vals=one.fut.map(z=>100+bias+z*sd);const inT=vals.filter(v=>v>=st.lo&&v<=st.hi).length/2,inL=vals.filter(v=>v>=100-lam&&v<=100+lam).length/2;msg+=`<br><span class="small">Simulation : ${fr(inT,1)} % des futurs résultats tombent dans l'intervalle de tolérance, ${fr(inL,1)} % dans ± λ.</span>`}
+  q('#one-verdict').innerHTML=`<div class="verdict ${ok?'ok':'bad'}"><span class="pill ${ok?'p-ok':'p-bad'}">${ok?'Niveau validé':'Niveau non validé'}</span><p class="small">${msg}</p></div>`;
+}
+['#sl-bias','#sl-sr','#sl-sb'].forEach(id=>q(id).addEventListener('input',()=>{renderOne()}));
+chips('#c-lam',[5,10,15],10,v=>'± '+v+' %',v=>{one.lam=v;renderOne()});
+chips('#c-beta',[0.8,0.9,0.95],0.8,v=>Math.round(v*100)+' %',v=>{one.beta=v;renderOne()});
+q('#one-new').addEventListener('click',()=>{one.pat=pattern();renderOne()});
+q('#one-fut').addEventListener('click',()=>{one.fut=Array.from({length:200},randn);renderOne()});
+
+// ---------- 2. construire ----------
+const pr={data:COURSE.map(r=>r.slice()),lam:10,beta:0.8,sel:0};
+function setHdr(){}
+function renderTable(P){
+  let h=`<thead><tr><th rowspan="2">Niveau</th><th colspan="3" class="grp">Série 1</th><th colspan="3" class="grp">Série 2</th><th colspan="3" class="grp">Série 3</th><th rowspan="2" class="grp">R moyen</th><th rowspan="2">s<sub>FI</sub></th><th rowspan="2">Intervalle</th><th rowspan="2"></th></tr><tr>${'<th class="grp">rép. 1</th><th>rép. 2</th><th>rép. 3</th>'.repeat(3)}</tr></thead><tbody>`;
+  P.lv.forEach((L,i)=>{h+=`<tr data-i="${i}" class="${pr.sel===i?'sel':''}"><td class="lv">${fr(L.c,L.c%1?1:0)} mg/L</td>`;
+    pr.data[i].forEach((v,j)=>{h+=`<td class="${j%3===0?'grp':''}"><input id="in-${i}-${j}" data-i="${i}" data-j="${j}" value="${String(v).replace('.',',')}" inputmode="decimal" aria-label="Niveau ${L.c} mg/L, série ${Math.floor(j/3)+1}, répétition ${j%3+1}"></td>`});
+    h+=`<td class="res grp">${fr(L.m)} %</td><td class="res">${fr(L.sfi,2)} %</td><td class="res">${fr(L.lo)} – ${fr(L.hi)}</td><td><span class="pill ${L.ok?'p-ok':'p-bad'}" style="font-size:11.5px;padding:1px 8px">${L.ok?'validé':'non validé'}</span></td></tr>`});
+  q('#p-table').innerHTML=h+'</tbody>';
+}
+function renderProf(rebuildTable=true){
+  setHdr();const P=profile(pr.data,pr.lam,pr.beta);
+  q('#chart-prof').innerHTML=profSVG(P,{sel:pr.sel,click:true,dots:true,labels:true});
+  if(rebuildTable)renderTable(P);else{
+    // update result cells only, keep focus in inputs
+    [...q('#p-table').querySelectorAll('tbody tr')].forEach((tr,i)=>{const L=P.lv[i],c=tr.querySelectorAll('td.res');c[0].textContent=fr(L.m)+' %';c[1].textContent=fr(L.sfi,2)+' %';c[2].textContent=fr(L.lo)+' – '+fr(L.hi);const p=tr.querySelector('.pill');p.className='pill '+(L.ok?'p-ok':'p-bad');p.textContent=L.ok?'validé':'non validé';tr.classList.toggle('sel',pr.sel===i)})}
+  const d=P.dom;let sm;
+  if(!d)sm=`<div class="verdict bad"><span class="pill p-bad">Aucun niveau validé</span><p class="small">La méthode n'est apte à l'usage sur aucun niveau avec λ = ± ${pr.lam} %.</p></div>`;
+  else{const a=P.lv[d[0]].c,b=P.lv[d[1]].c;sm=`<div class="verdict ok"><span class="pill p-ok">Domaine de validité : ${fr(a,a%1?1:0)} à ${fr(b,b%1?1:0)} mg/L</span><p class="small">Bornes du domaine = limites de quantification inférieure (${fr(a,a%1?1:0)} mg/L) et supérieure (${fr(b,b%1?1:0)} mg/L), avec λ = ± ${pr.lam} % et β = ${Math.round(pr.beta*100)} %.${P.cross.length?' Croisement estimé : '+P.cross.map(c=>fr(c.x)+' mg/L').join(', ')+'. Par prudence, on retient le niveau réellement testé et validé.':''}${P.gap?' Attention : des niveaux validés sont isolés, le domaine retenu est le plus grand bloc continu.':''}</p></div>`}
+  q('#p-summary').innerHTML=sm;
+  const L=P.lv[pr.sel];
+  q('#p-det-title').textContent=`Détail du calcul · ${fr(L.c,L.c%1?1:0)} mg/L`;
+  q('#p-det').innerHTML=`<dt>Moyennes des séries</dt><dd>${L.mi.map(v=>fr(v,1)).join(' · ')} %</dd><dt>Recouvrement moyen R</dt><dd>${fr(L.m,2)} %</dd><dt>Biais</dt><dd>${L.bias>=0?'+':''}${fr(L.bias,2)} %</dd><div class="sep"></div><dt>Carré moyen intra-série</dt><dd>${fr(L.msw,3)}</dd><dt>Carré moyen inter-séries</dt><dd>${fr(L.msb,3)}</dd><dt>s<sub>r</sub></dt><dd>${fr(L.sr,2)} %</dd><dt>s<sub>B</sub></dt><dd>${fr(L.sb,2)} %</dd><dt>s<sub>FI</sub></dt><dd>${fr(L.sfi,2)} %</dd><div class="sep"></div><dt>H = s<sub>B</sub>²/s<sub>r</sub>²</dt><dd>${fr(L.H,3)}</dd><dt>ν (degrés de liberté)</dt><dd>${fr(L.nu,2)}</dd><dt>t(ν ; ${fr((1+pr.beta)/2,3)})</dt><dd>${fr(L.t,3)}</dd><dt>k</dt><dd>${fr(L.k,3)}</dd><div class="sep"></div><dt>Intervalle de tolérance</dt><dd>${fr(L.lo,1)} – ${fr(L.hi,1)} %</dd><dt>Limites</dt><dd>${100-pr.lam} – ${100+pr.lam} %</dd>`;
+}
+q('#p-table').addEventListener('input',e=>{const t=e.target;if(!t.dataset||t.dataset.i==null)return;const v=parseFloat(t.value.replace(',','.'));if(isFinite(v)&&v>0){pr.data[+t.dataset.i][+t.dataset.j]=v;t.style.borderColor='';renderProf(false)}else t.style.borderColor='var(--bad)'});
+q('#p-table').addEventListener('click',e=>{const tr=e.target.closest('tr[data-i]');if(!tr)return;const i=+tr.dataset.i;if(i!==pr.sel){pr.sel=i;renderProf(false)}});
+q('#chart-prof').addEventListener('click',e=>{const r=e.target.closest('[data-i]');if(!r)return;pr.sel=+r.dataset.i;renderProf(false)});
+chips('#p-lam',[5,10,15],10,v=>'± '+v+' %',v=>{pr.lam=v;renderProf()});
+chips('#p-beta',[0.8,0.9,0.95],0.8,v=>Math.round(v*100)+' %',v=>{pr.beta=v;renderProf()});
+q('#p-course').addEventListener('click',()=>{pr.data=COURSE.map(r=>r.slice());pr.sel=0;renderProf()});
+function randomMethod(kind){
+  // per level: bias %, sr %, sB %
+  const base=LEVELS.map((c,i)=>({b:(Math.random()-.5)*2.5,sr:[3.2,2.2,1.6,1.3,1.1][i]*(0.8+Math.random()*.4),sb:[2,1.3,1,.8,.7][i]*Math.random()}));
+  if(kind==='fid')Object.assign(base[0],{sr:rnd(5.5,8),sb:rnd(2,4),b:rnd(-1.5,1.5)}),Math.random()<.5&&Object.assign(base[1],{sr:rnd(3.8,5),sb:rnd(1.5,2.5)});
+  if(kind==='jus')Object.assign(base[0],{b:rnd(9,13)*(Math.random()<.7?1:-1),sr:rnd(1.5,2.5),sb:rnd(0,1)});
+  if(kind==='sat')Object.assign(base[4],{b:-rnd(9,12),sr:rnd(1,1.6),sb:rnd(0,.8)}),Object.assign(base[3],{b:-rnd(2,4)});
+  if(kind==='both')Object.assign(base[0],{b:rnd(6,8),sr:rnd(4,6),sb:rnd(1.5,3)});
+  return LEVELS.map((c,i)=>build(pattern(),base[i].b,base[i].sr,base[i].sb).map(r=>+(c*r/100).toFixed(c<5?4:3)));
+}
+function rnd(a,b){return a+Math.random()*(b-a)}
+q('#p-random').addEventListener('click',()=>{const k=['fid','jus','sat','both','none'][Math.floor(Math.random()*5)];pr.data=randomMethod(k);pr.sel=0;renderProf()});
+
+// ---------- 3. s'entraîner ----------
+const tr={good:0,total:0,streak:0,done:false,P:null,ans:null,kind:null,lam:10,qtype:null};
+const lvTxt=c=>fr(c,c%1?1:0);
+const domTxt=(P)=>P.dom?`${lvTxt(P.lv[P.dom[0]].c)} à ${lvTxt(P.lv[P.dom[1]].c)} mg/L`:'Aucun niveau validé';
+function allRanges(){const r=[];for(let a=0;a<5;a++)for(let b=a;b<5;b++)r.push(`${lvTxt(LEVELS[a])} à ${lvTxt(LEVELS[b])} mg/L`);return r}
+function pickOptions(correct,pool,n=4){const o=new Set([correct]);const p=pool.filter(x=>x!==correct).sort(()=>Math.random()-.5);for(const x of p){if(o.size>=n)break;o.add(x)}return [...o].sort(()=>Math.random()-.5)}
+function newQuestion(){
+  tr.done=false;q('#t-feedback').hidden=true;
+  const kinds=['fid','jus','sat','both','fid','jus'];const kind=kinds[Math.floor(Math.random()*kinds.length)];
+  let data,P;for(let k=0;k<200;k++){data=randomMethod(kind);P=profile(data,10,0.8);
+    const fails=P.lv.filter(s=>!s.ok).length;if(fails>=1&&fails<=2&&P.dom&&!P.gap)break}
+  tr.P=P;tr.data=data;tr.kind=kind;
+  const types=['domain','cause','lambda'];tr.qtype=types[Math.floor(Math.random()*types.length)];
+  let question,opts,correct,explain;
+  if(tr.qtype==='domain'){question='Quel est le domaine de validité de cette méthode ?';correct=domTxt(P);opts=pickOptions(correct,[...allRanges(),'Aucun niveau validé']);
+    explain=`Niveaux validés (intervalle entre ${100-10} et ${100+10} %) : ${P.lv.filter(s=>s.ok).map(s=>lvTxt(s.c)).join(', ')} mg/L. Le domaine va du plus bas au plus haut niveau validé : ${correct}.`}
+  else if(tr.qtype==='cause'){const bad=P.lv.findIndex(s=>!s.ok);const L=P.lv[bad];
+    question=`Le niveau ${lvTxt(L.c)} mg/L n'est pas validé. Quel est le problème ?`;
+    const bigB=Math.abs(L.bias)>4.5, wide=L.k*L.sfi>7.5;
+    correct=bigB&&wide?'Justesse et fidélité':bigB?'Justesse (biais)':wide?'Fidélité (dispersion)':'Justesse et fidélité';
+    opts=['Justesse (biais)','Fidélité (dispersion)','Justesse et fidélité','Aucun : le niveau est validé'];
+    explain=`À ${lvTxt(L.c)} mg/L, le recouvrement moyen est ${fr(L.m)} % (biais ${L.bias>=0?'+':''}${fr(L.bias)} %) et la demi-largeur de l'intervalle vaut k × s<sub>FI</sub> = ${fr(L.k*L.sfi)} %. `+(correct.startsWith('Justesse (')?'La courbe bleue s\'éloigne de 100 % alors que l\'intervalle reste étroit : c\'est un problème de justesse.':correct.startsWith('Fidélité')?'La courbe bleue reste proche de 100 % mais l\'intervalle est trop large : c\'est un problème de fidélité.':'Le biais et la largeur de l\'intervalle se cumulent.')}
+  else{const nl=Math.random()<.6?5:15;const P2=profile(data,nl,0.8);tr.lam=nl;
+    question=`Avec les mêmes résultats, le client exige λ = ± ${nl} %. Quel est le nouveau domaine de validité ?`;correct=domTxt(P2);opts=pickOptions(correct,[...allRanges(),'Aucun niveau validé']);
+    explain=`On compare chaque intervalle à [${100-nl} ; ${100+nl}] %. Niveaux validés : ${P2.lv.filter(s=>s.ok).map(s=>lvTxt(s.c)).join(', ')||'aucun'}. ${nl<10?'Une exigence plus sévère réduit la gamme utilisable.':'Une exigence plus large étend la gamme, mais λ doit être fixé avant les essais.'}`;tr.P2=P2}
+  tr.ans=correct;tr.explain=explain;
+  q('#chart-train').innerHTML=profSVG(P,{hideVerdict:true,H:400});
+  q('#t-q').textContent=question;
+  q('#answers').innerHTML=opts.map(o=>`<button class="btn" data-a="${o}">${o}</button>`).join('');
+  q('#answers').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>answer(b)));
+  q('#t-good').textContent=`${tr.good} / ${tr.total}`;q('#t-streak').textContent=tr.streak;
+}
+function answer(b){
+  if(tr.done)return;tr.done=true;tr.total++;const ok=b.dataset.a===tr.ans;if(ok){tr.good++;tr.streak++}else tr.streak=0;
+  q('#answers').querySelectorAll('button').forEach(x=>{x.disabled=true;if(x.dataset.a===tr.ans)x.classList.add('right');else if(x===b)x.classList.add('wrong')});
+  const fb=q('#t-feedback');fb.hidden=false;fb.className='feedback '+(ok?'good':'badf');fb.innerHTML=`<b>${ok?'Exact.':'Pas tout à fait.'}</b> ${tr.explain}`;
+  const P=tr.qtype==='lambda'?tr.P2:tr.P;q('#chart-train').innerHTML=profSVG(P,{H:400,labels:true});
+  q('#t-good').textContent=`${tr.good} / ${tr.total}`;q('#t-streak').textContent=tr.streak;
+}
+q('#t-next').addEventListener('click',newQuestion);
+
+// ---------- 4. mémo ----------
+q('#m-try').addEventListener('click',()=>{pr.data=COURSE.map(r=>r.slice());pr.lam=5;pr.beta=0.8;
+  chips('#p-lam',[5,10,15],5,v=>'± '+v+' %',v=>{pr.lam=v;renderProf()});chips('#p-beta',[0.8,0.9,0.95],0.8,v=>Math.round(v*100)+' %',v=>{pr.beta=v;renderProf()});
+  pr.sel=1;renderProf();openView('construire');window.scrollTo({top:0})});
+
+// boot
+renderOne();renderProf();newQuestion();openView(start);
+})();
+</script>
+
+</body>
+</html>
