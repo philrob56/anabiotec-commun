@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<!-- anb-commun --><script src="https://philrob56.github.io/anabiotec-commun/anb-commun.js"></script><!-- /anb-commun -->
+<meta charset="UTF-8">
+<meta name="description" content="Application interactive sur la carte de contrôle de Shewhart (étalon de caféine en HPLC) : construire la carte, limites de surveillance ± 2s et de contrôle ± 3s, règles de décision, simulateur et entraînement.">
+<link rel="canonical" href="https://philrob56.github.io/anabiotec-commun/outils/carte-controle.html">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Carte de contrôle de Shewhart : construire, lire et décider | BTSa ANABIOTEC</title>
+<style>
+:root{
+  --bg:#F3F6F6; --panel:#FFFFFF; --ink:#13201F; --muted:#5B6B69; --line:#D5DEDD; --grid:#E6ECEB;
+  --accent:#2F47B8; --accent-soft:#E6EAFB;
+  --ok:#1C8A4E; --ok-zone:#E3F3E9; --warn:#C27A06; --warn-zone:#FBF0D9; --bad:#C62E2E; --bad-zone:#FBE4E2; --drift:#7A3FC4; --drift-soft:#EFE6FB;
+  --font-ui: system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --font-num: ui-monospace,"SF Mono","Cascadia Mono","Roboto Mono",Menlo,Consolas,monospace;
+  --font-display: "Avenir Next","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1716; --panel:#172221; --ink:#E4ECEB; --muted:#9AAAA8; --line:#2A3938; --grid:#1F2C2B;
+  --accent:#8EA2FF; --accent-soft:#232C55;
+  --ok:#4CC383; --ok-zone:#15302A; --warn:#F0B34A; --warn-zone:#332914; --bad:#FF7B72; --bad-zone:#3A1C1C; --drift:#B993F5; --drift-soft:#2C2240;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1716; --panel:#172221; --ink:#E4ECEB; --muted:#9AAAA8; --line:#2A3938; --grid:#1F2C2B;
+  --accent:#8EA2FF; --accent-soft:#232C55;
+  --ok:#4CC383; --ok-zone:#15302A; --warn:#F0B34A; --warn-zone:#332914; --bad:#FF7B72; --bad-zone:#3A1C1C; --drift:#B993F5; --drift-soft:#2C2240;
+  color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-ui);font-size:15px;line-height:1.5;margin:0}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+header.top{display:flex;flex-wrap:wrap;gap:8px 24px;align-items:flex-end;justify-content:space-between;padding-block:8px 18px;border-bottom:1px solid var(--line)}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+h1{font-family:var(--font-display);font-size:clamp(26px,4vw,38px);line-height:1.1;margin:4px 0 0;letter-spacing:-.01em;text-wrap:balance}
+h2{font-family:var(--font-display);font-size:22px;margin:0 0 6px;text-wrap:balance}
+h3{font-size:15px;margin:0 0 6px}
+p{margin:0}
+.lede{color:var(--muted);max-width:62ch}
+.std{font-family:var(--font-num);font-size:13px;color:var(--muted);text-align:right}
+.std b{color:var(--ink);font-weight:600}
+nav.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;gap:4px;overflow-x:auto;padding-block:10px;margin-bottom:8px;border-bottom:1px solid var(--line)}
+.tab{flex:0 0 auto;border:1px solid transparent;background:none;color:var(--muted);font:inherit;font-weight:600;padding:8px 14px;border-radius:999px;cursor:pointer;display:flex;gap:8px;align-items:center}
+.tab .n{font-family:var(--font-num);font-size:12px;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--line)}
+.tab[aria-selected="true"]{background:var(--panel);color:var(--ink);border-color:var(--line)}
+.tab[aria-selected="true"] .n{background:var(--accent);color:var(--panel);border-color:var(--accent)}
+.tab:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+section.view{display:grid;gap:16px;padding-top:12px}
+.intro{display:grid;gap:6px;max-width:75ch}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px;align-items:start}
+@media (max-width:900px){.grid2{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px;min-width:0}
+.chartbox{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:10px 8px 4px;min-width:0}
+.chartbox svg{display:block;width:100%;height:auto}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--muted);padding:6px 8px 8px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:12px;height:12px;border-radius:50%;display:inline-block}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.stack{display:grid;gap:10px}
+button.btn{font:inherit;font-weight:600;font-size:14px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:8px 12px;cursor:pointer}
+button.btn:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+button.primary:hover{filter:brightness(1.08)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:inherit;font-size:13.5px;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;padding:6px 12px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--ink);font-weight:600}
+label.chk{display:inline-flex;gap:8px;align-items:center;font-size:14px;cursor:pointer;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:14px}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0;font-family:var(--font-num);font-variant-numeric:tabular-nums;text-align:right}
+.num{font-family:var(--font-num);font-variant-numeric:tabular-nums}
+.pill{display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:13px;padding:4px 10px;border-radius:999px;border:1px solid currentColor}
+.p-ok{color:var(--ok);background:var(--ok-zone)} .p-vig{color:var(--warn);background:var(--warn-zone)} .p-ref{color:var(--bad);background:var(--bad-zone)} .p-der{color:var(--drift);background:var(--drift-soft)}
+.big{font-family:var(--font-num);font-size:30px;font-weight:600;line-height:1.1}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.log{display:grid;gap:6px;max-height:260px;overflow:auto;font-size:13.5px}
+.log div{display:grid;grid-template-columns:62px 1fr;gap:8px;padding:6px 8px;border-radius:6px;background:var(--bg)}
+.prelim{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:4px}
+.prelim span{font-family:var(--font-num);font-size:13px;text-align:center;background:var(--bg);border-radius:6px;padding:4px 0}
+.prelim span i{display:block;font-style:normal;font-size:10.5px;color:var(--muted)}
+table.rules{width:100%;border-collapse:collapse;font-size:14px}
+table.rules th{text-align:left;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:8px;border-bottom:1px solid var(--line)}
+table.rules td{padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+table.rules td.mini{width:210px}
+.tablewrap{overflow-x:auto}
+.formula{font-family:var(--font-num);background:var(--bg);border-radius:8px;padding:10px 12px;font-size:14px;line-height:1.7}
+.callout{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:0 var(--r) var(--r) 0;padding:12px 14px}
+.callout.lab{border-color:var(--ok);background:var(--ok-zone)}
+.answers{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+@media (max-width:520px){.answers{grid-template-columns:minmax(0,1fr)}}
+.answers button{text-align:left;padding:12px;line-height:1.3}
+.answers button small{display:block;font-weight:400;color:var(--muted);font-size:12.5px;margin-top:2px}
+.answers button.right{border-color:var(--ok);background:var(--ok-zone)}
+.answers button.wrong{border-color:var(--bad);background:var(--bad-zone)}
+.score{display:flex;gap:18px;font-size:14px}
+.score b{font-family:var(--font-num);font-size:20px;display:block}
+.feedback{border-radius:var(--r);padding:12px 14px;border:1px solid var(--line)}
+.feedback.good{border-color:var(--ok);background:var(--ok-zone)}
+.feedback.badf{border-color:var(--bad);background:var(--bad-zone)}
+details{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px}
+summary{cursor:pointer;font-weight:600}
+input.val{font:inherit;font-family:var(--font-num);width:110px;padding:7px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.c-zone-ok{fill:var(--ok-zone)} .c-zone-warn{fill:var(--warn-zone)} .c-zone-bad{fill:var(--bad-zone)}
+.c-grid{stroke:var(--grid);stroke-width:1}
+.c-axis{stroke:var(--line);stroke-width:1}
+.c-target{stroke:var(--ink);stroke-width:1.6}
+.c-surv{stroke:var(--warn);stroke-width:1.6;stroke-dasharray:7 5}
+.c-ctrl{stroke:var(--bad);stroke-width:1.8}
+.c-txt{fill:var(--muted);font-family:var(--font-num);font-size:12px}
+.c-lab{font-family:var(--font-num);font-size:12px;font-weight:600}
+.c-lab.t{fill:var(--ink)} .c-lab.s{fill:var(--warn)} .c-lab.c{fill:var(--bad)}
+.c-path{fill:none;stroke:var(--muted);stroke-width:1.3;opacity:.7}
+.c-pt{stroke:var(--panel);stroke-width:2}
+.st-ok{fill:var(--ok)} .st-vig{fill:var(--warn)} .st-ref{fill:var(--bad)} .st-der{fill:var(--drift)} .st-neutral{fill:var(--accent)}
+.c-ring{fill:none;stroke:var(--accent);stroke-width:2.2}
+.c-q{fill:var(--panel);font-family:var(--font-ui);font-weight:800;font-size:12px}
+.c-pending{fill:var(--accent)}
+.c-dens{fill:none;stroke:var(--muted);stroke-width:1.4}
+.c-dens-ok{fill:var(--ok);opacity:.28} .c-dens-warn{fill:var(--warn);opacity:.35} .c-dens-bad{fill:var(--bad);opacity:.45}
+.c-pct{font-family:var(--font-num);font-size:11.5px;fill:var(--ink)}
+.c-run{fill:var(--drift);opacity:.12}
+.clickable circle.c-pt{cursor:pointer}
+@media (prefers-reduced-motion:no-preference){ .pulse{animation:pulse 1.4s ease-in-out infinite} @keyframes pulse{50%{opacity:.35}} }
+</style>
+</head>
+<body>
+<!-- anb-charte --><div class="anb-head"><div class="anb-crumb"><i></i><a href="https://sites.google.com/view/anabioteclegroschene/accueil" target="_top" style="color:inherit;text-decoration:none" title="Tous les outils du BTSa ANABIOTEC"><b>BTSa ANABIOTEC</b></a><span>›</span>M6</div><div class="anb-right"><div class="anb-tag">LEGTA Le Gros Chêne · Pontivy</div><button type="button" class="anb-print" onclick="anbPrint()" title="Ouvrir une version imprimable (PDF)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Imprimer / PDF</button></div></div><!-- /anb-charte -->
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow">BTSa ANABIOTEC · Métrologie · Chapitre 4</div>
+      <h1>La carte de contrôle</h1>
+      <p class="lede">Surveiller une méthode dans le temps avec un étalon de contrôle : construire la carte, la lire, décider.</p>
+    </div>
+    <div class="std">Étalon de contrôle : caféine (HPLC)<br>valeur cible <b>50,0 mg/L</b> · s = <b>0,8 mg/L</b></div>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Étapes">
+    <button class="tab" role="tab" id="tab-construire" aria-selected="true" data-view="construire"><span class="n">1</span>Construire</button>
+    <button class="tab" role="tab" id="tab-surveiller" aria-selected="false" data-view="surveiller"><span class="n">2</span>Surveiller</button>
+    <button class="tab" role="tab" id="tab-entrainer" aria-selected="false" data-view="entrainer"><span class="n">3</span>S'entraîner</button>
+    <button class="tab" role="tab" id="tab-memo" aria-selected="false" data-view="memo"><span class="n">4</span>Mémo</button>
+  </nav>
+
+  <!-- 1. CONSTRUIRE -->
+  <section class="view" id="view-construire" role="tabpanel" aria-labelledby="tab-construire">
+    <div class="intro">
+      <h2>Phase préliminaire : tracer les cinq lignes</h2>
+      <p class="muted">On mesure l'étalon de contrôle sur au moins 20 séries, en conditions de fidélité intermédiaire (jours et opérateurs différents). On en tire la valeur cible et l'écart-type s, puis les limites. Affichez les lignes une à une.</p>
+    </div>
+    <div class="grid2">
+      <div class="stack">
+        <div class="chartbox"><div id="chart-build"></div>
+          <div class="legend"><span><i class="sw st-neutral" style="background:var(--accent)"></i>mesure préliminaire</span><span>courbe de droite : répartition attendue des résultats (loi normale)</span></div>
+        </div>
+        <div class="row">
+          <label class="chk"><input type="checkbox" id="b-cible" checked> Valeur cible</label>
+          <label class="chk"><input type="checkbox" id="b-surv"> Limites de surveillance ± 2s</label>
+          <label class="chk"><input type="checkbox" id="b-ctrl"> Limites de contrôle ± 3s</label>
+          <label class="chk"><input type="checkbox" id="b-dens"> Loi normale</label>
+        </div>
+      </div>
+      <div class="stack">
+        <div class="card stack">
+          <h3>Les 20 mesures préliminaires (mg/L)</h3>
+          <div class="prelim" id="prelim"></div>
+          <button class="btn" id="b-new">Nouveau tirage de 20 mesures</button>
+        </div>
+        <div class="card stack">
+          <h3>Calculs</h3>
+          <dl class="kv" id="calc"></dl>
+          <p class="small muted">Ici la carte utilise la valeur certifiée de l'étalon (50,0 mg/L) et s = 0,8 mg/L. La moyenne et l'écart-type de votre tirage en sont proches, sans être identiques : c'est l'erreur aléatoire.</p>
+        </div>
+      </div>
+    </div>
+    <div class="callout"><b>Pourquoi ± 2s et ± 3s ?</b> Pour une loi normale, 95 % des résultats tombent entre ± 2s et 99,7 % entre ± 3s. Un point entre 2s et 3s arrive donc environ 1 fois sur 20 par simple hasard. Un point au-delà de ± 3s n'a que 3 chances sur 1 000 d'être dû au hasard : on conclut à un problème.</div>
+  </section>
+
+  <!-- 2. SURVEILLER -->
+  <section class="view" id="view-surveiller" role="tabpanel" aria-labelledby="tab-surveiller" hidden>
+    <div class="intro">
+      <h2>Simulateur : la vie de la méthode, série après série</h2>
+      <p class="muted">Choisissez ce qui se passe au laboratoire, ajoutez des séries et observez comment la carte réagit. Chaque point est jugé avec les règles du cours avant de rendre les résultats. Cliquez sur un point pour le relire.</p>
+    </div>
+    <div class="card stack">
+      <h3>Situation du laboratoire</h3>
+      <div class="chips" id="modes">
+        <button class="chip" aria-pressed="true" data-mode="stable">Méthode sous contrôle</button>
+        <button class="chip" aria-pressed="false" data-mode="drift">Dérive : la salle se réchauffe (pas de four de colonne)</button>
+        <button class="chip" aria-pressed="false" data-mode="shift">Décalage brutal : étalon mal préparé</button>
+        <button class="chip" aria-pressed="false" data-mode="spread">Dispersion accrue : colonne usée</button>
+      </div>
+      <div class="row">
+        <button class="btn primary" id="s-add1">+ 1 série</button>
+        <button class="btn" id="s-add5">+ 5 séries</button>
+        <button class="btn" id="s-gross">Erreur ponctuelle (dilution ratée)</button>
+        <span class="row"><input class="val" id="s-val" inputmode="decimal" placeholder="ex. 51,9" aria-label="Valeur mesurée en mg/L"><button class="btn" id="s-addv">Ajouter cette valeur</button></span>
+        <button class="btn" id="s-undo">Annuler la dernière</button>
+        <button class="btn" id="s-reset">Recommencer</button>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="chartbox"><div id="chart-sim" class="clickable"></div>
+        <div class="legend">
+          <span><i class="sw" style="background:var(--ok)"></i>acceptée</span>
+          <span><i class="sw" style="background:var(--warn)"></i>acceptée, vigilance</span>
+          <span><i class="sw" style="background:var(--bad)"></i>refusée</span>
+          <span><i class="sw" style="background:var(--drift)"></i>dérive : action corrective</span>
+        </div>
+      </div>
+      <div class="stack">
+        <div class="card stack" id="sim-card"></div>
+        <div class="card stack">
+          <h3>Journal des alertes</h3>
+          <div class="log" id="sim-log"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. S'ENTRAINER -->
+  <section class="view" id="view-entrainer" role="tabpanel" aria-labelledby="tab-entrainer" hidden>
+    <div class="intro">
+      <h2>À vous de décider</h2>
+      <p class="muted">Le dernier point (marqué « ? ») vient d'être mesuré. Les résultats des échantillons de cette série peuvent-ils être rendus ?</p>
+    </div>
+    <div class="grid2">
+      <div class="chartbox"><div id="chart-train"></div></div>
+      <div class="stack">
+        <div class="card stack">
+          <div class="score"><div><span class="muted small">Bonnes réponses</span><b id="t-good">0 / 0</b></div><div><span class="muted small">Série en cours</span><b id="t-streak">0</b></div></div>
+          <div class="kv" id="t-last"></div>
+        </div>
+      </div>
+    </div>
+    <div class="answers" id="answers">
+      <button class="btn" data-a="ok">Accepter la série<small>rien à signaler</small></button>
+      <button class="btn" data-a="vig">Accepter, avec vigilance<small>surveiller la série suivante</small></button>
+      <button class="btn" data-a="ref">Refuser la série<small>chercher la cause, refaire</small></button>
+      <button class="btn" data-a="der">Accepter, mais action corrective<small>une dérive s'installe</small></button>
+    </div>
+    <div id="t-feedback" hidden></div>
+    <div class="row"><button class="btn primary" id="t-next">Situation suivante</button></div>
+  </section>
+
+  <!-- 4. MEMO -->
+  <section class="view" id="view-memo" role="tabpanel" aria-labelledby="tab-memo" hidden>
+    <div class="intro">
+      <h2>Lire la carte : les règles</h2>
+      <p class="muted">Les règles détaillées varient selon les référentiels (ISO 7870-2, règles de Westgard en biologie médicale), mais la logique est toujours la même.</p>
+    </div>
+    <div class="card tablewrap">
+      <table class="rules">
+        <thead><tr><th>Ce qu'on observe</th><th>Ce que cela signifie</th><th>Décision</th><th>Exemple</th></tr></thead>
+        <tbody id="rules-body"></tbody>
+      </table>
+    </div>
+    <div class="grid2">
+      <div class="card stack">
+        <h3>Les cinq lignes</h3>
+        <div class="formula">LSC = cible + 3s = 50,0 + 2,4 = 52,4 mg/L<br>LSS = cible + 2s = 50,0 + 1,6 = 51,6 mg/L<br>Cible = 50,0 mg/L<br>LIS = cible − 2s = 50,0 − 1,6 = 48,4 mg/L<br>LIC = cible − 3s = 50,0 − 2,4 = 47,6 mg/L</div>
+        <p class="small muted">LSC / LIC : limites supérieure et inférieure de contrôle (ou d'action). LSS / LIS : limites supérieure et inférieure de surveillance.</p>
+      </div>
+      <div class="stack">
+        <div class="callout lab"><b>Au labo.</b> Notre HPLC n'a pas de four de colonne : sur la carte de l'étalon de caféine, une suite de points du même côté de la cible doit faire penser à la température de la salle (saison, chauffage). La carte transforme cette intuition en preuve.</div>
+        <div class="callout"><b>Le bon réflexe.</b> Reporter le point de l'étalon avant de rendre les résultats des échantillons, et noter sur la carte chaque anomalie et sa correction.</div>
+      </div>
+    </div>
+    <details>
+      <summary>Exercice du cours : séries 26 et 27</summary>
+      <p style="margin-top:8px">Après la série 25, l'étalon donne 52,0 mg/L (série 26) puis 51,9 mg/L (série 27). Que décidez-vous à chaque fois ?</p>
+      <details style="margin-top:10px"><summary>Voir la réponse</summary>
+        <p style="margin-top:8px">Série 26 : 52,0 mg/L est entre + 2s (51,6) et + 3s (52,4) : vigilance, la série est acceptée.<br>Série 27 : deuxième point consécutif dans la même zone, du même côté : la série est refusée et on recherche la cause avant de rendre les résultats.</p>
+        <button class="btn" id="m-try" style="margin-top:10px">Essayer dans le simulateur</button>
+      </details>
+    </details>
+  </section>
+</div>
+
+<script>
+(function(){
+const T=50.0, S=0.8;
+const fr=(v,d=1)=>v.toFixed(d).replace('.',',').replace('-','−');
+const randn=()=>{let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)};
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const lim={lsc:T+3*S,lss:T+2*S,lis:T-2*S,lic:T-3*S};
+
+// ---------- rules ----------
+function evaluate(vals,t=T,s=S){
+  const out=[];let run=0,runSign=0,up=1,down=1;
+  vals.forEach((v,i)=>{
+    const z=(v-t)/s, sg=z>0?1:(z<0?-1:0), az=Math.abs(z);
+    if(sg!==0&&sg===runSign)run++;else{run=sg?1:0;runSign=sg}
+    if(i>0){up=v>vals[i-1]?up+1:1;down=v<vals[i-1]?down+1:1}
+    const prev=i>0?out[i-1]:null;
+    const r1=az>3;
+    const r3=!r1&&az>2&&prev&&Math.abs(prev.z)>2&&Math.sign(prev.z)===sg;
+    const r4side=run>=7, r4trend=up>=7||down>=7, r4=r4side||r4trend;
+    const r2=!r1&&!r3&&az>2;
+    let status='ok',involved=[i];
+    if(r1)status='ref';
+    else if(r3){status='ref';involved=[i-1,i]}
+    else if(r4){status='der';const k=r4side?run:Math.max(up,down);involved=[];for(let j=i-k+1;j<=i;j++)involved.push(j)}
+    else if(r2)status='vig';
+    out.push({v,z,zone:az>3?'bad':az>2?'warn':'ok',r1,r2,r3,r4,r4side,r4trend,run,up,down,status,involved,alsoVig:r4&&r2});
+  });
+  return out;
+}
+const STATUS={
+  ok:{pill:'p-ok',label:'Série acceptée',cls:'st-ok'},
+  vig:{pill:'p-vig',label:'Acceptée · vigilance',cls:'st-vig'},
+  ref:{pill:'p-ref',label:'Série refusée',cls:'st-ref'},
+  der:{pill:'p-der',label:'Dérive · action corrective',cls:'st-der'}
+};
+function explain(e,i){
+  const n=i+1;
+  if(e.r1)return {rule:'1 point au-delà de ± 3s',why:`${fr(e.v)} mg/L est ${e.z>0?'au-dessus de la LSC (52,4)':'sous la LIC (47,6)'}. Une erreur importante, presque jamais due au hasard (3 chances sur 1 000).`,todo:'Ne pas rendre les résultats de la série. Chercher la cause, corriger, refaire la série.'};
+  if(e.r3)return {rule:'2 points consécutifs entre 2s et 3s, du même côté',why:`Les séries ${n-1} et ${n} sont toutes deux ${e.z>0?'au-dessus de + 2s':'sous − 2s'}. Deux fois de suite un événement à 1 chance sur 20 : la méthode est probablement décalée.`,todo:'Ne pas rendre les résultats. Chercher la cause (étalon, étalonnage, réactif…) avant de continuer.'};
+  if(e.r4){const k=e.r4side?e.run:Math.max(e.up,e.down);return {rule:e.r4side?'7 points consécutifs du même côté de la cible':'7 points en hausse (ou en baisse) continue',why:`${k} points de suite ${e.r4side?(e.z>0?'au-dessus':'en dessous')+' de la cible':(e.up>=7?'en hausse':'en baisse')}. Le hasard seul ne fait presque jamais cela : une erreur systématique s'installe.`+(e.alsoVig?' Ce point est en plus dans la zone de vigilance.':''),todo:'La série peut être rendue, mais il faut agir avant qu\'un point ne sorte : réétalonner, changer le réactif, contrôler la température de la salle…'}}
+  if(e.r2)return {rule:'1 point entre 2s et 3s',why:`${fr(e.v)} mg/L est entre ${e.z>0?'+ 2s (51,6) et + 3s (52,4)':'− 3s (47,6) et − 2s (48,4)'}. Cela arrive environ 1 fois sur 20 par simple hasard.`,todo:'La série est acceptée. Regarder attentivement la série suivante.'};
+  return {rule:'Point entre ± 2s',why:`${fr(e.v)} mg/L est dans la zone verte, sans enchaînement suspect.`,todo:'Les résultats des échantillons peuvent être rendus.'};
+}
+
+// ---------- chart ----------
+function chartSVG(o){
+  const vals=o.vals, W=o.W||900, H=o.H||380, mini=!!o.mini;
+  const show=Object.assign({cible:true,surv:true,ctrl:true,dens:false},o.show||{});
+  const padL=mini?6:56, padR=mini?6:(show.dens?190:96), padT=mini?6:14, padB=mini?6:34;
+  const n=Math.max(vals.length,o.minN||20);
+  let lo=T-4*S, hi=T+4*S;
+  vals.forEach(v=>{lo=Math.min(lo,v-0.4*S);hi=Math.max(hi,v+0.4*S)});
+  if(mini){lo=T-4.2*S;hi=T+4.2*S}
+  const pw=W-padL-padR, ph=H-padT-padB;
+  const y=v=>padT+(hi-v)/(hi-lo)*ph, x=i=>padL+(i+0.5)*pw/n;
+  const ev=o.evals||null;
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${o.aria||'Carte de contrôle'}">`;
+  // zones
+  if(show.surv) s+=`<rect class="c-zone-ok" x="${padL}" y="${y(T+2*S)}" width="${pw}" height="${y(T-2*S)-y(T+2*S)}"/>`;
+  if(show.surv&&show.ctrl){s+=`<rect class="c-zone-warn" x="${padL}" y="${y(T+3*S)}" width="${pw}" height="${y(T+2*S)-y(T+3*S)}"/><rect class="c-zone-warn" x="${padL}" y="${y(T-2*S)}" width="${pw}" height="${y(T-3*S)-y(T-2*S)}"/>`}
+  if(show.ctrl){s+=`<rect class="c-zone-bad" x="${padL}" y="${padT}" width="${pw}" height="${Math.max(0,y(T+3*S)-padT)}"/><rect class="c-zone-bad" x="${padL}" y="${y(T-3*S)}" width="${pw}" height="${Math.max(0,padT+ph-y(T-3*S))}"/>`}
+  // run highlight
+  if(o.band){const [a,b]=o.band;s+=`<rect class="c-run" x="${x(a)-pw/n/2}" y="${padT}" width="${(b-a+1)*pw/n}" height="${ph}"/>`}
+  // grid + y ticks
+  if(!mini){
+    const step=1, t0=Math.ceil(lo), t1=Math.floor(hi);
+    for(let v=t0;v<=t1;v+=step){s+=`<line class="c-grid" x1="${padL}" x2="${padL+pw}" y1="${y(v)}" y2="${y(v)}"/><text class="c-txt" x="${padL-8}" y="${y(v)+4}" text-anchor="end">${fr(v,0)}</text>`}
+    s+=`<text class="c-txt" x="12" y="${padT+ph/2}" transform="rotate(-90 12 ${padT+ph/2})" text-anchor="middle">caféine (mg/L)</text>`;
+    s+=`<line class="c-axis" x1="${padL}" x2="${padL+pw}" y1="${padT+ph}" y2="${padT+ph}"/>`;
+    const every=n>30?5:(n>20?2:1);
+    for(let i=0;i<n;i++){if((i+1)%every===0||i===0)s+=`<text class="c-txt" x="${x(i)}" y="${padT+ph+16}" text-anchor="middle">${i+1}</text>`}
+    s+=`<text class="c-txt" x="${padL+pw/2}" y="${H-2}" text-anchor="middle">n° de série</text>`;
+  }
+  // lines
+  const L=(v,cls,lab,lc)=>{s+=`<line class="${cls}" x1="${padL}" x2="${padL+pw}" y1="${y(v)}" y2="${y(v)}"/>`;if(!mini)s+=`<text class="c-lab ${lc}" x="${padL+pw+6}" y="${y(v)+4}">${lab} ${fr(v)}</text>`};
+  if(show.ctrl){L(T+3*S,'c-ctrl','LSC','c');L(T-3*S,'c-ctrl','LIC','c')}
+  if(show.surv){L(T+2*S,'c-surv','LSS','s');L(T-2*S,'c-surv','LIS','s')}
+  if(show.cible)L(T,'c-target','Cible','t');
+  // density
+  if(show.dens&&!mini){
+    const x0=padL+pw+104, wmax=72, dens=v=>Math.exp(-0.5*((v-T)/S)**2);
+    const pathFor=(a,b)=>{let p=`M${x0},${y(a)}`;for(let k=0;k<=40;k++){const v=a+(b-a)*k/40;p+=` L${x0+wmax*dens(v)},${y(v)}`}return p+` L${x0},${y(b)} Z`};
+    s+=`<path class="c-dens-bad" d="${pathFor(T+3*S,T+4*S)}"/><path class="c-dens-bad" d="${pathFor(T-4*S,T-3*S)}"/>`;
+    s+=`<path class="c-dens-warn" d="${pathFor(T+2*S,T+3*S)}"/><path class="c-dens-warn" d="${pathFor(T-3*S,T-2*S)}"/>`;
+    s+=`<path class="c-dens-ok" d="${pathFor(T-2*S,T+2*S)}"/>`;
+    let p=`M${x0},${y(T-4*S)}`;for(let k=0;k<=80;k++){const v=T-4*S+8*S*k/80;p+=` L${x0+wmax*dens(v)},${y(v)}`}
+    s+=`<path class="c-dens" d="${p}"/><line class="c-axis" x1="${x0}" x2="${x0}" y1="${y(T+4*S)}" y2="${y(T-4*S)}"/>`;
+    s+=`<text class="c-pct" x="${x0+8}" y="${y(T)+4}">95 %</text><text class="c-pct" x="${x0+4}" y="${y(T+2.5*S)+4}">2,1 %</text><text class="c-pct" x="${x0+4}" y="${y(T-2.5*S)+4}">2,1 %</text><text class="c-pct" x="${x0+4}" y="${y(T+3.5*S)+4}">0,13 %</text><text class="c-pct" x="${x0+4}" y="${y(T-3.5*S)+4}">0,13 %</text>`;
+  }
+  // path + points
+  if(vals.length>1){s+=`<polyline class="c-path" points="${vals.map((v,i)=>`${x(i)},${y(v)}`).join(' ')}"/>`}
+  const r=mini?3.6:5.5;
+  (o.rings||[]).forEach(i=>{if(i>=0&&i<vals.length)s+=`<circle class="c-ring" cx="${x(i)}" cy="${y(vals[i])}" r="${r+5}"/>`});
+  vals.forEach((v,i)=>{
+    const isPending=o.pendingLast&&i===vals.length-1;
+    const cls=isPending?'c-pending':(ev?STATUS[ev[i].status].cls:'st-neutral');
+    s+=`<circle class="c-pt ${cls}${isPending?' pulse':''}" data-i="${i}" cx="${x(i)}" cy="${y(v)}" r="${isPending?r+3:r}"><title>Série ${i+1} : ${fr(v,2)} mg/L</title></circle>`;
+    if(isPending)s+=`<text class="c-q" x="${x(i)}" y="${y(v)+4}" text-anchor="middle">?</text>`;
+  });
+  (o.marks||[]).forEach(([i,t])=>{s+=`<text class="c-lab t" x="${x(i)}" y="${y(vals[i])-(vals[i]>T?14:-22)}" text-anchor="middle">${t}</text>`});
+  return s+'</svg>';
+}
+
+// ---------- tabs ----------
+const tabs=[...document.querySelectorAll('.tab')];
+function openView(name){tabs.forEach(t=>{const on=t.dataset.view===name;t.setAttribute('aria-selected',on);document.getElementById('view-'+t.dataset.view).hidden=!on});try{localStorage.setItem('cc-tab',name)}catch(e){}}
+tabs.forEach(t=>t.addEventListener('click',()=>openView(t.dataset.view)));
+let startTab='construire';
+const h=(location.hash||'').slice(1); if(['construire','surveiller','entrainer','memo'].includes(h))startTab=h;
+else{try{const v=localStorage.getItem('cc-tab');if(v)startTab=v}catch(e){}}
+
+// ---------- 1. construire ----------
+let prelim=[];
+function newPrelim(){prelim=Array.from({length:20},()=>+(T+S*randn()).toFixed(1))}
+function renderBuild(){
+  const show={cible:q('#b-cible').checked,surv:q('#b-surv').checked,ctrl:q('#b-ctrl').checked,dens:q('#b-dens').checked};
+  q('#chart-build').innerHTML=chartSVG({vals:prelim,show,minN:20,aria:'Mesures préliminaires de l\'étalon'});
+  q('#prelim').innerHTML=prelim.map((v,i)=>`<span><i>n°${i+1}</i>${fr(v)}</span>`).join('');
+  const m=prelim.reduce((a,b)=>a+b,0)/prelim.length;
+  const sd=Math.sqrt(prelim.reduce((a,b)=>a+(b-m)**2,0)/(prelim.length-1));
+  q('#calc').innerHTML=`<dt>Moyenne des 20 mesures ȳ</dt><dd>${fr(m,2)} mg/L</dd><dt>Écart-type s (n − 1)</dt><dd>${fr(sd,2)} mg/L</dd><dt>Valeur cible retenue</dt><dd>${fr(T)} mg/L</dd><dt>s retenu</dt><dd>${fr(S)} mg/L</dd><dt>LSS (cible + 2s)</dt><dd>${fr(lim.lss)} mg/L</dd><dt>LIS (cible − 2s)</dt><dd>${fr(lim.lis)} mg/L</dd><dt>LSC (cible + 3s)</dt><dd>${fr(lim.lsc)} mg/L</dd><dt>LIC (cible − 3s)</dt><dd>${fr(lim.lic)} mg/L</dd>`;
+}
+['#b-cible','#b-surv','#b-ctrl','#b-dens'].forEach(id=>q(id).addEventListener('change',renderBuild));
+q('#b-new').addEventListener('click',()=>{newPrelim();renderBuild()});
+
+// ---------- 2. surveiller ----------
+const sim={vals:[],mode:'stable',bias:0,sel:null};
+function cleanStart(k){let v;do{v=Array.from({length:k},()=>+(T+S*randn()).toFixed(2))}while(evaluate(v).some(e=>e.status!=='ok'));return v}
+function nextVal(){
+  if(sim.mode==='stable')return T+S*randn();
+  if(sim.mode==='shift')return T+1.9*S+S*0.8*randn();
+  if(sim.mode==='spread')return T+2.3*S*randn();
+  if(sim.mode==='drift'){sim.bias+=0.22*S;return T+sim.bias+0.6*S*randn()}
+}
+function addSim(v){sim.vals.push(+v.toFixed(2));sim.sel=null;renderSim()}
+function renderSim(){
+  const ev=evaluate(sim.vals);
+  const sel=sim.sel==null?sim.vals.length-1:sim.sel;
+  const e=ev[sel];
+  const rings=e&&e.status==='der'?[sel]:(e&&e.status!=='ok'?e.involved:[sel]);
+  const band=e&&e.status==='der'?[e.involved[0],e.involved[e.involved.length-1]]:null;
+  q('#chart-sim').innerHTML=chartSVG({vals:sim.vals,evals:ev,minN:Math.max(30,Math.ceil((sim.vals.length+3)/5)*5),rings,band,aria:'Carte de contrôle simulée'});
+  if(e){const x=explain(e,sel),st=STATUS[e.status];
+    q('#sim-card').innerHTML=`<div class="row" style="justify-content:space-between"><span class="muted small">${sim.sel==null?'Dernière série':'Série sélectionnée'} · n° ${sel+1}</span><span class="pill ${st.pill}">${st.label}</span></div>
+    <div class="big">${fr(e.v,2)} <span class="small muted">mg/L</span></div>
+    <div class="small muted num">écart à la cible : ${e.z>=0?'+':''}${fr(e.z,2)} s</div>
+    <div><b>${x.rule}</b><p class="small" style="margin-top:4px">${x.why}</p></div>
+    <div class="small"><b>Que faire ?</b> ${x.todo}</div>`}
+  const alerts=ev.map((e,i)=>({e,i})).filter(a=>a.e.status!=='ok').reverse();
+  q('#sim-log').innerHTML=alerts.length?alerts.map(({e,i})=>`<div><span class="num"><b>n° ${i+1}</b></span><span><span class="pill ${STATUS[e.status].pill}" style="font-size:11.5px;padding:1px 8px">${STATUS[e.status].label}</span> ${explain(e,i).rule}</span></div>`).join(''):'<p class="small muted">Aucune alerte : la méthode est sous contrôle.</p>';
+}
+document.querySelectorAll('#modes .chip').forEach(c=>c.addEventListener('click',()=>{
+  document.querySelectorAll('#modes .chip').forEach(d=>d.setAttribute('aria-pressed',d===c));
+  sim.mode=c.dataset.mode;sim.bias=0;
+}));
+q('#s-add1').addEventListener('click',()=>addSim(nextVal()));
+q('#s-add5').addEventListener('click',()=>{for(let k=0;k<5;k++)sim.vals.push(+nextVal().toFixed(2));sim.sel=null;renderSim()});
+q('#s-gross').addEventListener('click',()=>addSim(T+(Math.random()<.5?-1:1)*rnd(3.3,4.2)*S));
+function addTyped(){const raw=q('#s-val').value.trim().replace(',','.');const v=parseFloat(raw);if(!isFinite(v)||v<30||v>70){q('#s-val').setCustomValidity('Entrez une valeur en mg/L, par exemple 51,9');q('#s-val').reportValidity();return}q('#s-val').setCustomValidity('');addSim(v);q('#s-val').value=''}
+q('#s-addv').addEventListener('click',addTyped);
+q('#s-val').addEventListener('keydown',e=>{if(e.key==='Enter')addTyped()});
+q('#s-val').addEventListener('input',()=>q('#s-val').setCustomValidity(''));
+q('#s-undo').addEventListener('click',()=>{if(sim.vals.length){sim.vals.pop();sim.sel=null;renderSim()}});
+function resetSim(){sim.vals=cleanStart(12);sim.bias=0;sim.sel=null;renderSim()}
+q('#s-reset').addEventListener('click',resetSim);
+q('#chart-sim').addEventListener('click',ev=>{const c=ev.target.closest('circle.c-pt');if(!c)return;const i=+c.dataset.i;sim.sel=(i===sim.vals.length-1)?null:i;renderSim()});
+q('#m-try').addEventListener('click',()=>{
+  // the course example: 25 series ending clean, then 52,0 and 51,9
+  sim.vals=cleanStart(25);sim.vals.push(52.0);sim.sel=null;
+  document.querySelectorAll('#modes .chip').forEach(d=>d.setAttribute('aria-pressed',d.dataset.mode==='stable'));sim.mode='stable';
+  q('#s-val').value='51,9';renderSim();openView('surveiller');window.scrollTo({top:0});
+});
+
+// ---------- 3. entrainer ----------
+const tr={vals:[],answer:null,done:false,good:0,total:0,streak:0,last:null};
+function genScenario(){
+  const kinds=['ok','vig','ref1','ref2','der','der'];
+  let kind=kinds[Math.floor(Math.random()*kinds.length)];
+  if(kind===tr.last&&Math.random()<.6)kind=kinds[Math.floor(Math.random()*kinds.length)];
+  tr.last=kind;
+  for(let tries=0;tries<500;tries++){
+    let v=cleanStart(Math.floor(rnd(11,15)));
+    const sg=Math.random()<.5?-1:1;
+    if(kind==='ok'){v.push(T+rnd(-1.7,1.7)*S)}
+    else if(kind==='vig'){v.push(T+sg*rnd(2.1,2.9)*S)}
+    else if(kind==='ref1'){v.push(T+sg*rnd(3.2,4.0)*S)}
+    else if(kind==='ref2'){v.push(T+sg*rnd(2.1,2.85)*S);v.push(T+sg*rnd(2.1,2.85)*S)}
+    else if(kind==='der'){
+      if(Math.random()<.7){v.push(T-sg*rnd(0.3,1.2)*S);for(let k=0;k<7;k++)v.push(T+sg*rnd(0.25,1.75)*S)}
+      else{let z=rnd(-1.6,-1.0);v.push(T+(z+0.1)*S);for(let k=0;k<7;k++){z+=rnd(0.3,0.45);v.push(T+sg*z*S)}}
+    }
+    v=v.map(a=>+a.toFixed(2));
+    const ev=evaluate(v), lastE=ev[ev.length-1];
+    const want=kind.startsWith('ref')?'ref':kind;
+    const extra=kind==='ref2'?2:(kind==='der'?8:1);
+    const historyClean=ev.slice(0,ev.length-extra).every(e=>e.status==='ok');
+    const midOk=kind==='ref2'?ev[ev.length-2].status==='vig':(kind==='der'?ev.slice(ev.length-8,ev.length-1).every(e=>e.status==='ok'):true);
+    if(lastE.status===want&&historyClean&&midOk&&!(kind==='der'&&lastE.alsoVig)){tr.vals=v;tr.answer=want;return}
+  }
+  tr.vals=cleanStart(14);tr.answer='ok';
+}
+function renderTrain(){
+  const ev=evaluate(tr.vals), n=tr.vals.length, e=ev[n-1];
+  const opts={vals:tr.vals,minN:Math.max(20,n+1),aria:'Carte de contrôle à interpréter'};
+  if(tr.done){opts.evals=ev;opts.rings=e.status==='ref'?e.involved:[n-1];if(e.status==='der')opts.band=[e.involved[0],e.involved[e.involved.length-1]]}
+  else{opts.evals=ev.map((x,i)=>i<n-1?{...x,status:'ok'}:x);opts.pendingLast=true}
+  q('#chart-train').innerHTML=chartSVG(opts);
+  q('#t-good').textContent=`${tr.good} / ${tr.total}`;q('#t-streak').textContent=tr.streak;
+  const prev=n>1?tr.vals[n-2]:null;
+  q('#t-last').innerHTML=`<dt>Dernière série</dt><dd>n° ${n}</dd><dt>Valeur mesurée</dt><dd>${fr(tr.vals[n-1],2)} mg/L</dd>${prev!=null?`<dt>Série précédente</dt><dd>${fr(prev,2)} mg/L</dd>`:''}<dt>Limites ± 2s</dt><dd>48,4 – 51,6</dd><dt>Limites ± 3s</dt><dd>47,6 – 52,4</dd>`;
+}
+function newTrain(){genScenario();tr.done=false;q('#t-feedback').hidden=true;document.querySelectorAll('#answers button').forEach(b=>{b.classList.remove('right','wrong');b.disabled=false});renderTrain()}
+document.querySelectorAll('#answers button').forEach(b=>b.addEventListener('click',()=>{
+  if(tr.done)return;tr.done=true;tr.total++;
+  const ok=b.dataset.a===tr.answer; if(ok){tr.good++;tr.streak++}else tr.streak=0;
+  document.querySelectorAll('#answers button').forEach(x=>{x.disabled=true;if(x.dataset.a===tr.answer)x.classList.add('right');else if(x===b)x.classList.add('wrong')});
+  const ev=evaluate(tr.vals),n=tr.vals.length,x=explain(ev[n-1],n-1);
+  const fb=q('#t-feedback');fb.hidden=false;fb.className='feedback '+(ok?'good':'badf');
+  fb.innerHTML=`<b>${ok?'Bonne décision.':'Pas tout à fait.'}</b> Règle : <b>${x.rule}</b>. ${x.why} <br><span class="small"><b>Que faire ?</b> ${x.todo}</span>`;
+  renderTrain();
+}));
+q('#t-next').addEventListener('click',newTrain);
+
+// ---------- 4. memo ----------
+function miniEx(kind){
+  const base=[50.3,49.6,50.5,49.8,50.1,49.4,50.2];
+  let v,ev;
+  if(kind==='r1')v=[...base,49.9,52.9];
+  if(kind==='r2')v=[...base,50.4,48.0,49.7];
+  if(kind==='r3')v=[...base,49.8,51.9,52.1];
+  if(kind==='r4')v=[49.3,50.6,49.5,50.4,50.9,50.6,51.2,50.7,51.1,51.0];
+  ev=evaluate(v);const last=v.length-1;let rings=ev[last].status==='ref'?ev[last].involved:[];
+  if(kind==='r2'){const i=8;rings=[i];ev[last].status='ok'}
+  const band=kind==='r4'?[ev[last].involved[0],last]:null;
+  return chartSVG({vals:v,evals:ev,mini:true,W:200,H:86,minN:v.length,rings,band,aria:'Exemple'});
+}
+const R=[
+  ['1 point au-delà de ± 3s','erreur importante, presque jamais due au hasard','<span class="pill p-ref">Série refusée</span><br><span class="small muted">chercher la cause, refaire</span>','r1'],
+  ['1 point entre 2s et 3s','arrive 1 fois sur 20 par simple hasard','<span class="pill p-vig">Acceptée · vigilance</span><br><span class="small muted">surveiller la série suivante</span>','r2'],
+  ['2 points consécutifs entre 2s et 3s, du même côté','décalage probable de la méthode','<span class="pill p-ref">Série refusée</span><br><span class="small muted">chercher la cause</span>','r3'],
+  ['7 points consécutifs du même côté de la cible (ou 7 points en hausse ou en baisse continue)','dérive : une erreur systématique s\'installe','<span class="pill p-der">Action corrective</span><br><span class="small muted">réétalonner, changer le réactif… avant qu\'un point ne sorte</span>','r4']
+];
+q('#rules-body').innerHTML=R.map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td>${r[2]}</td><td class="mini">${miniEx(r[3])}</td></tr>`).join('');
+
+function q(s){return document.querySelector(s)}
+// boot
+newPrelim();renderBuild();resetSim();newTrain();openView(startTab);
+})();
+</script>
+
+</body>
+</html>
